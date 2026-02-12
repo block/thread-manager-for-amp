@@ -1,0 +1,347 @@
+/* Terminal Manager */
+.terminal-manager {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--accent-pink);
+  z-index: 100;
+  animation: slideUpManager 0.2s ease;
+}
+
+.terminal-manager.minimized {
+  height: auto !important;
+}
+
+.terminal-manager.expanded {
+  height: 100vh !important;
+}
+
+@keyframes slideUpManager {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Resize handle */
+.terminal-resize-handle {
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: row-resize;
+  z-index: 10;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.terminal-manager:hover .terminal-resize-handle,
+.terminal-resize-handle:hover {
+  opacity: 1;
+}
+
+.terminal-resize-handle:active {
+  opacity: 1;
+  color: var(--accent-cyan);
+}
+
+.terminal-dock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.terminal-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  padding-right: 12px;
+}
+
+.terminal-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.terminal-tab:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
+}
+
+.terminal-tab.active {
+  background: var(--bg-active);
+  border-color: var(--accent-pink);
+  color: var(--text-primary);
+}
+
+.terminal-tab.in-view {
+  border-color: var(--accent-cyan);
+}
+
+.terminal-tab.dragging {
+  opacity: 0.5;
+}
+
+.tab-visibility {
+  font-size: 8px;
+  line-height: 1;
+}
+
+.tab-visibility.visible {
+  color: var(--accent-cyan);
+}
+
+.tab-visibility.hidden {
+  color: var(--text-muted);
+}
+
+.terminal-tab-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.terminal-tab-status.status-idle {
+  background-color: #4ade80;
+  box-shadow: 0 0 4px rgba(74, 222, 128, 0.4);
+}
+
+.terminal-tab-status.status-running {
+  background-color: #fbbf24;
+  box-shadow: 0 0 4px rgba(251, 191, 36, 0.5);
+  animation: status-pulse 1.5s ease-in-out infinite;
+}
+
+.terminal-tab-status.status-error {
+  background-color: #f87171;
+  box-shadow: 0 0 4px rgba(248, 113, 113, 0.5);
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.terminal-tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.terminal-tab-unread {
+  background: var(--accent-pink);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  animation: unread-pulse 2s ease-in-out infinite;
+}
+
+@keyframes unread-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.terminal-tab.has-unread {
+  border-color: var(--accent-pink);
+}
+
+.terminal-tab-close {
+  padding: 2px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.terminal-tab-close:hover {
+  background: var(--error);
+  color: white;
+}
+
+.terminal-dock-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dock-btn {
+  padding: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s;
+}
+
+.dock-btn:hover {
+  background: var(--bg-hover);
+}
+
+/* Distinct colors for each dock button */
+.dock-btn.expand {
+  color: var(--accent-cyan);
+}
+
+.dock-btn.expand:hover {
+  border-color: var(--accent-cyan);
+}
+
+.dock-btn.split {
+  color: var(--accent-blue);
+}
+
+.dock-btn.split:hover {
+  border-color: var(--accent-blue);
+}
+
+.dock-btn.grid {
+  color: var(--accent-magenta);
+}
+
+.dock-btn.grid:hover {
+  border-color: var(--accent-magenta);
+}
+
+.dock-btn.minimize {
+  color: var(--accent-yellow);
+}
+
+.dock-btn.minimize:hover {
+  border-color: var(--accent-yellow);
+}
+
+.dock-btn.close {
+  color: var(--error);
+}
+
+.dock-btn.close:hover {
+  background: var(--error);
+  border-color: var(--error);
+  color: white;
+}
+
+.dock-btn.active {
+  background: var(--bg-active);
+  border-color: var(--accent-pink);
+  color: var(--accent-pink);
+}
+
+.dock-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+.terminal-panes {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.terminal-panes.layout-tabs .terminal-pane {
+  flex: 1;
+}
+
+.terminal-panes.layout-split {
+  flex-direction: row;
+}
+
+.terminal-panes.layout-split .terminal-pane {
+  flex: 1;
+  border-right: 1px solid var(--border);
+}
+
+.terminal-panes.layout-split .terminal-pane:last-child {
+  border-right: none;
+}
+
+.terminal-panes.layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.terminal-panes.layout-grid .terminal-pane {
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.terminal-panes.layout-grid .terminal-pane:nth-child(2n) {
+  border-right: none;
+}
+
+.terminal-panes.layout-grid .terminal-pane:nth-child(n+3) {
+  border-bottom: none;
+}
+
+/* When only 3 terminals, make the third span full width on second row */
+.terminal-panes.layout-grid .terminal-pane:nth-child(3):last-child {
+  grid-column: span 2;
+  border-right: none;
+}
+
+.terminal-pane {
+  display: flex;
+  overflow: hidden;
+}
+
+.terminal-pane .terminal-container {
+  flex: 1;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+.terminal-container.embedded {
+  max-width: none;
+  width: 100%;
+  height: 100%;
+}
+
+.terminal-container.embedded .terminal-body {
+  height: 100%;
+}

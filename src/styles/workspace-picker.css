@@ -1,0 +1,292 @@
+/* Workspace Picker Modal */
+.workspace-picker {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 500px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.workspace-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.workspace-picker-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.workspace-picker-header h2 svg {
+  color: var(--accent-cyan);
+}
+
+/* Search */
+.workspace-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.workspace-search svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.workspace-search input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.workspace-search input:focus {
+  outline: none;
+}
+
+.workspace-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.search-clear:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.workspace-picker-content {
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.workspace-loading,
+.workspace-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.workspace-loading.creating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  color: var(--accent-cyan);
+}
+
+.workspace-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  background: var(--bg-tertiary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.workspace-option:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-cyan);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.workspace-option.default {
+  background: rgba(14, 243, 255, 0.08);
+  border-color: rgba(14, 243, 255, 0.4);
+}
+
+.workspace-option.default:hover {
+  background: rgba(14, 243, 255, 0.15);
+  border-color: var(--accent-cyan);
+}
+
+.workspace-option svg {
+  flex-shrink: 0;
+  color: var(--accent-yellow);
+  margin-top: 3px;
+}
+
+.workspace-option.default svg {
+  color: var(--accent-cyan);
+}
+
+.workspace-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.workspace-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.workspace-path {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspace-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.workspace-repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--accent-pink);
+}
+
+.workspace-repo svg {
+  color: var(--accent-pink);
+}
+
+.workspace-last-used {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.workspace-option.from-thread {
+  border-left: 4px solid var(--accent-cyan);
+  border-color: rgba(14, 243, 255, 0.3);
+  border-left-color: var(--accent-cyan);
+}
+
+.workspace-option.from-scan {
+  border-left: 4px solid var(--accent-yellow);
+  border-color: rgba(255, 212, 0, 0.2);
+  border-left-color: var(--accent-yellow);
+}
+
+/* Custom path input */
+.workspace-custom {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.workspace-option.custom-trigger {
+  background: transparent;
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.workspace-option.custom-trigger svg {
+  color: var(--text-muted);
+}
+
+.workspace-option.custom-trigger:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-cyan);
+}
+
+.workspace-option.custom-trigger:hover svg {
+  color: var(--accent-cyan);
+}
+
+.custom-path-input {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-path-input input {
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: var(--font-mono);
+}
+
+.custom-path-input input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+}
+
+.custom-path-btn {
+  padding: 10px 16px;
+  background: var(--accent-cyan);
+  border: none;
+  border-radius: 6px;
+  color: var(--bg-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.custom-path-btn:hover {
+  opacity: 0.9;
+}
+
+.custom-path-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.custom-path-cancel {
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.custom-path-cancel:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}

@@ -1,0 +1,88 @@
+.output-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+}
+
+.output-modal {
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 
+    0 0 0 1px var(--border),
+    0 16px 70px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(14, 243, 255, 0.15);
+}
+
+.output-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-tertiary);
+}
+
+.output-modal-title {
+  color: var(--accent-cyan);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.output-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  transition: color 0.15s;
+}
+
+.output-modal-close:hover {
+  color: var(--accent-pink);
+}
+
+.output-modal-content {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.output-modal-content pre {
+  margin: 0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.output-modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.output-modal-content::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+.output-modal-content::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 4px;
+}
+
+.output-modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}

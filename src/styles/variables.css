@@ -1,0 +1,48 @@
+:root {
+  /* 2077 Theme - Authentic colors from VS Code theme */
+  --bg-primary: #030d22;
+  --bg-secondary: #04112c;
+  --bg-tertiary: #0d0931;
+  --bg-input: #150f53;
+  --bg-hover: #0a2f66;
+  --bg-selection: #073170;
+  --bg-active: #1d1641;
+  --bg-elevated: #081a3a;
+  
+  /* Accent colors */
+  --accent-pink: #ff2592;
+  --accent-cyan: #0ef3ff;
+  --accent-yellow: #ffd400;
+  --accent-blue: #47a1fa;
+  --accent-magenta: #EA00D9;
+  --accent-purple: #a855f7;
+  --accent-green: #22c55e;
+  
+  /* Typography */
+  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  
+  /* Text */
+  --text-primary: #fdfeff;
+  --text-secondary: #6b9eff;
+  --text-muted: #4a7bd4;
+  
+  /* Borders */
+  --border: #1a1845;
+  --border-subtle: #0f0d2a;
+  --border-input: #1f1a5a;
+  --border-accent: rgba(71, 161, 250, 0.2);
+  
+  /* Status */
+  --error: #f87171;
+  --warning: #fad46d;
+  --success: #4ade80;
+  
+  /* Scrollbar */
+  --scrollbar: #fc309654;
+  --scrollbar-hover: #ee0077;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}

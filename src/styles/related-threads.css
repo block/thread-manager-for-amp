@@ -1,0 +1,93 @@
+/* Related threads */
+.related-threads {
+  padding: 0 16px;
+}
+
+.related-threads-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.related-threads-toggle:hover {
+  color: var(--accent-cyan);
+}
+
+.related-threads-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 12px;
+}
+
+.related-thread-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.related-thread-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-cyan);
+}
+
+.related-thread-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.related-thread-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.related-thread-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.related-workspace {
+  padding: 2px 6px;
+  background: var(--bg-primary);
+  border-radius: 3px;
+  color: var(--accent-cyan);
+}
+
+.related-time {
+  color: var(--text-muted);
+}
+
+.related-files {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--accent-yellow);
+  flex-shrink: 0;
+  margin-left: 12px;
+}

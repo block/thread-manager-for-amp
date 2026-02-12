@@ -1,0 +1,165 @@
+/* Shell Terminal Overlay */
+.shell-terminal-overlay {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 50%;
+  height: 40%;
+  min-width: 500px;
+  min-height: 300px;
+  z-index: var(--z-modal);
+  animation: slideInFromBottom 0.2s ease;
+}
+
+.shell-terminal-overlay.maximized {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: unset;
+  min-height: unset;
+}
+
+.shell-terminal-overlay.minimized {
+  display: none;
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.shell-terminal-container {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.shell-terminal-overlay.maximized .shell-terminal-container {
+  border-radius: 0;
+}
+
+.shell-terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.shell-terminal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.shell-icon {
+  color: var(--accent-cyan);
+}
+
+.shell-info {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-status {
+  font-size: 10px;
+  margin-left: 4px;
+}
+
+.shell-status.connected {
+  color: var(--success);
+}
+
+.shell-status.disconnected {
+  color: var(--error);
+}
+
+.shell-terminal-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shell-btn {
+  padding: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.shell-btn:hover {
+  background: var(--bg-hover);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.shell-btn.close:hover {
+  color: var(--accent-pink);
+  border-color: var(--accent-pink);
+}
+
+.shell-terminal-body {
+  flex: 1;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.shell-terminal-body .xterm {
+  height: 100%;
+}
+
+.shell-terminal-body .xterm-viewport {
+  overflow-y: auto;
+}
+
+/* Terminal toggle button in header */
+.terminal-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: rgba(14, 243, 255, 0.1);
+  border: 1px solid rgba(14, 243, 255, 0.3);
+  border-radius: 6px;
+  color: var(--accent-cyan);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.terminal-toggle-btn:hover {
+  background: rgba(14, 243, 255, 0.18);
+  border-color: var(--accent-cyan);
+}
+
+.terminal-toggle-btn.active {
+  background: rgba(14, 243, 255, 0.25);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 8px rgba(14, 243, 255, 0.3);
+}

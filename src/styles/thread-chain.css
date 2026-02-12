@@ -1,0 +1,126 @@
+/* Thread discovery container */
+.thread-discovery {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border);
+  max-height: 50vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Thread chain */
+.thread-chain {
+  padding: 0 16px;
+}
+
+.thread-chain-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.thread-chain-toggle:hover {
+  color: var(--accent-pink);
+}
+
+.thread-chain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 12px;
+}
+
+.chain-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.chain-thread-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.chain-thread-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-pink);
+}
+
+.chain-item.ancestor .chain-thread-btn {
+  border-left: 3px solid var(--accent-cyan);
+}
+
+.chain-item.descendant .chain-thread-btn {
+  border-left: 3px solid var(--accent-yellow);
+}
+
+.chain-current-marker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: rgba(255, 42, 109, 0.15);
+  border: 1px solid var(--accent-pink);
+  border-left: 3px solid var(--accent-pink);
+  border-radius: 6px;
+}
+
+.chain-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.chain-item.ancestor .chain-label {
+  color: var(--accent-cyan);
+}
+
+.chain-item.current .chain-label {
+  color: var(--accent-pink);
+}
+
+.chain-item.descendant .chain-label {
+  color: var(--accent-yellow);
+}
+
+.chain-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chain-comment {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chain-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+  color: var(--text-muted);
+}

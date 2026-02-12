@@ -1,0 +1,201 @@
+/* What changed */
+.what-changed {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.what-changed-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.what-changed-toggle:hover {
+  color: var(--accent-yellow);
+}
+
+.what-changed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 12px;
+}
+
+.change-summary {
+  display: flex;
+  gap: 16px;
+  padding: 8px 0;
+  font-size: 12px;
+}
+
+.summary-created {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--success);
+}
+
+.summary-edited {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-yellow);
+}
+
+.change-file {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.change-file-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+  color: inherit;
+}
+
+.change-file-header:hover {
+  background: var(--bg-hover);
+}
+
+.change-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.change-icon.created {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--success);
+}
+
+.change-icon.edited {
+  background: rgba(252, 232, 3, 0.15);
+  color: var(--accent-yellow);
+}
+
+.change-filename {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #fdfeff);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.change-dir {
+  font-size: 11px;
+  color: var(--text-muted, #3e8efd);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.change-expand {
+  color: var(--text-muted);
+}
+
+.change-diffs {
+  border-top: 1px solid var(--border);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.change-diff {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  font-size: 11px;
+}
+
+.diff-create .diff-label {
+  display: block;
+  font-size: 10px;
+  color: var(--success);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.diff-preview {
+  margin: 0;
+  padding: 8px;
+  background: rgba(0, 255, 136, 0.05);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.diff-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.diff-old,
+.diff-new {
+  display: flex;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.diff-old {
+  background: rgba(255, 85, 85, 0.1);
+}
+
+.diff-new {
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.diff-marker {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.diff-old .diff-marker {
+  color: var(--error);
+}
+
+.diff-new .diff-marker {
+  color: var(--success);
+}
+
+.diff-old pre,
+.diff-new pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text-secondary);
+}

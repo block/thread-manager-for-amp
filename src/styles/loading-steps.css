@@ -1,0 +1,149 @@
+/* Loading Steps Component */
+.loading-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-width: 280px;
+}
+
+.loading-steps-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.loading-steps-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.loading-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.loading-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.loading-step-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.loading-step-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Step statuses */
+.loading-step-pending .loading-step-icon {
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+
+.loading-step-pending .loading-step-label {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.loading-step-running .loading-step-icon {
+  color: var(--accent-cyan);
+}
+
+.loading-step-running .loading-step-label {
+  color: var(--text-primary);
+}
+
+.loading-step-complete .loading-step-icon {
+  color: var(--success);
+}
+
+.loading-step-complete .loading-step-label {
+  color: var(--success);
+}
+
+.loading-step-error .loading-step-icon {
+  color: var(--error);
+}
+
+.loading-step-error .loading-step-label {
+  color: var(--error);
+}
+
+/* Spinner animation */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Compact variant (inline) */
+.loading-steps-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.loading-steps-compact .loading-spinner {
+  color: var(--accent-cyan);
+}
+
+/* Toast variant (floating notification) */
+.loading-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loading-toast.exiting {
+  animation: slideDown 0.2s ease-in forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}

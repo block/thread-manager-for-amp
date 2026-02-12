@@ -1,0 +1,167 @@
+import {
+  Plus, GitBranch, RefreshCw, Edit3, Share2, ExternalLink, Copy,
+  Archive, Trash2, Map, Tag, X, Link2, Clock, ArrowLeft, ArrowRight, Search,
+} from 'lucide-react';
+import { CATEGORIES } from './categories';
+import type { Command, CommandFactoryContext, CommandHandlers } from './types';
+
+export function createThreadCommands(
+  handlers: CommandHandlers,
+  context: CommandFactoryContext
+): Command[] {
+  const { activeThreadId, hasActiveThread, openThreadsCount } = context;
+
+  return [
+    {
+      id: 'thread-new',
+      category: CATEGORIES.THREAD,
+      label: 'new',
+      icon: <Plus size={14} />,
+      shortcut: 'Ctrl+N',
+      action: handlers.onNewThread,
+    },
+    {
+      id: 'thread-handoff',
+      category: CATEGORIES.THREAD,
+      label: 'handoff',
+      icon: <GitBranch size={14} />,
+      shortcut: 'Ctrl+H',
+      action: () => activeThreadId && handlers.onHandoff?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-switch',
+      category: CATEGORIES.THREAD,
+      label: 'switch',
+      icon: <RefreshCw size={14} />,
+      action: handlers.onRefresh,
+    },
+    {
+      id: 'thread-rename',
+      category: CATEGORIES.THREAD,
+      label: 'rename',
+      icon: <Edit3 size={14} />,
+      action: () => activeThreadId && handlers.onRenameThread?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-share',
+      category: CATEGORIES.THREAD,
+      label: 'share',
+      icon: <Share2 size={14} />,
+      action: () => activeThreadId && handlers.onShareThread?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-open-browser',
+      category: CATEGORIES.THREAD,
+      label: 'open in browser',
+      icon: <ExternalLink size={14} />,
+      action: () => activeThreadId && handlers.onOpenInBrowser?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-copy-url',
+      category: CATEGORIES.THREAD,
+      label: 'copy url',
+      icon: <Copy size={14} />,
+      action: () => activeThreadId && handlers.onCopyThreadUrl?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-copy-id',
+      category: CATEGORIES.THREAD,
+      label: 'copy id',
+      icon: <Copy size={14} />,
+      action: () => activeThreadId && handlers.onCopyThreadId?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-archive',
+      category: CATEGORIES.THREAD,
+      label: 'archive',
+      icon: <Archive size={14} />,
+      action: () => activeThreadId && handlers.onArchiveThread?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-delete',
+      category: CATEGORIES.THREAD,
+      label: 'delete',
+      icon: <Trash2 size={14} />,
+      action: () => activeThreadId && handlers.onDeleteThread?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-map',
+      category: CATEGORIES.THREAD,
+      label: 'map',
+      icon: <Map size={14} />,
+      action: () => activeThreadId && handlers.onThreadMap?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-add-label',
+      category: CATEGORIES.THREAD,
+      label: 'add label',
+      icon: <Tag size={14} />,
+      action: () => activeThreadId && handlers.onAddLabel?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-remove-label',
+      category: CATEGORIES.THREAD,
+      label: 'remove label',
+      icon: <X size={14} />,
+      action: () => activeThreadId && handlers.onRemoveLabel?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-blockers',
+      category: CATEGORIES.THREAD,
+      label: 'manage blockers',
+      icon: <Link2 size={14} />,
+      action: () => activeThreadId && handlers.onManageBlockers?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-archive-and-exit',
+      category: CATEGORIES.THREAD,
+      label: 'archive and exit',
+      icon: <Archive size={14} />,
+      action: () => activeThreadId && handlers.onArchiveAndClose?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-archive-old',
+      category: CATEGORIES.THREAD,
+      label: 'archive old threads',
+      icon: <Clock size={14} />,
+      action: () => handlers.onArchiveOldThreads?.(),
+    },
+    {
+      id: 'thread-switch-previous',
+      category: CATEGORIES.THREAD,
+      label: 'switch to previous',
+      icon: <ArrowLeft size={14} />,
+      action: () => handlers.onSwitchToPrevious?.(),
+      disabled: openThreadsCount < 2,
+    },
+    {
+      id: 'thread-switch-next',
+      category: CATEGORIES.THREAD,
+      label: 'switch to next',
+      icon: <ArrowRight size={14} />,
+      action: () => handlers.onSwitchToNext?.(),
+      disabled: openThreadsCount < 2,
+    },
+    {
+      id: 'context-analyze',
+      category: CATEGORIES.CONTEXT,
+      label: 'analyze',
+      icon: <Search size={14} />,
+      action: () => handlers.onContextAnalyze?.(),
+      disabled: !hasActiveThread,
+    },
+  ];
+}

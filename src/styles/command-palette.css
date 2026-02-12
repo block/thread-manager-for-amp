@@ -1,0 +1,191 @@
+.command-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  z-index: 9999;
+}
+
+.command-palette {
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 8px;
+  box-shadow: 
+    0 0 0 1px var(--border),
+    0 16px 70px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(14, 243, 255, 0.15);
+  overflow: hidden;
+}
+
+.command-palette-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-tertiary);
+}
+
+.command-palette-title {
+  color: var(--accent-cyan);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.command-palette-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  transition: color 0.15s;
+}
+
+.command-palette-close:hover {
+  color: var(--accent-pink);
+}
+
+.command-palette-input-wrapper {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-input);
+}
+
+.command-palette-prompt {
+  color: var(--accent-yellow);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+.command-palette-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 14px;
+  outline: none;
+}
+
+.command-palette-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.command-palette-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.command-group {
+  /* Groups are visual separators via category labels */
+}
+
+.command-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.command-item:hover,
+.command-item.selected {
+  background: var(--accent-cyan);
+}
+
+.command-item.selected .command-category,
+.command-item.selected .command-label,
+.command-item.selected .command-shortcut {
+  color: var(--bg-primary);
+}
+
+.command-item.selected .command-icon {
+  color: var(--bg-primary);
+}
+
+.command-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.command-item.disabled:hover,
+.command-item.disabled.selected {
+  background: transparent;
+}
+
+.command-item.disabled.selected .command-category,
+.command-item.disabled.selected .command-label,
+.command-item.disabled.selected .command-shortcut,
+.command-item.disabled.selected .command-icon {
+  color: inherit;
+}
+
+.command-category {
+  color: var(--accent-magenta);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.command-label {
+  flex: 1;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.command-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.command-shortcut {
+  color: var(--accent-pink);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  margin-left: auto;
+  padding-left: 16px;
+}
+
+.command-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Scrollbar */
+.command-palette-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.command-palette-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.command-palette-list::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 3px;
+}
+
+.command-palette-list::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}

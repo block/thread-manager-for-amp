@@ -1,0 +1,155 @@
+import { formatToolUse, type ToolInput } from './format';
+
+export interface AttachedImage {
+  data: string;
+  mediaType: string;
+}
+
+export interface Message {
+  id: string;
+  type: 'user' | 'assistant' | 'system' | 'tool_use' | 'tool_result' | 'error';
+  content: string;
+  toolName?: string;
+  toolId?: string;
+  toolInput?: ToolInput;
+  success?: boolean;
+  image?: AttachedImage;
+  isContextLimit?: boolean;
+  timestamp?: string;  // ISO date string
+}
+
+let messageIdCounter = 0;
+function generateId(): string {
+  return `msg-${++messageIdCounter}`;
+}
+
+// Parse a section into individual message blocks
+function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
+  const messages: Message[] = [];
+  
+  if (role === 'assistant') {
+    // Remove thinking JSON blocks (can be multi-line with nested content)
+    const cleanText = text.replace(/\{"type":"thinking"[\s\S]*?"provider":"anthropic"\}\s*/g, '');
+    
+    // Find all tool uses
+    const toolUseRegex = /\*\*Tool Use:\*\*\s*`(\w+)`\s*```json\s*([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = toolUseRegex.exec(cleanText)) !== null) {
+      // Add any text before this tool use
+      const textBefore = cleanText.slice(lastIndex, match.index).trim();
+      if (textBefore) {
+        messages.push({
+          id: generateId(),
+          type: 'assistant',
+          content: textBefore,
+        });
+      }
+      
+      // Add the tool use
+      let input: ToolInput = {};
+      try {
+        // Unescape triple backticks that were escaped during formatting
+        const jsonStr = match[2].replace(/\\`\\`\\`/g, '```');
+        input = JSON.parse(jsonStr);
+      } catch { /* ignore parse errors */ }
+      
+      messages.push({
+        id: generateId(),
+        type: 'tool_use',
+        content: formatToolUse(match[1], input),
+        toolName: match[1],
+        toolInput: input,
+      });
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add any remaining text after last tool use
+    const remainingText = cleanText.slice(lastIndex).trim();
+    if (remainingText) {
+      messages.push({
+        id: generateId(),
+        type: 'assistant',
+        content: remainingText,
+      });
+    }
+  } else {
+    // User section - find tool results and plain text
+    const toolResultRegex = /\*\*Tool Result:\*\*\s*`[^`]*`\s*```([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = toolResultRegex.exec(text)) !== null) {
+      // Add any text before this tool result
+      const textBefore = text.slice(lastIndex, match.index).trim();
+      if (textBefore) {
+        messages.push({
+          id: generateId(),
+          type: 'user',
+          content: textBefore,
+        });
+      }
+      
+      // Add the tool result (skip empty/no output ones)
+      // Unescape triple backticks that were escaped during formatting
+      const resultContent = match[1].trim().replace(/\\`\\`\\`/g, '```');
+      if (resultContent && resultContent !== 'undefined' && resultContent !== '(no output)') {
+        messages.push({
+          id: generateId(),
+          type: 'tool_result',
+          content: resultContent,
+          success: true,
+        });
+      }
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add any remaining text after last tool result
+    const remainingText = text.slice(lastIndex).trim();
+    if (remainingText) {
+      messages.push({
+        id: generateId(),
+        type: 'user',
+        content: remainingText,
+      });
+    }
+  }
+  
+  return messages;
+}
+
+export function parseMarkdownHistory(markdown: string): Message[] {
+  const messages: Message[] = [];
+  
+  // Remove YAML frontmatter
+  const content = markdown.replace(/^---[\s\S]*?---\n*/, '').trim();
+  if (!content) return messages;
+  
+  // Remove the title heading
+  const withoutTitle = content.replace(/^#\s+[^\n]+\n*/, '').trim();
+
+  // Split by ## User or ## Assistant headers (with optional timestamp comment)
+  const sections = withoutTitle.split(/^## (User|Assistant)(?:\s*<!--\s*timestamp:([^>]+)\s*-->)?\s*$/m);
+  
+  for (let i = 1; i < sections.length; i += 3) {
+    const role = sections[i] as 'User' | 'Assistant';
+    const timestamp = sections[i + 1]?.trim() || undefined;
+    const sectionText = sections[i + 2]?.trim();
+    
+    if (!sectionText) continue;
+    
+    const sectionMessages = parseSection(sectionText, role.toLowerCase() as 'user' | 'assistant');
+    
+    // Apply timestamp to the first message in this section (the main user/assistant message)
+    if (sectionMessages.length > 0 && timestamp) {
+      sectionMessages[0].timestamp = timestamp;
+    }
+    
+    messages.push(...sectionMessages);
+  }
+
+  return messages;
+}

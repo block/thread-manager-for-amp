@@ -1,0 +1,130 @@
+/* Theme Picker */
+.theme-picker {
+  position: relative;
+}
+
+.theme-picker-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: rgba(255, 212, 0, 0.1);
+  border: 1px solid rgba(255, 212, 0, 0.3);
+  border-radius: 6px;
+  color: var(--accent-yellow);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.theme-picker-btn:hover {
+  background: rgba(255, 212, 0, 0.18);
+  border-color: rgba(255, 212, 0, 0.5);
+}
+
+.theme-picker-dropdown {
+  position: fixed;
+  width: 320px;
+  max-height: 480px;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  z-index: 99999;
+}
+
+.theme-picker-header {
+  padding: 14px 16px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+}
+
+.theme-picker-section {
+  padding: 12px;
+}
+
+.theme-picker-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+
+.theme-picker-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.theme-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
+}
+
+.theme-picker-item:hover {
+  background: var(--bg-hover);
+}
+
+.theme-picker-item.active {
+  background: var(--bg-selection);
+}
+
+.theme-preview {
+  position: relative;
+  width: 32px;
+  height: 22px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.theme-preview-bg {
+  position: absolute;
+  inset: 0;
+}
+
+.theme-preview-accent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+
+.theme-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theme-check {
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+}
+
+/* Light theme adjustments */
+:root.light .theme-picker-dropdown {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+:root.light .theme-preview {
+  border-color: rgba(0, 0, 0, 0.15);
+}
