@@ -5,13 +5,14 @@
 // Rates are for Opus 4.5/4.6 and Sonnet 4.5 (≤200K token prompts).
 // Amp caps context at 168K tokens, so the >200K pricing tier never applies.
 //
-// ⚠️  Known limitation: When reading costs from thread JSON files (e.g. in
-// listThreads), the `outputTokens` field only records VISIBLE (summarized)
-// output — it does NOT include extended thinking tokens, which are billed as
-// output tokens at $25/MTok for Opus. This causes thread list cost estimates
-// to undercount by the amount of thinking token usage. The live WebSocket
-// path (handleStreamEvent) receives billed output_tokens from the stream and
-// should be more accurate.
+// The `outputTokens` field in thread JSON files and in the --stream-json
+// output already includes extended thinking tokens — no multiplier is needed.
+//
+// ⚠️  Known limitation: Subagent (Task tool) and Oracle costs are billed to
+// the parent thread by Amp but their token usage is NOT recorded in the
+// parent thread's JSON file. This means cost estimates will undercount for
+// threads that heavily use subagents. There is currently no Amp API to
+// retrieve the true billed cost per thread.
 
 // ── Pricing rates (per token) ───────────────────────────────────────────
 
@@ -27,12 +28,6 @@ const SONNET_CACHE_CREATION_RATE = 3.75 / 1_000_000; // $3.75 per 1M tokens
 const SONNET_CACHE_READ_RATE = 0.3 / 1_000_000;      // $0.30 per 1M tokens
 const SONNET_OUTPUT_RATE = 15 / 1_000_000;            // $15 per 1M tokens
 
-// Extended thinking multiplier: the thread file's outputTokens only records
-// visible/summarized output, not the full thinking tokens billed as output.
-// Empirically, actual billed output is ~5x the visible count (~1,500 thinking
-// tokens per inference call). This brings estimates within ~5% of Amp's cost.
-const THINKING_OUTPUT_MULTIPLIER = 5;
-
 // ── Types ───────────────────────────────────────────────────────────────
 
 export interface CostInput {
@@ -47,14 +42,13 @@ export interface CostInput {
 
 export function calculateCost(tokens: CostInput): number {
   const { inputTokens, cacheCreationTokens, cacheReadTokens, outputTokens, isOpus } = tokens;
-  const adjustedOutput = outputTokens * THINKING_OUTPUT_MULTIPLIER;
 
   if (isOpus) {
     return (
       inputTokens * OPUS_INPUT_RATE +
       cacheCreationTokens * OPUS_CACHE_CREATION_RATE +
       cacheReadTokens * OPUS_CACHE_READ_RATE +
-      adjustedOutput * OPUS_OUTPUT_RATE
+      outputTokens * OPUS_OUTPUT_RATE
     );
   }
 
@@ -62,6 +56,6 @@ export function calculateCost(tokens: CostInput): number {
     inputTokens * SONNET_INPUT_RATE +
     cacheCreationTokens * SONNET_CACHE_CREATION_RATE +
     cacheReadTokens * SONNET_CACHE_READ_RATE +
-    adjustedOutput * SONNET_OUTPUT_RATE
+    outputTokens * SONNET_OUTPUT_RATE
   );
 }
