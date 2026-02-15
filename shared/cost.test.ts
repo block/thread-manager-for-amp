@@ -65,9 +65,9 @@ describe('calculateCost', () => {
       outputTokens: 50_000,
       isOpus: true,
     };
-    // 100k * 5/1M + 500k * 6.25/1M + 400k * 1.5/1M + 50k * 25/1M
-    // = 0.5 + 3.125 + 0.6 + 1.25 = 5.475
-    expect(calculateCost(input)).toBeCloseTo(5.475, 6);
+    // 100k * 5/1M + 500k * 6.25/1M + 400k * 0.5/1M + 50k * 25/1M
+    // = 0.5 + 3.125 + 0.2 + 1.25 = 5.075
+    expect(calculateCost(input)).toBeCloseTo(5.075, 6);
   });
 
   it('calculates cache-heavy sonnet workload', () => {
@@ -91,18 +91,18 @@ describe('calculateCost', () => {
       outputTokens: 5_000,
       isOpus: true,
     };
-    // 10k * 5/1M + 20k * 6.25/1M + 80k * 1.5/1M + 5k * 25/1M
-    // = 0.05 + 0.125 + 0.12 + 0.125 = 0.42
-    expect(calculateCost(input)).toBeCloseTo(0.42, 6);
+    // 10k * 5/1M + 20k * 6.25/1M + 80k * 0.5/1M + 5k * 25/1M
+    // = 0.05 + 0.125 + 0.04 + 0.125 = 0.34
+    expect(calculateCost(input)).toBeCloseTo(0.34, 6);
   });
 
-  it('matches the original inline opus formula: (input*5 + cache*6.25 + read*1.5 + output*25) / 1M', () => {
+  it('matches opus 4.5 formula: (input*5 + cache*6.25 + read*0.5 + output*25) / 1M', () => {
     const input = 50_000;
     const cacheCreation = 30_000;
     const cacheRead = 120_000;
     const output = 8_000;
 
-    const inlineResult = (input * 5 + cacheCreation * 6.25 + cacheRead * 1.5 + output * 25) / 1_000_000;
+    const expected = (input * 5 + cacheCreation * 6.25 + cacheRead * 0.5 + output * 25) / 1_000_000;
     const functionResult = calculateCost({
       inputTokens: input,
       cacheCreationTokens: cacheCreation,
@@ -111,7 +111,7 @@ describe('calculateCost', () => {
       isOpus: true,
     });
 
-    expect(functionResult).toBeCloseTo(inlineResult, 10);
+    expect(functionResult).toBeCloseTo(expected, 10);
   });
 
   it('matches the original inline sonnet formula: (input*3 + cache*3.75 + read*0.3 + output*15) / 1M', () => {

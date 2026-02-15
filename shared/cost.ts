@@ -7,10 +7,10 @@
 
 // ── Pricing rates (per token) ───────────────────────────────────────────
 
-// Opus pricing (≤200K token prompts)
+// Opus 4.5 pricing (≤200K token prompts)
 const OPUS_INPUT_RATE = 5 / 1_000_000;              // $5 per 1M tokens
 const OPUS_CACHE_CREATION_RATE = 6.25 / 1_000_000;  // $6.25 per 1M tokens
-const OPUS_CACHE_READ_RATE = 1.5 / 1_000_000;       // $1.50 per 1M tokens
+const OPUS_CACHE_READ_RATE = 0.5 / 1_000_000;       // $0.50 per 1M tokens
 const OPUS_OUTPUT_RATE = 25 / 1_000_000;             // $25 per 1M tokens
 
 // Sonnet / non-opus pricing (≤200K token prompts)
