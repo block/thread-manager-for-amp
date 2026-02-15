@@ -1,9 +1,17 @@
 // Cost calculation for Amp thread token usage.
 // Centralises pricing logic that was previously duplicated in 3 places.
 //
-// Pricing source: https://www.anthropic.com/pricing#702eb553-fc07-4023-a493-74e04e884e6d
-// These are the ≤200K token prompt rates. Rates differ for >200K prompts
-// and for older model generations — this is a rough estimate, not exact billing.
+// Pricing source: https://www.anthropic.com/pricing
+// Rates are for Opus 4.5/4.6 and Sonnet 4.5 (≤200K token prompts).
+// Amp caps context at 168K tokens, so the >200K pricing tier never applies.
+//
+// ⚠️  Known limitation: When reading costs from thread JSON files (e.g. in
+// listThreads), the `outputTokens` field only records VISIBLE (summarized)
+// output — it does NOT include extended thinking tokens, which are billed as
+// output tokens at $25/MTok for Opus. This causes thread list cost estimates
+// to undercount by the amount of thinking token usage. The live WebSocket
+// path (handleStreamEvent) receives billed output_tokens from the stream and
+// should be more accurate.
 
 // ── Pricing rates (per token) ───────────────────────────────────────────
 
