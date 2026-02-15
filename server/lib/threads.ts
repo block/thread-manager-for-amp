@@ -3,6 +3,7 @@ import type { Stats } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './constants.js';
+import { calculateCost } from '../../shared/cost.js';
 import { formatRelativeTime, runAmp, stripAnsi } from './utils.js';
 import { getArtifacts, deleteThreadData } from './database.js';
 import { formatMessageContent } from './threadParsing.js';
@@ -215,13 +216,13 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
             }
           }
           
-          // Calculate cost based on model pricing (per 1M tokens)
-          let cost = 0;
-          if (isOpus) {
-            cost = (freshInputTokens * 5 + cacheCreation * 6.25 + cacheRead * 1.5 + totalOutputTokens * 25) / 1_000_000;
-          } else {
-            cost = (freshInputTokens * 3 + cacheCreation * 3.75 + cacheRead * 0.3 + totalOutputTokens * 15) / 1_000_000;
-          }
+          const cost = calculateCost({
+            inputTokens: freshInputTokens,
+            cacheCreationTokens: cacheCreation,
+            cacheReadTokens: cacheRead,
+            outputTokens: totalOutputTokens,
+            isOpus,
+          });
           
           const contextPercent = maxContextTokens > 0 
             ? Math.round((contextTokens / maxContextTokens) * 100) 

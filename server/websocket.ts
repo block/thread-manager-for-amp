@@ -7,6 +7,7 @@ import { IncomingMessage, Server } from 'http';
 import { Duplex } from 'stream';
 import type { RunningThreadState, RunningThreadsMap, ThreadImage } from '../shared/types.js';
 import type { WsServerMessage, WsClientMessage } from '../shared/websocket.js';
+import { calculateCost } from '../shared/cost.js';
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
 
@@ -148,20 +149,13 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
         const totalContext = inputTokens + cacheCreationTokens + cacheReadTokens;
         const contextPercent = Math.round((totalContext / maxTokens) * 100);
 
-        let messageCost: number;
-        if (session.isOpus) {
-          const freshInputCost = inputTokens * 0.000005;
-          const cacheCreationCost = cacheCreationTokens * 0.00000625;
-          const cacheReadCost = cacheReadTokens * 0.0000015;
-          const outputCost = outputTokens * 0.000025;
-          messageCost = freshInputCost + cacheCreationCost + cacheReadCost + outputCost;
-        } else {
-          const freshInputCost = inputTokens * 0.000003;
-          const cacheCreationCost = cacheCreationTokens * 0.00000375;
-          const cacheReadCost = cacheReadTokens * 0.0000003;
-          const outputCost = outputTokens * 0.000015;
-          messageCost = freshInputCost + cacheCreationCost + cacheReadCost + outputCost;
-        }
+        const messageCost = calculateCost({
+          inputTokens,
+          cacheCreationTokens,
+          cacheReadTokens,
+          outputTokens,
+          isOpus: session.isOpus,
+        });
 
         session.cumulativeCost += messageCost;
 
@@ -404,11 +398,13 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
       }
     }
 
-    if (session.isOpus) {
-      session.cumulativeCost = (freshInputTokens * 5 + cacheCreation * 6.25 + cacheRead * 1.5 + totalOutputTokens * 25) / 1_000_000;
-    } else {
-      session.cumulativeCost = (freshInputTokens * 3 + cacheCreation * 3.75 + cacheRead * 0.3 + totalOutputTokens * 15) / 1_000_000;
-    }
+    session.cumulativeCost = calculateCost({
+      inputTokens: freshInputTokens,
+      cacheCreationTokens: cacheCreation,
+      cacheReadTokens: cacheRead,
+      outputTokens: totalOutputTokens,
+      isOpus: session.isOpus,
+    });
 
     const contextPercent = maxContextTokens > 0
       ? Math.round((contextTokens / maxContextTokens) * 100)
