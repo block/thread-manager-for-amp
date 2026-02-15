@@ -29,9 +29,9 @@ const SONNET_OUTPUT_RATE = 15 / 1_000_000;            // $15 per 1M tokens
 
 // Extended thinking multiplier: the thread file's outputTokens only records
 // visible/summarized output, not the full thinking tokens billed as output.
-// Empirically, actual billed output is ~3x the visible count. This brings
-// estimates closer to Amp's reported cost (within ~5%).
-const THINKING_OUTPUT_MULTIPLIER = 3;
+// Empirically, actual billed output is ~5x the visible count (~1,500 thinking
+// tokens per inference call). This brings estimates within ~5% of Amp's cost.
+const THINKING_OUTPUT_MULTIPLIER = 5;
 
 // ── Types ───────────────────────────────────────────────────────────────
 

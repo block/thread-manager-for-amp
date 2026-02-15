@@ -39,7 +39,7 @@ describe('calculateCost', () => {
     expect(calculateCost(input)).toBe(0);
   });
 
-  it('applies 3x thinking multiplier to opus output', () => {
+  it('applies 5x thinking multiplier to opus output', () => {
     const input: CostInput = {
       inputTokens: 0,
       cacheCreationTokens: 0,
@@ -47,11 +47,11 @@ describe('calculateCost', () => {
       outputTokens: 1_000_000,
       isOpus: true,
     };
-    // 1M tokens * 3x multiplier * $25/MTok = $75
-    expect(calculateCost(input)).toBeCloseTo(75.0, 6);
+    // 1M tokens * 5x multiplier * $25/MTok = $125
+    expect(calculateCost(input)).toBeCloseTo(125.0, 6);
   });
 
-  it('applies 3x thinking multiplier to sonnet output', () => {
+  it('applies 5x thinking multiplier to sonnet output', () => {
     const input: CostInput = {
       inputTokens: 0,
       cacheCreationTokens: 0,
@@ -59,8 +59,8 @@ describe('calculateCost', () => {
       outputTokens: 1_000_000,
       isOpus: false,
     };
-    // 1M tokens * 3x multiplier * $15/MTok = $45
-    expect(calculateCost(input)).toBeCloseTo(45.0, 6);
+    // 1M tokens * 5x multiplier * $15/MTok = $75
+    expect(calculateCost(input)).toBeCloseTo(75.0, 6);
   });
 
   it('calculates cache-heavy opus workload', () => {
@@ -74,8 +74,8 @@ describe('calculateCost', () => {
     // input: 100k * 5/1M = 0.5
     // cache write: 500k * 6.25/1M = 3.125
     // cache read: 400k * 0.5/1M = 0.2
-    // output: 50k * 3 * 25/1M = 3.75
-    expect(calculateCost(input)).toBeCloseTo(7.575, 6);
+    // output: 50k * 5 * 25/1M = 6.25
+    expect(calculateCost(input)).toBeCloseTo(10.075, 6);
   });
 
   it('calculates cache-heavy sonnet workload', () => {
@@ -89,8 +89,8 @@ describe('calculateCost', () => {
     // input: 100k * 3/1M = 0.3
     // cache write: 500k * 3.75/1M = 1.875
     // cache read: 400k * 0.3/1M = 0.12
-    // output: 50k * 3 * 15/1M = 2.25
-    expect(calculateCost(input)).toBeCloseTo(4.545, 6);
+    // output: 50k * 5 * 15/1M = 3.75
+    expect(calculateCost(input)).toBeCloseTo(6.045, 6);
   });
 
   it('calculates typical mixed usage for opus', () => {
@@ -104,8 +104,8 @@ describe('calculateCost', () => {
     // input: 10k * 5/1M = 0.05
     // cache write: 20k * 6.25/1M = 0.125
     // cache read: 80k * 0.5/1M = 0.04
-    // output: 5k * 3 * 25/1M = 0.375
-    expect(calculateCost(input)).toBeCloseTo(0.59, 6);
+    // output: 5k * 5 * 25/1M = 0.625
+    expect(calculateCost(input)).toBeCloseTo(0.84, 6);
   });
 
   it('input-side cost is unaffected by thinking multiplier', () => {
@@ -122,8 +122,8 @@ describe('calculateCost', () => {
     const fullCost = calculateCost(withOutput);
     const outputPortion = fullCost - inputOnlyCost;
 
-    // Output portion should be 10k * 3 * 25/1M = 0.75
-    expect(outputPortion).toBeCloseTo(0.75, 6);
+    // Output portion should be 10k * 5 * 25/1M = 1.25
+    expect(outputPortion).toBeCloseTo(1.25, 6);
     // Input portion should be 100k*5 + 50k*6.25 + 200k*0.5 = 912500 / 1M = 0.9125
     expect(inputOnlyCost).toBeCloseTo(0.9125, 6);
   });
