@@ -27,6 +27,12 @@ const SONNET_CACHE_CREATION_RATE = 3.75 / 1_000_000; // $3.75 per 1M tokens
 const SONNET_CACHE_READ_RATE = 0.3 / 1_000_000;      // $0.30 per 1M tokens
 const SONNET_OUTPUT_RATE = 15 / 1_000_000;            // $15 per 1M tokens
 
+// Extended thinking multiplier: the thread file's outputTokens only records
+// visible/summarized output, not the full thinking tokens billed as output.
+// Empirically, actual billed output is ~3x the visible count. This brings
+// estimates closer to Amp's reported cost (within ~5%).
+const THINKING_OUTPUT_MULTIPLIER = 3;
+
 // ── Types ───────────────────────────────────────────────────────────────
 
 export interface CostInput {
@@ -41,13 +47,14 @@ export interface CostInput {
 
 export function calculateCost(tokens: CostInput): number {
   const { inputTokens, cacheCreationTokens, cacheReadTokens, outputTokens, isOpus } = tokens;
+  const adjustedOutput = outputTokens * THINKING_OUTPUT_MULTIPLIER;
 
   if (isOpus) {
     return (
       inputTokens * OPUS_INPUT_RATE +
       cacheCreationTokens * OPUS_CACHE_CREATION_RATE +
       cacheReadTokens * OPUS_CACHE_READ_RATE +
-      outputTokens * OPUS_OUTPUT_RATE
+      adjustedOutput * OPUS_OUTPUT_RATE
     );
   }
 
@@ -55,6 +62,6 @@ export function calculateCost(tokens: CostInput): number {
     inputTokens * SONNET_INPUT_RATE +
     cacheCreationTokens * SONNET_CACHE_CREATION_RATE +
     cacheReadTokens * SONNET_CACHE_READ_RATE +
-    outputTokens * SONNET_OUTPUT_RATE
+    adjustedOutput * SONNET_OUTPUT_RATE
   );
 }
