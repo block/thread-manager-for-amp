@@ -381,25 +381,28 @@ export async function searchThreads(query: string): Promise<SearchResult[]> {
           if (matches.length >= 3) break;
         }
         
-        if (matches.length > 0) {
-          let title = data.title || '';
-          if (!title && messages.length > 0) {
-            const firstUser = messages.find((m) => m.role === 'user');
-            if (firstUser?.content) {
-              let tc = '';
-              if (typeof firstUser.content === 'string') {
-                tc = firstUser.content;
-              } else if (Array.isArray(firstUser.content)) {
-                const textBlock = firstUser.content.find(
-                  (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text'
-                );
-                tc = textBlock?.text || '';
-              }
-              title = tc.slice(0, 60).replace(/\n/g, ' ').trim();
+        let title = data.title || '';
+        if (!title && messages.length > 0) {
+          const firstUser = messages.find((m) => m.role === 'user');
+          if (firstUser?.content) {
+            let tc = '';
+            if (typeof firstUser.content === 'string') {
+              tc = firstUser.content;
+            } else if (Array.isArray(firstUser.content)) {
+              const textBlock = firstUser.content.find(
+                (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text'
+              );
+              tc = textBlock?.text || '';
             }
+            title = tc.slice(0, 60).replace(/\n/g, ' ').trim();
           }
-          if (!title) title = threadId;
-          
+        }
+        if (!title) title = threadId;
+
+        const titleMatches = title.toLowerCase().includes(searchLower);
+        const idMatches = threadId.toLowerCase().includes(searchLower);
+
+        if (matches.length > 0 || titleMatches || idMatches) {
           results.push({ threadId, title, lastUpdated: new Date(fileStat.mtimeMs).toISOString(), matches, mtime: fileStat.mtimeMs });
         }
       } catch {

@@ -89,12 +89,12 @@ export const ToolbarContentSearch = memo(function ToolbarContentSearch({
       <FileText size={16} className={styles.searchIconContent} />
       <input
         type="text"
-        placeholder="Search all content..."
+        placeholder="Search threads..."
         value={fullTextQuery}
         onChange={(e) => setFullTextQuery(e.target.value)}
         onFocus={() => searchResults.length > 0 && setShowResults(true)}
         className={styles.searchInput}
-        aria-label="Search all content"
+        aria-label="Search threads"
       />
       {fullTextQuery && (
         <button className={styles.searchClear} onClick={handleClear}>
@@ -108,17 +108,25 @@ export const ToolbarContentSearch = memo(function ToolbarContentSearch({
           {searchResults.map((result) => (
             <button key={result.threadId} className={styles.searchResult} onClick={() => handleResultClick(result)}>
               <div className={styles.searchResultHeader}>
-                <span className={styles.searchResultTitle}>{result.title}</span>
+                <span className={styles.searchResultTitle}>{highlightMatch(result.title, fullTextQuery)}</span>
                 <Timestamp date={result.lastUpdated} className={styles.searchResultTime} />
               </div>
-              <div className={styles.searchResultMatches}>
-                {result.matches.map((match, i) => (
-                  <div key={i} className={styles.searchResultMatch}>
-                    <span className={styles.matchRole}>{match.role}:</span>
-                    <span className={styles.matchSnippet}>{highlightMatch(match.snippet, fullTextQuery)}</span>
+              {result.matches.length > 0 ? (
+                <div className={styles.searchResultMatches}>
+                  {result.matches.map((match, i) => (
+                    <div key={i} className={styles.searchResultMatch}>
+                      <span className={styles.matchRole}>{match.role}:</span>
+                      <span className={styles.matchSnippet}>{highlightMatch(match.snippet, fullTextQuery)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.searchResultMatches}>
+                  <div className={styles.searchResultMatch}>
+                    <span className={styles.matchSnippet}>{highlightMatch(result.threadId, fullTextQuery)}</span>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </button>
           ))}
         </div>
