@@ -14,7 +14,7 @@ function findAmpBin(): string {
 export const AMP_BIN: string = findAmpBin();
 
 export const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': `http://localhost:5173`,
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 } as const;

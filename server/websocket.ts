@@ -453,8 +453,8 @@ export function setupWebSocket(server: Server): WebSocketServer {
   server.on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     const url = new URL(request.url || '/', `http://${request.headers.host}`);
 
-    if (url.pathname === '/shell') {
-      return; // Let shell-websocket handle it
+    if (url.pathname !== '/ws') {
+      return; // Let other handlers (e.g. shell-websocket) handle non-/ws paths
     }
 
     wss.handleUpgrade(request, socket, head, (ws) => {

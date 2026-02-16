@@ -1,4 +1,7 @@
 import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { createServer as createNetServer } from 'net';
+import { writeFileSync, unlinkSync } from 'fs';
+import { join } from 'path';
 import { PORT, CORS_HEADERS } from './lib/constants.js';
 import { serveStatic } from './lib/utils.js';
 import { handleThreadRoutes } from './routes/threads.js';
@@ -9,6 +12,8 @@ import { handleArtifactRoutes } from './routes/artifacts.js';
 import { setupWebSocket } from './websocket.js';
 import { setupShellWebSocket } from './shell-websocket.js';
 
+const PORT_FILE = join(import.meta.dirname, '..', '.server-port');
+
 // Prevent silent crashes from unhandled errors
 process.on('unhandledRejection', (reason) => {
   console.error('[PROCESS] Unhandled rejection:', reason);
@@ -16,6 +21,33 @@ process.on('unhandledRejection', (reason) => {
 process.on('uncaughtException', (err) => {
   console.error('[PROCESS] Uncaught exception:', err);
 });
+
+function isPortAvailable(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const tester = createNetServer();
+    tester.once('error', () => resolve(false));
+    tester.once('listening', () => {
+      tester.close(() => resolve(true));
+    });
+    tester.listen(port, '127.0.0.1');
+  });
+}
+
+async function findAvailablePort(startPort: number, maxAttempts = 10): Promise<number> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const port = startPort + i;
+    if (await isPortAvailable(port)) return port;
+  }
+  throw new Error(`No available port found between ${startPort} and ${startPort + maxAttempts - 1}`);
+}
+
+function cleanupPortFile(): void {
+  try {
+    unlinkSync(PORT_FILE);
+  } catch {
+    // File may not exist
+  }
+}
 
 const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
   // Set CORS headers for all responses
@@ -55,8 +87,23 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 setupWebSocket(server);
 setupShellWebSocket(server);
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`🚀 Thread Manager for Amp running at http://localhost:${PORT}`);
-  console.log(`📡 WebSocket server ready`);
-  console.log(`💻 Shell WebSocket ready at /shell`);
+// Clean up port file on exit
+process.on('exit', cleanupPortFile);
+process.on('SIGINT', () => { cleanupPortFile(); process.exit(0); });
+process.on('SIGTERM', () => { cleanupPortFile(); process.exit(0); });
+
+async function start(): Promise<void> {
+  const port = await findAvailablePort(PORT);
+  writeFileSync(PORT_FILE, String(port), 'utf-8');
+
+  server.listen(port, '127.0.0.1', () => {
+    console.log(`🚀 Thread Manager for Amp running at http://localhost:${port}`);
+    console.log(`📡 WebSocket server ready`);
+    console.log(`💻 Shell WebSocket ready at /shell`);
+  });
+}
+
+start().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });

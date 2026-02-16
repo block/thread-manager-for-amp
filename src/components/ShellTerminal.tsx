@@ -27,10 +27,8 @@ export function ShellTerminal({ cwd, onClose, onMinimize, minimized }: ShellTerm
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.hostname;
-    const port = import.meta.env.DEV ? '3001' : window.location.port;
     const cwdParam = cwd ? `?cwd=${encodeURIComponent(cwd)}` : '';
-    const wsUrl = `${protocol}//${host}:${port}/shell${cwdParam}`;
+    const wsUrl = `${protocol}//${window.location.host}/shell${cwdParam}`;
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
