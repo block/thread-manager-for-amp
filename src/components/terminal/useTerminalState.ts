@@ -3,6 +3,7 @@ import type { ThreadMetadata } from '../../types';
 import type { Message } from '../../utils/parseMarkdown';
 import type { UsageInfo } from './types';
 import { DEFAULT_MAX_CONTEXT_TOKENS } from '../../constants';
+export { generateId } from '../../../shared/utils.js';
 
 interface UseTerminalStateOptions {
   thread: {
@@ -10,14 +11,6 @@ interface UseTerminalStateOptions {
     cost?: number;
     maxContextTokens?: number;
   };
-}
-
-let msgCounter = 0;
-export function generateId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return `msg-${crypto.randomUUID()}`;
-  }
-  return `msg-${Date.now()}-${++msgCounter}`;
 }
 
 export function useTerminalState({ thread }: UseTerminalStateOptions) {

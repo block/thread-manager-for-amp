@@ -3,6 +3,7 @@ import { spawn, type StdioOptions } from 'child_process';
 import { readFile } from 'fs/promises';
 import { join, extname, normalize } from 'path';
 import { CORS_HEADERS, MIME_TYPES, AMP_BIN, AMP_HOME } from './constants.js';
+export { stripAnsi } from '../../shared/utils.js';
 
 interface RunAmpOptions {
   cwd?: string;
@@ -87,11 +88,6 @@ export function runAmp(args: string[], options: RunAmpOptions = {}): Promise<str
       }
     });
   });
-}
-
-export function stripAnsi(str: string): string {
-  // eslint-disable-next-line no-control-regex
-  return str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, '');
 }
 
 export function formatRelativeTime(date: Date): string {

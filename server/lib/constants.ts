@@ -30,5 +30,4 @@ export const MIME_TYPES: Record<string, string> = {
   '.ico': 'image/x-icon',
 };
 
-// Default context window for Claude models (Sonnet 4/Opus 4)
-export const DEFAULT_MAX_CONTEXT_TOKENS = 168000;
+export { DEFAULT_MAX_CONTEXT_TOKENS } from '../../shared/constants.js';

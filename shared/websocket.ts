@@ -42,12 +42,15 @@ export type WsServerMessage =
 // Alias for backward compatibility with frontend
 export type WsEvent = WsServerMessage;
 
-// Shell WebSocket types
+// Shell WebSocket types (aligned with server/shell-websocket.ts)
 export type ShellClientMessage =
-  | { type: 'input'; data: string }
-  | { type: 'resize'; cols: number; rows: number };
+  | { type: 'input'; data?: string }
+  | { type: 'resize'; cols?: number; rows?: number }
+  | { type: 'ping' };
 
 export type ShellServerMessage =
-  | { type: 'connected'; pid: number }
-  | { type: 'output'; data: string }
-  | { type: 'exit'; code: number };
+  | { type: 'connected'; sessionId?: string; shell?: string; cwd?: string }
+  | { type: 'output'; data?: string }
+  | { type: 'exit'; exitCode?: number }
+  | { type: 'error'; content?: string }
+  | { type: 'pong' };
