@@ -33,13 +33,10 @@ const SONNET_OUTPUT_RATE = 15 / 1_000_000;            // $15 per 1M tokens
 // the parent thread's usage data. Estimates are based on empirical analysis
 // comparing visible thread costs to Amp CLI reported costs.
 
-// Conservative estimates — intentionally low to avoid overcounting.
-// Task cost varies wildly ($0.50 for a simple git rebase to $10+ for
-// a complex multi-file implementation), so we use a low flat rate.
-// Complex subagent-heavy threads will undercount; simple threads will
-// be close to accurate.
+// Flat per-call estimates for tools with hidden LLM usage (except Task,
+// which uses prompt-length scaling — see estimateTaskCost below).
 export const TOOL_COST_ESTIMATES: Record<string, number> = {
-  Task: 1.00,           // Full subagent session (actual range: $0.50–$10+)
+  Task: 2.00,           // Fallback when prompt length unknown (see estimateTaskCost)
   oracle: 0.50,         // Single GPT-5.2 reasoning call
   finder: 0.15,         // 1-3 LLM search calls
   librarian: 0.35,      // Multiple LLM calls with GitHub context
@@ -50,6 +47,24 @@ export const TOOL_COST_ESTIMATES: Record<string, number> = {
   look_at: 0.10,        // 1 LLM call for image/doc analysis
   handoff: 0.10,        // 1 LLM call for context summary
 };
+
+// Task prompt-length thresholds for cost scaling.
+// Longer prompts correlate with more complex subagent work (more tool
+// calls, more inference turns). Empirically calibrated against threads
+// with known Amp CLI reported costs.
+const TASK_COST_TIERS: { maxChars: number; cost: number }[] = [
+  { maxChars: 500,  cost: 0.75 },   // Simple: git rebase, status check
+  { maxChars: 2000, cost: 2.00 },   // Medium: focused edits, single-file
+  { maxChars: 4000, cost: 4.00 },   // Complex: multi-file implementation
+  { maxChars: Infinity, cost: 7.00 }, // Very complex: full feature impl
+];
+
+export function estimateTaskCost(promptLength: number): number {
+  for (const tier of TASK_COST_TIERS) {
+    if (promptLength < tier.maxChars) return tier.cost;
+  }
+  return TASK_COST_TIERS[TASK_COST_TIERS.length - 1].cost;
+}
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -87,12 +102,23 @@ export function calculateCost(tokens: CostInput): number {
   );
 }
 
-export function estimateToolCosts(toolCounts: ToolCostCounts): number {
+export function estimateToolCosts(
+  toolCounts: ToolCostCounts,
+  taskPromptLengths?: number[],
+): number {
   let total = 0;
   for (const [tool, count] of Object.entries(toolCounts)) {
+    if (tool === 'Task' && taskPromptLengths && taskPromptLengths.length > 0) {
+      continue; // handled below with per-prompt scaling
+    }
     const perCall = TOOL_COST_ESTIMATES[tool];
     if (perCall) {
       total += perCall * count;
+    }
+  }
+  if (taskPromptLengths && taskPromptLengths.length > 0) {
+    for (const len of taskPromptLengths) {
+      total += estimateTaskCost(len);
     }
   }
   return total;

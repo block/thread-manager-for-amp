@@ -7,7 +7,7 @@ import { IncomingMessage, Server } from 'http';
 import { Duplex } from 'stream';
 import type { RunningThreadState, RunningThreadsMap, ThreadImage } from '../shared/types.js';
 import type { WsServerMessage, WsClientMessage } from '../shared/websocket.js';
-import { calculateCost, isHiddenCostTool, TOOL_COST_ESTIMATES } from '../shared/cost.js';
+import { calculateCost, isHiddenCostTool, TOOL_COST_ESTIMATES, estimateTaskCost } from '../shared/cost.js';
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
 
@@ -104,6 +104,7 @@ interface ThreadUsage {
 interface ThreadContentBlock {
   type: string;
   name?: string;
+  input?: { prompt?: string; [key: string]: unknown };
 }
 
 interface ThreadMessage {
@@ -181,7 +182,13 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
             sendToSession(session, { type: 'text', content: block.text });
           } else if (block.type === 'tool_use' && block.id && block.name) {
             if (isHiddenCostTool(block.name)) {
-              const toolCost = TOOL_COST_ESTIMATES[block.name] || 0;
+              let toolCost: number;
+              if (block.name === 'Task' && block.input) {
+                const prompt = (block.input.prompt as string) || '';
+                toolCost = estimateTaskCost(prompt.length);
+              } else {
+                toolCost = TOOL_COST_ESTIMATES[block.name] || 0;
+              }
               session.cumulativeCost += toolCost;
               sendToSession(session, {
                 type: 'usage',
@@ -418,7 +425,12 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
       if (msg.content) {
         for (const block of msg.content) {
           if (block.type === 'tool_use' && block.name && isHiddenCostTool(block.name)) {
-            hiddenToolCost += TOOL_COST_ESTIMATES[block.name] || 0;
+            if (block.name === 'Task') {
+              const prompt = block.input?.prompt || '';
+              hiddenToolCost += estimateTaskCost(prompt.length);
+            } else {
+              hiddenToolCost += TOOL_COST_ESTIMATES[block.name] || 0;
+            }
           }
         }
       }

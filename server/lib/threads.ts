@@ -206,6 +206,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           let contextTokens = 0;
           let maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS;
           const hiddenToolCounts: ToolCostCounts = {};
+          const taskPromptLengths: number[] = [];
           
           for (const msg of messages) {
             if (msg.usage) {
@@ -219,9 +220,14 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
             if (Array.isArray(msg.content)) {
               for (const block of msg.content) {
                 if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
-                  const name = (block as ToolUseContent).name;
+                  const toolBlock = block as ToolUseContent;
+                  const name = toolBlock.name;
                   if (name && isHiddenCostTool(name)) {
                     hiddenToolCounts[name] = (hiddenToolCounts[name] || 0) + 1;
+                    if (name === 'Task') {
+                      const prompt = (toolBlock.input?.prompt as string) || '';
+                      taskPromptLengths.push(prompt.length);
+                    }
                   }
                 }
               }
@@ -235,7 +241,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
             outputTokens: totalOutputTokens,
             isOpus,
           });
-          const cost = tokenCost + estimateToolCosts(hiddenToolCounts);
+          const cost = tokenCost + estimateToolCosts(hiddenToolCounts, taskPromptLengths);
           
           const contextPercent = maxContextTokens > 0 
             ? Math.round((contextTokens / maxContextTokens) * 100) 

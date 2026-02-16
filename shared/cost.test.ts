@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calculateCost,
   estimateToolCosts,
+  estimateTaskCost,
   isHiddenCostTool,
   TOOL_COST_ESTIMATES,
   type CostInput,
@@ -138,14 +139,26 @@ describe('estimateToolCosts', () => {
     expect(estimateToolCosts({})).toBe(0);
   });
 
-  it('estimates cost for a single Task call', () => {
+  it('uses flat fallback for Task when no prompt lengths provided', () => {
     expect(estimateToolCosts({ Task: 1 })).toBe(TOOL_COST_ESTIMATES.Task);
   });
 
-  it('estimates cost for multiple tool types', () => {
-    const counts = { Task: 2, oracle: 1, finder: 3 };
+  it('uses prompt-length scaling when taskPromptLengths provided', () => {
+    // 1 simple task (300 chars → $0.75)
+    const cost = estimateToolCosts({ Task: 1 }, [300]);
+    expect(cost).toBeCloseTo(0.75, 6);
+  });
+
+  it('scales mixed-complexity tasks by prompt length', () => {
+    // 3 tasks: simple (400 chars), medium (1500 chars), complex (5000 chars)
+    const cost = estimateToolCosts({ Task: 3, oracle: 1 }, [400, 1500, 5000]);
+    // 0.75 + 2.00 + 7.00 + oracle 0.50 = 10.25
+    expect(cost).toBeCloseTo(10.25, 6);
+  });
+
+  it('estimates cost for multiple tool types without Task prompts', () => {
+    const counts = { oracle: 1, finder: 3 };
     const expected =
-      TOOL_COST_ESTIMATES.Task * 2 +
       TOOL_COST_ESTIMATES.oracle * 1 +
       TOOL_COST_ESTIMATES.finder * 3;
     expect(estimateToolCosts(counts)).toBeCloseTo(expected, 6);
@@ -155,12 +168,48 @@ describe('estimateToolCosts', () => {
     expect(estimateToolCosts({ Bash: 10, Read: 5, unknown_tool: 3 })).toBe(0);
   });
 
-  it('handles realistic subagent-heavy thread', () => {
-    // Simulating T-019c38e7: 4 Task + 1 oracle + 5 finder + 1 read_web_page
+  it('handles realistic subagent-heavy thread with prompt lengths', () => {
+    // Simulating T-019c38e7: 4 complex Tasks + 1 oracle + 5 finder + 1 read_web_page
     const counts = { Task: 4, oracle: 1, finder: 5, read_web_page: 1 };
-    const cost = estimateToolCosts(counts);
-    // 4*1.00 + 0.50 + 5*0.15 + 0.40 = 4.00 + 0.50 + 0.75 + 0.40 = 5.65
-    expect(cost).toBeCloseTo(5.65, 6);
+    const prompts = [5174, 4173, 5288, 4809]; // all >4000 chars → $7.00 each
+    const cost = estimateToolCosts(counts, prompts);
+    // 4*7.00 + 0.50 + 5*0.15 + 0.40 = 28.00 + 0.50 + 0.75 + 0.40 = 29.65
+    expect(cost).toBeCloseTo(29.65, 6);
+  });
+
+  it('handles simple git-rebase thread with short prompts', () => {
+    // 19 simple tasks (~450 chars each)
+    const counts = { Task: 19 };
+    const prompts = Array(19).fill(450); // all <500 → $0.75 each
+    const cost = estimateToolCosts(counts, prompts);
+    // 19 * 0.75 = 14.25
+    expect(cost).toBeCloseTo(14.25, 6);
+  });
+});
+
+describe('estimateTaskCost', () => {
+  it('returns $0.75 for short prompts (<500 chars)', () => {
+    expect(estimateTaskCost(100)).toBe(0.75);
+    expect(estimateTaskCost(499)).toBe(0.75);
+  });
+
+  it('returns $2.00 for medium prompts (500–1999 chars)', () => {
+    expect(estimateTaskCost(500)).toBe(2.00);
+    expect(estimateTaskCost(1999)).toBe(2.00);
+  });
+
+  it('returns $4.00 for complex prompts (2000–3999 chars)', () => {
+    expect(estimateTaskCost(2000)).toBe(4.00);
+    expect(estimateTaskCost(3999)).toBe(4.00);
+  });
+
+  it('returns $7.00 for very complex prompts (4000+ chars)', () => {
+    expect(estimateTaskCost(4000)).toBe(7.00);
+    expect(estimateTaskCost(10000)).toBe(7.00);
+  });
+
+  it('returns $0.75 for zero-length prompt', () => {
+    expect(estimateTaskCost(0)).toBe(0.75);
   });
 });
 
