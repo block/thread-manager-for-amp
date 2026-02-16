@@ -1,4 +1,7 @@
+import { Info } from 'lucide-react';
 import type { TerminalStatusBarProps } from './types';
+
+const COST_TOOLTIP = 'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data';
 
 export function TerminalStatusBar({ usage }: TerminalStatusBarProps) {
   return (
@@ -15,8 +18,8 @@ export function TerminalStatusBar({ usage }: TerminalStatusBarProps) {
           />
         </div>
       </div>
-      <div className="status-item" title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data">
-        <span className="status-label">Est. Cost</span>
+      <div className="status-item" title={COST_TOOLTIP}>
+        <span className="status-label">Est. Cost <Info size={10} className="cost-info-icon" /></span>
         <span className="status-value">~${usage.estimatedCost}</span>
       </div>
     </div>

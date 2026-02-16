@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, memo } from 'react';
-import { CheckSquare, Square, MinusSquare } from 'lucide-react';
+import { CheckSquare, Square, MinusSquare, Info } from 'lucide-react';
 import type { Thread, ThreadStatus } from '../../types';
 import { ConfirmModal } from '../ConfirmModal';
 import { KanbanView } from '../KanbanView';
@@ -178,7 +178,7 @@ export const ThreadList = memo(function ThreadList({
                 <th>Labels</th>
                 <SortHeader field="lastUpdated" currentField={sortField} direction={sortDirection} onSort={onSort}>Updated</SortHeader>
                 <SortHeader field="contextPercent" currentField={sortField} direction={sortDirection} onSort={onSort}>Context</SortHeader>
-                <SortHeader field="cost" currentField={sortField} direction={sortDirection} onSort={onSort}>Cost</SortHeader>
+                <SortHeader field="cost" currentField={sortField} direction={sortDirection} onSort={onSort}>Cost <Info size={10} className="cost-info-icon" title="Estimated — may differ from actual billing" /></SortHeader>
                 <th>Actions</th>
               </tr>
             </thead>
