@@ -66,6 +66,15 @@ export function estimateTaskCost(promptLength: number): number {
   return TASK_COST_TIERS[TASK_COST_TIERS.length - 1].cost;
 }
 
+// ── Per-turn overhead ────────────────────────────────────────────────────
+// Each inference turn has ~15K system prompt tokens that are recorded as
+// "cache reads" in thread JSON, but on the first turn of a session (or
+// when the cache expires) Amp actually creates the cache at the higher
+// cache_creation rate. This per-turn overhead accounts for that gap.
+// Empirically: 15K tokens × (cache_creation - cache_read) rate ≈ $0.086.
+const OPUS_TURN_OVERHEAD = 0.09;    // ~15K tokens × $5.75/MTok delta
+const SONNET_TURN_OVERHEAD = 0.05;  // ~15K tokens × $3.45/MTok delta
+
 // ── Types ───────────────────────────────────────────────────────────────
 
 export interface CostInput {
@@ -74,6 +83,7 @@ export interface CostInput {
   cacheReadTokens: number;
   outputTokens: number;
   isOpus: boolean;
+  turns?: number;
 }
 
 export interface ToolCostCounts {
@@ -83,14 +93,15 @@ export interface ToolCostCounts {
 // ── Public API ──────────────────────────────────────────────────────────
 
 export function calculateCost(tokens: CostInput): number {
-  const { inputTokens, cacheCreationTokens, cacheReadTokens, outputTokens, isOpus } = tokens;
+  const { inputTokens, cacheCreationTokens, cacheReadTokens, outputTokens, isOpus, turns = 0 } = tokens;
 
   if (isOpus) {
     return (
       inputTokens * OPUS_INPUT_RATE +
       cacheCreationTokens * OPUS_CACHE_CREATION_RATE +
       cacheReadTokens * OPUS_CACHE_READ_RATE +
-      outputTokens * OPUS_OUTPUT_RATE
+      outputTokens * OPUS_OUTPUT_RATE +
+      turns * OPUS_TURN_OVERHEAD
     );
   }
 
@@ -98,7 +109,8 @@ export function calculateCost(tokens: CostInput): number {
     inputTokens * SONNET_INPUT_RATE +
     cacheCreationTokens * SONNET_CACHE_CREATION_RATE +
     cacheReadTokens * SONNET_CACHE_READ_RATE +
-    outputTokens * SONNET_OUTPUT_RATE
+    outputTokens * SONNET_OUTPUT_RATE +
+    turns * SONNET_TURN_OVERHEAD
   );
 }
 

@@ -121,6 +121,36 @@ describe('calculateCost', () => {
     expect(inputOnlyCost).toBeCloseTo(0.9125, 6);
   });
 
+  it('adds per-turn overhead for opus', () => {
+    const base: CostInput = {
+      inputTokens: 10,
+      cacheCreationTokens: 9708,
+      cacheReadTokens: 14974,
+      outputTokens: 57,
+      isOpus: true,
+    };
+    const withoutTurns = calculateCost(base);
+    const withTurn = calculateCost({ ...base, turns: 1 });
+    // 1 turn × $0.09 overhead
+    expect(withTurn - withoutTurns).toBeCloseTo(0.09, 4);
+    // Simple "haiku" thread: should be ~$0.16 with 1 turn
+    expect(withTurn).toBeCloseTo(0.16, 1);
+  });
+
+  it('adds per-turn overhead for sonnet', () => {
+    const base: CostInput = {
+      inputTokens: 10,
+      cacheCreationTokens: 9708,
+      cacheReadTokens: 14974,
+      outputTokens: 57,
+      isOpus: false,
+    };
+    const withoutTurns = calculateCost(base);
+    const withTurn = calculateCost({ ...base, turns: 1 });
+    // 1 turn × $0.05 overhead
+    expect(withTurn - withoutTurns).toBeCloseTo(0.05, 4);
+  });
+
   it('opus is more expensive than sonnet for same tokens', () => {
     const tokens = {
       inputTokens: 50_000,

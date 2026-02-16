@@ -205,6 +205,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           let cacheRead = 0;
           let contextTokens = 0;
           let maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS;
+          let turns = 0;
           const hiddenToolCounts: ToolCostCounts = {};
           const taskPromptLengths: number[] = [];
           
@@ -216,6 +217,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
               cacheRead += msg.usage.cacheReadInputTokens || 0;
               contextTokens = msg.usage.totalInputTokens || contextTokens;
               maxContextTokens = msg.usage.maxInputTokens || maxContextTokens;
+              turns++;
             }
             if (Array.isArray(msg.content)) {
               for (const block of msg.content) {
@@ -240,6 +242,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
             cacheReadTokens: cacheRead,
             outputTokens: totalOutputTokens,
             isOpus,
+            turns,
           });
           const cost = tokenCost + estimateToolCosts(hiddenToolCounts, taskPromptLengths);
           

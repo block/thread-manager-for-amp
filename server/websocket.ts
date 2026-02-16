@@ -162,6 +162,7 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
           cacheReadTokens,
           outputTokens,
           isOpus: session.isOpus,
+          turns: 1,
         });
 
         session.cumulativeCost += messageCost;
@@ -412,6 +413,7 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
     let contextTokens = 0;
     let maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS;
     let hiddenToolCost = 0;
+    let turns = 0;
 
     for (const msg of messages) {
       if (msg.usage) {
@@ -421,6 +423,7 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
         cacheRead += msg.usage.cacheReadInputTokens || 0;
         contextTokens = msg.usage.totalInputTokens || contextTokens;
         maxContextTokens = msg.usage.maxInputTokens || maxContextTokens;
+        turns++;
       }
       if (msg.content) {
         for (const block of msg.content) {
@@ -442,6 +445,7 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
       cacheReadTokens: cacheRead,
       outputTokens: totalOutputTokens,
       isOpus: session.isOpus,
+      turns,
     }) + hiddenToolCost;
 
     const contextPercent = maxContextTokens > 0
