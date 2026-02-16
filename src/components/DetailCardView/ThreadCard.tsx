@@ -126,7 +126,7 @@ export function ThreadCard({
             </span>
           )}
           {thread.cost !== undefined && (
-            <span className="detail-card-stat cost">${thread.cost.toFixed(2)}</span>
+            <span className="detail-card-stat cost" title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data">~${thread.cost.toFixed(2)}</span>
           )}
         </div>
 
@@ -180,7 +180,7 @@ export function ThreadCard({
                 <div className="detail-card-meta">
                   <span className="detail-card-time">{formatRelativeTime(ancestor.lastUpdated)}</span>
                   {ancestor.cost !== undefined && (
-                    <span className="detail-card-stat cost">${ancestor.cost.toFixed(2)}</span>
+                    <span className="detail-card-stat cost" title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data">~${ancestor.cost.toFixed(2)}</span>
                   )}
                 </div>
               </div>

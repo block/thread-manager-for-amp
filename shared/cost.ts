@@ -39,7 +39,7 @@ const SONNET_OUTPUT_RATE = 15 / 1_000_000;            // $15 per 1M tokens
 // Complex subagent-heavy threads will undercount; simple threads will
 // be close to accurate.
 export const TOOL_COST_ESTIMATES: Record<string, number> = {
-  Task: 0.50,           // Full subagent session (actual range: $0.50–$10+)
+  Task: 1.00,           // Full subagent session (actual range: $0.50–$10+)
   oracle: 0.50,         // Single GPT-5.2 reasoning call
   finder: 0.15,         // 1-3 LLM search calls
   librarian: 0.35,      // Multiple LLM calls with GitHub context

@@ -15,9 +15,9 @@ export function TerminalStatusBar({ usage }: TerminalStatusBarProps) {
           />
         </div>
       </div>
-      <div className="status-item">
+      <div className="status-item" title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data">
         <span className="status-label">Est. Cost</span>
-        <span className="status-value">${usage.estimatedCost}</span>
+        <span className="status-value">~${usage.estimatedCost}</span>
       </div>
     </div>
   );
