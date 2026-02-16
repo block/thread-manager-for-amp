@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from 'react';
 import { X, ExternalLink } from 'lucide-react';
+import { BaseModal } from './BaseModal';
 
 interface FileDiff {
   diff?: string;
@@ -60,25 +60,6 @@ export function DiffModal({
   loading,
   onClose,
 }: DiffModalProps) {
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose();
-    }
-  }, [onClose]);
-
-  useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
-  }, [isOpen, handleKeyDown]);
-
-  if (!isOpen) return null;
-
   const openInEditor = () => {
     window.open(`vscode://file/${workspacePath}/${filePath}`, '_blank');
   };
@@ -88,9 +69,14 @@ export function DiffModal({
     : { oldLines: [], newLines: [] };
 
   return (
-    <div className="diff-modal-overlay" onClick={onClose}>
-      <div className="diff-modal-container" onClick={e => e.stopPropagation()}>
-        <div className="diff-modal-header">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={filename}
+      className="diff-modal-container"
+      overlayClassName="diff-modal-overlay"
+    >
+      <div className="diff-modal-header">
           <div className="diff-modal-title">
             <span className="diff-modal-filename">{filename}</span>
             <span className="diff-modal-path">{filePath}</span>
@@ -161,8 +147,7 @@ export function DiffModal({
               </div>
             </div>
           )}
-        </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }
