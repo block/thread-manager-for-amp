@@ -10,9 +10,10 @@ const MESSAGE_POLL_INTERVAL_MS = 10000;
 
 interface UseTerminalMessagesOptions {
   threadId: string;
+  wsConnected: boolean;
 }
 
-export function useTerminalMessages({ threadId }: UseTerminalMessagesOptions) {
+export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessagesOptions) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
@@ -117,7 +118,10 @@ export function useTerminalMessages({ threadId }: UseTerminalMessagesOptions) {
   }, [hasMoreMessages, loadingMore, loadMoreMessages]);
 
   // Poll for new messages (for CLI-initiated continuations)
+  // Disabled when WebSocket is connected — WS is the sole data source to avoid race conditions
   useEffect(() => {
+    if (wsConnected) return;
+
     const pollForNewMessages = async () => {
       try {
         const currentMessages = messagesRef.current;
@@ -145,7 +149,7 @@ export function useTerminalMessages({ threadId }: UseTerminalMessagesOptions) {
 
     const intervalId = setInterval(pollForNewMessages, MESSAGE_POLL_INTERVAL_MS);
     return () => clearInterval(intervalId);
-  }, [threadId]);
+  }, [threadId, wsConnected]);
 
   return {
     messages,
