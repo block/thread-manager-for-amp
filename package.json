@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k \"tsx watch server/index.ts\" \"sleep 1 && vite\"",
+    "dev:kill": "SP=$(cat .server-port 2>/dev/null || echo 3001); lsof -ti:${SP} -ti:5173 -ti:5174 -ti:5175 | xargs kill -9 2>/dev/null; rm -f .server-port; echo 'Done'",
     "server": "tsx server/index.ts",
     "server:build": "tsc -p server/tsconfig.json",
     "server:start": "node server/dist/index.js",
