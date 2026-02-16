@@ -143,6 +143,7 @@ export function TerminalInput({
         disabled={!isConnected}
         className="terminal-input"
         rows={1}
+        aria-label="Message input"
       />
       <button 
         onClick={onSend} 

@@ -141,6 +141,7 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
+            aria-label="Type a command"
           />
         </div>
 

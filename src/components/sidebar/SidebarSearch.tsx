@@ -11,6 +11,7 @@ export function SidebarSearch({ searchQuery, onSearchChange }: SidebarSearchProp
         value={searchQuery}
         onChange={(e) => onSearchChange(e.target.value)}
         className="sidebar-search-input"
+        aria-label="Filter threads"
       />
     </div>
   );

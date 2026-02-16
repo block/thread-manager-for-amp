@@ -166,6 +166,7 @@ export function MessageSearchModal({
               placeholder="Search messages..."
               value={query}
               onChange={e => setQuery(e.target.value)}
+              aria-label="Search messages"
             />
           </div>
           <button className="message-search-close" onClick={onClose}>

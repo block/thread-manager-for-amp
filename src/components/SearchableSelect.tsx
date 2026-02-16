@@ -100,6 +100,7 @@ export const SearchableSelect = memo(function SearchableSelect({
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={searchPlaceholder}
                 className="searchable-select-search-input"
+                aria-label={searchPlaceholder}
               />
               {search && (
                 <button
