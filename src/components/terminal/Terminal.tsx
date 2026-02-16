@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { Minimap, type MinimapItem } from '../Minimap';
 import { ThreadDiscovery } from '../ThreadDiscovery';
 import { MessageSearchModal } from '../MessageSearchModal';
@@ -33,14 +33,21 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
     closeViewingImage, addSessionImage, clearInput, scrollToMessage, checkContextWarning,
   } = state;
 
+  const [wsConnected, setWsConnected] = useState(false);
+
   const {
     messages, setMessages, isLoading, setIsLoading, hasMoreMessages,
     loadingMore, loadMoreMessages, messagesContainerRef, messagesEndRef, messageRefs,
-  } = useTerminalMessages({ threadId });
+  } = useTerminalMessages({ threadId, wsConnected });
 
   const {
     isConnected, isSending, isRunning, agentStatus, sendMessage: wsSendMessage, cancelOperation,
   } = useTerminalWebSocket({ threadId, setMessages, setUsage, setIsLoading });
+
+  // Sync WS connection state to control message polling
+  useEffect(() => {
+    setWsConnected(isConnected);
+  }, [isConnected]);
 
   useScrollBehavior({ messages, loadingMore, messagesContainerRef });
 
