@@ -35,6 +35,7 @@ interface ThreadSession {
   connectedAt: number;
   startedAt?: number;
   killTimeout: NodeJS.Timeout | null;
+  processing: boolean;
 }
 
 const sessions = new Map<string, ThreadSession>();
@@ -285,111 +286,116 @@ async function spawnAmpOnSession(
   message: string,
   image: ThreadImage | null = null
 ): Promise<void> {
-  if (session.child) {
+  if (session.processing || session.child) {
     sendToSession(session, { type: 'error', content: 'A command is already running. Please wait.' });
     return;
   }
 
-  let finalMessage = message;
+  session.processing = true;
+  try {
+    let finalMessage = message;
 
-  if (image) {
-    try {
-      const threadArtifactsDir = join(ARTIFACTS_DIR, session.threadId);
-      await mkdir(threadArtifactsDir, { recursive: true });
+    if (image) {
+      try {
+        const threadArtifactsDir = join(ARTIFACTS_DIR, session.threadId);
+        await mkdir(threadArtifactsDir, { recursive: true });
 
-      const ext = image.mediaType.split('/')[1] || 'png';
-      const filename = `${Date.now()}.${ext}`;
-      const imagePath = join(threadArtifactsDir, filename);
-      const imageBuffer = Buffer.from(image.data, 'base64');
-      await writeFile(imagePath, imageBuffer);
+        const ext = image.mediaType.split('/')[1] || 'png';
+        const filename = `${Date.now()}.${ext}`;
+        const imagePath = join(threadArtifactsDir, filename);
+        const imageBuffer = Buffer.from(image.data, 'base64');
+        await writeFile(imagePath, imageBuffer);
 
-      createArtifact({
-        threadId: session.threadId,
-        type: 'image',
-        title: `Uploaded image ${filename}`,
-        content: null,
-        filePath: imagePath,
-        mediaType: image.mediaType,
-      });
+        createArtifact({
+          threadId: session.threadId,
+          type: 'image',
+          title: `Uploaded image ${filename}`,
+          content: null,
+          filePath: imagePath,
+          mediaType: image.mediaType,
+        });
 
-      finalMessage = `First, analyze this image: ${imagePath}\n\nThen respond to: ${message}`;
-    } catch (e) {
-      console.error('[TERM] Failed to save image:', e);
-      sendToSession(session, { type: 'error', content: 'Failed to process image' });
+        finalMessage = `First, analyze this image: ${imagePath}\n\nThen respond to: ${message}`;
+      } catch (e) {
+        console.error('[TERM] Failed to save image:', e);
+        sendToSession(session, { type: 'error', content: 'Failed to process image' });
+      }
     }
+
+    const child = spawn(AMP_BIN, [
+      'threads', 'continue', session.threadId,
+      '--no-ide',
+      '--execute', finalMessage,
+      '--stream-json',
+    ], {
+      cwd: AMP_HOME,
+      env: { ...process.env, CI: '1', TERM: 'dumb' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    session.child = child;
+    session.startedAt = Date.now();
+
+    child.on('error', (err: Error) => {
+      console.error(`[WS] Child process error for thread ${session.threadId}:`, err.message);
+      sendToSession(session, { type: 'error', content: `Failed to start agent: ${err.message}` });
+      sendToSession(session, { type: 'done', code: 1 });
+      session.child = null;
+      session.startedAt = undefined;
+    });
+
+    child.stdout?.on('data', (data: Buffer) => {
+      session.buffer += data.toString();
+      const lines = session.buffer.split('\n');
+      session.buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const json: AmpStreamEvent = JSON.parse(line);
+          handleStreamEvent(session, json);
+        } catch {
+          // Skip non-JSON lines
+        }
+      }
+    });
+
+    child.stderr?.on('data', (data: Buffer) => {
+      session.stderrBuffer += data.toString();
+      if (session.stderrBuffer.length > 40000) {
+        session.stderrBuffer = session.stderrBuffer.slice(-20000);
+      }
+    });
+
+    child.on('close', (code: number | null) => {
+      // Flush remaining buffered content
+      if (session.buffer.trim()) {
+        try {
+          const json: AmpStreamEvent = JSON.parse(session.buffer);
+          handleStreamEvent(session, json);
+        } catch {
+          // Ignore
+        }
+        session.buffer = '';
+      }
+
+      const exitCode = code ?? 0;
+      if (exitCode !== 0) {
+        const stderrMsg = session.stderrBuffer.trim();
+        sendToSession(session, {
+          type: 'error',
+          content: stderrMsg || `amp exited with code ${exitCode}`,
+        });
+      }
+
+      sendToSession(session, { type: 'done', code: exitCode });
+      session.stderrBuffer = '';
+      session.child = null;
+      session.startedAt = undefined;
+    });
+  } finally {
+    session.processing = false;
   }
-
-  const child = spawn(AMP_BIN, [
-    'threads', 'continue', session.threadId,
-    '--no-ide',
-    '--execute', finalMessage,
-    '--stream-json',
-  ], {
-    cwd: AMP_HOME,
-    env: { ...process.env, CI: '1', TERM: 'dumb' },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-
-  session.child = child;
-  session.startedAt = Date.now();
-
-  child.on('error', (err: Error) => {
-    console.error(`[WS] Child process error for thread ${session.threadId}:`, err.message);
-    sendToSession(session, { type: 'error', content: `Failed to start agent: ${err.message}` });
-    sendToSession(session, { type: 'done', code: 1 });
-    session.child = null;
-    session.startedAt = undefined;
-  });
-
-  child.stdout?.on('data', (data: Buffer) => {
-    session.buffer += data.toString();
-    const lines = session.buffer.split('\n');
-    session.buffer = lines.pop() || '';
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      try {
-        const json: AmpStreamEvent = JSON.parse(line);
-        handleStreamEvent(session, json);
-      } catch {
-        // Skip non-JSON lines
-      }
-    }
-  });
-
-  child.stderr?.on('data', (data: Buffer) => {
-    session.stderrBuffer += data.toString();
-    if (session.stderrBuffer.length > 40000) {
-      session.stderrBuffer = session.stderrBuffer.slice(-20000);
-    }
-  });
-
-  child.on('close', (code: number | null) => {
-    // Flush remaining buffered content
-    if (session.buffer.trim()) {
-      try {
-        const json: AmpStreamEvent = JSON.parse(session.buffer);
-        handleStreamEvent(session, json);
-      } catch {
-        // Ignore
-      }
-      session.buffer = '';
-    }
-
-    const exitCode = code ?? 0;
-    if (exitCode !== 0) {
-      const stderrMsg = session.stderrBuffer.trim();
-      sendToSession(session, {
-        type: 'error',
-        content: stderrMsg || `amp exited with code ${exitCode}`,
-      });
-    }
-
-    sendToSession(session, { type: 'done', code: exitCode });
-    session.stderrBuffer = '';
-    session.child = null;
-    session.startedAt = undefined;
-  });
 }
 
 // ── Initialise session cost/model from thread file ──────────────────────
@@ -533,6 +539,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
         isOpus: true,
         connectedAt: Date.now(),
         killTimeout: null,
+        processing: false,
       };
       sessions.set(threadId, session);
     }
