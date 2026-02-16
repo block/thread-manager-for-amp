@@ -20,6 +20,7 @@ function looksLikeJson(content: string): boolean {
          (trimmed.startsWith('[') && trimmed.endsWith(']'));
 }
 
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- explicit for readability
 function tryParseJson(content: string): unknown | null {
   try {
     return JSON.parse(content);
