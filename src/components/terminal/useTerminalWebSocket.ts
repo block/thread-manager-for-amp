@@ -149,6 +149,18 @@ export function useTerminalWebSocket({
               }
               wasCancelledRef.current = false;
               break;
+            case 'system':
+              if (data.subtype === 'interrupting') {
+                // Mark the last user message as interrupted
+                setMessages(prev => {
+                  const lastUserIdx = prev.findLastIndex(m => m.type === 'user');
+                  if (lastUserIdx === -1) return prev;
+                  const updated = [...prev];
+                  updated[lastUserIdx] = { ...updated[lastUserIdx], interrupted: true };
+                  return updated;
+                });
+              }
+              break;
             case 'cancelled':
               setIsSending(false);
               setIsRunning(false);
@@ -205,7 +217,7 @@ export function useTerminalWebSocket({
     };
   }, [threadId, setMessages, setUsage, setIsLoading]);
 
-  const sendMessage = useCallback((content: string, image?: { data: string; mediaType: string }, cancelFirst?: boolean) => {
+  const sendMessage = useCallback((content: string, image?: { data: string; mediaType: string }) => {
     if (!wsRef.current || !isConnected) return false;
     
     // Reset response tracking
@@ -213,26 +225,9 @@ export function useTerminalWebSocket({
     wasCancelledRef.current = false;
     setNoResponseDetected(false);
     
-    // If we need to cancel first, send cancel and delay the message
-    if (cancelFirst && (isSending || isRunning)) {
-      wsRef.current.send(JSON.stringify({ type: 'cancel' }));
-      // Send message after a short delay to let cancel process
-      setTimeout(() => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({ 
-            type: 'message', 
-            content,
-            image: image || undefined,
-          }));
-          setIsSending(true);
-          setAgentStatus('waiting');
-        }
-      }, 100);
-      return true;
-    }
-    
-    if (isSending) return false;
-    
+    // Always send the message — if the agent is already running, the server
+    // will interrupt the current operation (SIGINT) and queue this message
+    // to be processed after the child exits. No client-side cancel needed.
     wsRef.current.send(JSON.stringify({ 
       type: 'message', 
       content,
@@ -242,7 +237,7 @@ export function useTerminalWebSocket({
     setIsSending(true);
     setAgentStatus('waiting');
     return true;
-  }, [isConnected, isSending, isRunning]);
+  }, [isConnected]);
 
   const cancelOperation = useCallback(() => {
     if (wsRef.current && (isSending || isRunning)) {

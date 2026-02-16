@@ -113,6 +113,9 @@ function MessageItem({
           <span className="chat-sender">
             {msg.type === 'user' ? 'You' : msg.type === 'error' ? 'Error' : 'Amp'}
           </span>
+          {msg.interrupted && (
+            <span className="chat-interrupted-badge">interrupted</span>
+          )}
           {msg.timestamp && (
             <Timestamp date={msg.timestamp} className="chat-timestamp" />
           )}

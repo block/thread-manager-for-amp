@@ -16,6 +16,7 @@ export interface Message {
   image?: AttachedImage;
   isContextLimit?: boolean;
   timestamp?: string;  // ISO date string
+  interrupted?: boolean;
 }
 
 let messageIdCounter = 0;

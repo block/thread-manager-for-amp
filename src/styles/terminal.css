@@ -280,6 +280,13 @@
   opacity: 0.7;
 }
 
+.chat-interrupted-badge {
+  font-size: 10px;
+  color: var(--accent-orange, #f0a050);
+  opacity: 0.8;
+  font-style: italic;
+}
+
 .chat-message-user .chat-header {
   justify-content: flex-end;
 }

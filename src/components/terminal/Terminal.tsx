@@ -153,9 +153,8 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
   const handleSendMessage = useCallback(() => {
     if ((!input.trim() && !pendingImage) || !isConnected) return;
     const messageText = input.trim() || 'Analyze this image';
-    const needsCancel = isRunning || isSending;
     setMessages(prev => [...prev, { id: generateId(), type: 'user', content: messageText, image: pendingImage || undefined }]);
-    wsSendMessage(messageText, pendingImage || undefined, needsCancel);
+    wsSendMessage(messageText, pendingImage || undefined);
     if (pendingImage) addSessionImage(pendingImage);
     clearInput();
 
@@ -167,7 +166,7 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
           .catch(err => console.debug('Auto-link issue failed:', err));
       }
     }
-  }, [input, pendingImage, isConnected, isRunning, isSending, setMessages, wsSendMessage, addSessionImage, clearInput, metadata, threadId, setMetadata]);
+  }, [input, pendingImage, isConnected, setMessages, wsSendMessage, addSessionImage, clearInput, metadata, threadId, setMetadata]);
 
   const content = (
     <div ref={containerRef} className={`terminal-container with-minimap ${embedded ? 'embedded' : ''}`} onClick={e => e.stopPropagation()}>

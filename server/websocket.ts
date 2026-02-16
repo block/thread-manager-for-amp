@@ -24,6 +24,11 @@ const PING_INTERVAL_MS = 25_000;
 // Stream listeners always route through `session.currentWs` so a new socket
 // immediately picks up where the old one left off.
 
+interface PendingMessage {
+  content: string;
+  image: ThreadImage | null;
+}
+
 interface ThreadSession {
   threadId: string;
   child: ChildProcess | null;
@@ -36,6 +41,8 @@ interface ThreadSession {
   startedAt?: number;
   killTimeout: NodeJS.Timeout | null;
   processing: boolean;
+  pendingMessage: PendingMessage | null;
+  activeMessage: string | null;
 }
 
 const sessions = new Map<string, ThreadSession>();
@@ -286,8 +293,25 @@ async function spawnAmpOnSession(
   message: string,
   image: ThreadImage | null = null
 ): Promise<void> {
-  if (session.processing || session.child) {
-    sendToSession(session, { type: 'error', content: 'A command is already running. Please wait.' });
+  // If a child is already running, interrupt it and queue this message.
+  // The SIGINT kills the child before amp persists the user's message to the
+  // thread file, so we compose both the interrupted message and the new one
+  // into a single prompt for the next spawn.
+  if (session.child) {
+    const interruptedMsg = session.activeMessage;
+    const composed = interruptedMsg
+      ? `[The user sent this message but interrupted before you could respond:]\n${interruptedMsg}\n\n[The user then sent this follow-up message:]\n${message}`
+      : message;
+    session.pendingMessage = { content: composed, image };
+    session.child.kill('SIGINT');
+    sendToSession(session, { type: 'system', subtype: 'interrupting' });
+    return;
+  }
+
+  // Serialization guard: prevent the async gap race where two rapid messages
+  // both pass the session.child check before either spawns.
+  if (session.processing) {
+    session.pendingMessage = { content: message, image };
     return;
   }
 
@@ -335,6 +359,7 @@ async function spawnAmpOnSession(
 
     session.child = child;
     session.startedAt = Date.now();
+    session.activeMessage = finalMessage;
 
     child.on('error', (err: Error) => {
       console.error(`[WS] Child process error for thread ${session.threadId}:`, err.message);
@@ -342,6 +367,7 @@ async function spawnAmpOnSession(
       sendToSession(session, { type: 'done', code: 1 });
       session.child = null;
       session.startedAt = undefined;
+      session.activeMessage = null;
     });
 
     child.stdout?.on('data', (data: Buffer) => {
@@ -380,18 +406,35 @@ async function spawnAmpOnSession(
       }
 
       const exitCode = code ?? 0;
-      if (exitCode !== 0) {
-        const stderrMsg = session.stderrBuffer.trim();
-        sendToSession(session, {
-          type: 'error',
-          content: stderrMsg || `amp exited with code ${exitCode}`,
-        });
+      const pending = session.pendingMessage;
+
+      // If a message is queued (interrupt-then-send), suppress the error/done
+      // from the interrupted child — the client stays in "waiting" state and
+      // the pending message will spawn immediately below.
+      if (!pending) {
+        if (exitCode !== 0) {
+          const stderrMsg = session.stderrBuffer.trim();
+          sendToSession(session, {
+            type: 'error',
+            content: stderrMsg || `amp exited with code ${exitCode}`,
+          });
+        }
+
+        sendToSession(session, { type: 'done', code: exitCode });
       }
 
-      sendToSession(session, { type: 'done', code: exitCode });
       session.stderrBuffer = '';
       session.child = null;
       session.startedAt = undefined;
+      session.activeMessage = null;
+
+      if (pending) {
+        session.pendingMessage = null;
+        void spawnAmpOnSession(session, pending.content, pending.image).catch((err) => {
+          console.error(`[WS] spawnAmp error for queued message on thread ${session.threadId}:`, err);
+          sendToSession(session, { type: 'error', content: 'Failed to process queued message' });
+        });
+      }
     });
   } finally {
     session.processing = false;
@@ -540,6 +583,8 @@ export function setupWebSocket(server: Server): WebSocketServer {
         connectedAt: Date.now(),
         killTimeout: null,
         processing: false,
+        pendingMessage: null,
+        activeMessage: null,
       };
       sessions.set(threadId, session);
     }
