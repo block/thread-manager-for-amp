@@ -4,20 +4,7 @@ import type { WsEvent } from '../../types/websocket';
 import type { UsageInfo } from './types';
 import { formatToolUse } from '../../utils/format';
 import { playNotificationSound, isSoundEnabled } from '../../utils/sounds';
-
-let msgCounter = 0;
-function generateId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return `msg-${crypto.randomUUID()}`;
-  }
-  return `msg-${Date.now()}-${++msgCounter}`;
-}
-
-// Strip ANSI escape codes from terminal output
-function stripAnsi(str: string): string {
-  // eslint-disable-next-line no-control-regex
-  return str.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, '');
-}
+import { generateId, stripAnsi } from '../../../shared/utils.js';
 
 interface UseTerminalWebSocketOptions {
   threadId: string;

@@ -5,23 +5,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage } from 'http';
 import type { Server } from 'http';
 import type { Duplex } from 'stream';
-
-interface ShellClientMessage {
-  type: 'input' | 'resize' | 'ping';
-  data?: string;
-  cols?: number;
-  rows?: number;
-}
-
-interface ShellServerMessage {
-  type: 'connected' | 'output' | 'exit' | 'error' | 'pong';
-  sessionId?: string;
-  shell?: string;
-  cwd?: string;
-  data?: string;
-  exitCode?: number;
-  content?: string;
-}
+import type { ShellClientMessage, ShellServerMessage } from '../shared/websocket.js';
 
 interface SessionState {
   cwd: string;
