@@ -3,7 +3,8 @@ import type { Stats } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './constants.js';
-import { calculateCost } from '../../shared/cost.js';
+import { calculateCost, estimateToolCosts, isHiddenCostTool } from '../../shared/cost.js';
+import type { ToolCostCounts } from '../../shared/cost.js';
 import { formatRelativeTime, runAmp, stripAnsi } from './utils.js';
 import { getArtifacts, deleteThreadData } from './database.js';
 import { formatMessageContent } from './threadParsing.js';
@@ -204,6 +205,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           let cacheRead = 0;
           let contextTokens = 0;
           let maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS;
+          const hiddenToolCounts: ToolCostCounts = {};
           
           for (const msg of messages) {
             if (msg.usage) {
@@ -214,15 +216,26 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
               contextTokens = msg.usage.totalInputTokens || contextTokens;
               maxContextTokens = msg.usage.maxInputTokens || maxContextTokens;
             }
+            if (Array.isArray(msg.content)) {
+              for (const block of msg.content) {
+                if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
+                  const name = (block as ToolUseContent).name;
+                  if (name && isHiddenCostTool(name)) {
+                    hiddenToolCounts[name] = (hiddenToolCounts[name] || 0) + 1;
+                  }
+                }
+              }
+            }
           }
           
-          const cost = calculateCost({
+          const tokenCost = calculateCost({
             inputTokens: freshInputTokens,
             cacheCreationTokens: cacheCreation,
             cacheReadTokens: cacheRead,
             outputTokens: totalOutputTokens,
             isOpus,
           });
+          const cost = tokenCost + estimateToolCosts(hiddenToolCounts);
           
           const contextPercent = maxContextTokens > 0 
             ? Math.round((contextTokens / maxContextTokens) * 100) 

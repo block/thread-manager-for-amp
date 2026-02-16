@@ -7,7 +7,7 @@ import { IncomingMessage, Server } from 'http';
 import { Duplex } from 'stream';
 import type { RunningThreadState, RunningThreadsMap, ThreadImage } from '../shared/types.js';
 import type { WsServerMessage, WsClientMessage } from '../shared/websocket.js';
-import { calculateCost } from '../shared/cost.js';
+import { calculateCost, isHiddenCostTool, TOOL_COST_ESTIMATES } from '../shared/cost.js';
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
 
@@ -101,8 +101,14 @@ interface ThreadUsage {
   maxInputTokens?: number;
 }
 
+interface ThreadContentBlock {
+  type: string;
+  name?: string;
+}
+
 interface ThreadMessage {
   usage?: ThreadUsage;
+  content?: ThreadContentBlock[];
 }
 
 interface ThreadData {
@@ -174,6 +180,18 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
           if (block.type === 'text' && block.text) {
             sendToSession(session, { type: 'text', content: block.text });
           } else if (block.type === 'tool_use' && block.id && block.name) {
+            if (isHiddenCostTool(block.name)) {
+              const toolCost = TOOL_COST_ESTIMATES[block.name] || 0;
+              session.cumulativeCost += toolCost;
+              sendToSession(session, {
+                type: 'usage',
+                contextPercent: -1,
+                inputTokens: 0,
+                outputTokens: 0,
+                maxTokens: 0,
+                estimatedCost: session.cumulativeCost.toFixed(4),
+              });
+            }
             sendToSession(session, {
               type: 'tool_use',
               id: block.id,
@@ -386,6 +404,7 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
     let cacheRead = 0;
     let contextTokens = 0;
     let maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS;
+    let hiddenToolCost = 0;
 
     for (const msg of messages) {
       if (msg.usage) {
@@ -396,6 +415,13 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
         contextTokens = msg.usage.totalInputTokens || contextTokens;
         maxContextTokens = msg.usage.maxInputTokens || maxContextTokens;
       }
+      if (msg.content) {
+        for (const block of msg.content) {
+          if (block.type === 'tool_use' && block.name && isHiddenCostTool(block.name)) {
+            hiddenToolCost += TOOL_COST_ESTIMATES[block.name] || 0;
+          }
+        }
+      }
     }
 
     session.cumulativeCost = calculateCost({
@@ -404,7 +430,7 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
       cacheReadTokens: cacheRead,
       outputTokens: totalOutputTokens,
       isOpus: session.isOpus,
-    });
+    }) + hiddenToolCost;
 
     const contextPercent = maxContextTokens > 0
       ? Math.round((contextTokens / maxContextTokens) * 100)
