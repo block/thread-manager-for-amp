@@ -45,15 +45,40 @@ export const Toolbar = memo(function Toolbar({
           >
             <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#0ef3ff" />
-                  <stop offset="50%" stopColor="#ff2592" />
-                  <stop offset="100%" stopColor="#ffd400" />
+                <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ff2592" />
+                  <stop offset="30%" stopColor="#ffd400" />
+                  <stop offset="70%" stopColor="#ffd400" />
+                  <stop offset="100%" stopColor="#0ef3ff" />
                 </linearGradient>
+                <linearGradient id="lg2" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#0ef3ff" stopOpacity="0.92" />
+                  <stop offset="50%" stopColor="#ffa040" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="#ff2592" stopOpacity="0.15" />
+                </linearGradient>
+                <radialGradient id="rg1" cx="15%" cy="85%" r="75%">
+                  <stop offset="0%" stopColor="#ff2592" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="#ff2592" stopOpacity="0" />
+                </radialGradient>
+                <radialGradient id="rg2" cx="85%" cy="15%" r="55%">
+                  <stop offset="0%" stopColor="#0ef3ff" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#0ef3ff" stopOpacity="0" />
+                </radialGradient>
+                <clipPath id="logoClip"><rect width="32" height="32" rx="7"/></clipPath>
+                <mask id="logoMask">
+                  <rect width="32" height="32" fill="white"/>
+                  <path d="M8 10l6 6-6 6" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  <line x1="17" y1="22" x2="24" y2="22" stroke="black" strokeWidth="3" strokeLinecap="round"/>
+                </mask>
               </defs>
-              <rect width="32" height="32" rx="7" fill="#1a1a2e"/>
-              <path d="M8 10l6 6-6 6" stroke="url(#logoGradient)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <line x1="17" y1="22" x2="24" y2="22" stroke="url(#logoGradient)" strokeWidth="3" strokeLinecap="round"/>
+              <g mask="url(#logoMask)">
+                <g clipPath="url(#logoClip)">
+                  <rect width="32" height="32" fill="url(#lg1)"/>
+                  <rect width="32" height="32" fill="url(#lg2)"/>
+                  <rect width="32" height="32" fill="url(#rg1)"/>
+                  <rect width="32" height="32" fill="url(#rg2)"/>
+                </g>
+              </g>
             </svg>
           </button>
 
