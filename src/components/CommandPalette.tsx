@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { X } from 'lucide-react';
+import { BaseModal } from './BaseModal';
 import '../styles/command-palette.css';
 
 export interface Command {
@@ -92,18 +93,12 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
           executeCommand(filteredCommands[selectedIndex]);
         }
         break;
-      case 'Escape':
-        e.preventDefault();
-        onClose();
-        break;
     }
-  }, [filteredCommands, selectedIndex, executeCommand, onClose]);
+  }, [filteredCommands, selectedIndex, executeCommand]);
 
   const handleMouseMove = useCallback(() => {
     setIsKeyboardNav(false);
   }, []);
-
-  if (!isOpen) return null;
 
   // Group commands by category
   const groupedCommands: { category: string; items: Command[] }[] = [];
@@ -119,63 +114,68 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
   let globalIndex = 0;
 
   return (
-    <div className="command-palette-overlay" onClick={onClose}>
-      <div className="command-palette" onClick={e => e.stopPropagation()}>
-        <div className="command-palette-header">
-          <span className="command-palette-title">Command Palette</span>
-          <button className="command-palette-close" onClick={onClose}>
-            <X size={16} />
-          </button>
-        </div>
-        
-        <div className="command-palette-input-wrapper">
-          <span className="command-palette-prompt">&gt;</span>
-          <input
-            ref={inputRef}
-            type="text"
-            className="command-palette-input"
-            placeholder="Type a command..."
-            value={query}
-            onChange={e => {
-              setQuery(e.target.value);
-              setSelectedIndex(0);
-            }}
-            onKeyDown={handleKeyDown}
-            aria-label="Type a command"
-          />
-        </div>
-
-        <div className="command-palette-list" ref={listRef} onMouseMove={handleMouseMove}>
-          {groupedCommands.map(group => (
-            <div key={group.category} className="command-group">
-              {group.items.map(cmd => {
-                const itemIndex = globalIndex++;
-                const isSelected = itemIndex === selectedIndex;
-                return (
-                  <div
-                    key={cmd.id}
-                    className={`command-item ${isSelected ? 'selected' : ''} ${cmd.disabled ? 'disabled' : ''}`}
-                    onClick={() => executeCommand(cmd)}
-                    onMouseEnter={() => !isKeyboardNav && setSelectedIndex(itemIndex)}
-                  >
-                    <span className="command-category">{cmd.category}</span>
-                    <span className="command-label">
-                      {cmd.icon && <span className="command-icon">{cmd.icon}</span>}
-                      {cmd.label}
-                    </span>
-                    {cmd.shortcut && (
-                      <span className="command-shortcut">{cmd.shortcut}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-          {filteredCommands.length === 0 && (
-            <div className="command-empty">No matching commands</div>
-          )}
-        </div>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Command Palette"
+      className="command-palette"
+      overlayClassName="command-palette-overlay"
+      trapFocus={false}
+    >
+      <div className="command-palette-header">
+        <span className="command-palette-title">Command Palette</span>
+        <button className="command-palette-close" onClick={onClose}>
+          <X size={16} />
+        </button>
       </div>
-    </div>
+      
+      <div className="command-palette-input-wrapper">
+        <span className="command-palette-prompt">&gt;</span>
+        <input
+          ref={inputRef}
+          type="text"
+          className="command-palette-input"
+          placeholder="Type a command..."
+          value={query}
+          onChange={e => {
+            setQuery(e.target.value);
+            setSelectedIndex(0);
+          }}
+          onKeyDown={handleKeyDown}
+          aria-label="Type a command"
+        />
+      </div>
+
+      <div className="command-palette-list" ref={listRef} onMouseMove={handleMouseMove}>
+        {groupedCommands.map(group => (
+          <div key={group.category} className="command-group">
+            {group.items.map(cmd => {
+              const itemIndex = globalIndex++;
+              const isSelected = itemIndex === selectedIndex;
+              return (
+                <div
+                  key={cmd.id}
+                  className={`command-item ${isSelected ? 'selected' : ''} ${cmd.disabled ? 'disabled' : ''}`}
+                  onClick={() => executeCommand(cmd)}
+                  onMouseEnter={() => !isKeyboardNav && setSelectedIndex(itemIndex)}
+                >
+                  <span className="command-category">{cmd.category}</span>
+                  <span className="command-label">
+                    {cmd.icon && <span className="command-icon">{cmd.icon}</span>}
+                    {cmd.label}
+                  </span>
+                  {cmd.shortcut && (
+                    <span className="command-shortcut">{cmd.shortcut}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+        {filteredCommands.length === 0 && (
+          <div className="command-empty">No matching commands</div>
+        )}
+      </div>
+    </BaseModal>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { X, Search, User, Bot, Terminal, AlertCircle, ChevronRight } from 'lucide-react';
+import { BaseModal } from './BaseModal';
 import type { Message } from '../utils/parseMarkdown';
 import '../styles/terminal.css';
 
@@ -125,9 +126,6 @@ export function MessageSearchModal({
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     switch (e.key) {
-      case 'Escape':
-        onClose();
-        break;
       case 'ArrowDown':
         e.preventDefault();
         setSelectedIndex(prev => Math.min(prev + 1, results.length - 1));
@@ -151,11 +149,16 @@ export function MessageSearchModal({
     onClose();
   }, [onJumpToMessage, onClose]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="message-search-overlay" onClick={onClose}>
-      <div className="message-search-modal" onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Search Messages"
+      className="message-search-modal"
+      overlayClassName="message-search-overlay"
+      trapFocus={false}
+    >
+      <div onKeyDown={handleKeyDown}>
         <div className="message-search-header">
           <div className="message-search-input-wrapper">
             <Search size={16} className="message-search-icon" />
@@ -208,6 +211,6 @@ export function MessageSearchModal({
           </div>
         )}
       </div>
-    </div>
+    </BaseModal>
   );
 }
