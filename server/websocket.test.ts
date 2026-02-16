@@ -48,19 +48,6 @@ function waitForMessage(ws: WebSocket, type: string): Promise<Record<string, unk
   });
 }
 
-function collectMessages(ws: WebSocket, duration: number): Promise<Record<string, unknown>[]> {
-  return new Promise((resolve) => {
-    const messages: Record<string, unknown>[] = [];
-    const handler = (data: Buffer) => {
-      messages.push(JSON.parse(data.toString()));
-    };
-    ws.on('message', handler);
-    setTimeout(() => {
-      ws.off('message', handler);
-      resolve(messages);
-    }, duration);
-  });
-}
 
 describe('concurrent spawn race condition', () => {
   let server: Server;
@@ -92,24 +79,16 @@ describe('concurrent spawn race condition', () => {
     // Wait for the 'ready' message
     await waitForMessage(ws, 'ready');
 
-    // Collect all messages for a short window after sending two rapid messages
-    const messagesPromise = collectMessages(ws, 200);
-
     // Send two messages in rapid succession (no await between them)
     ws.send(JSON.stringify({ type: 'message', content: 'first message' }));
     ws.send(JSON.stringify({ type: 'message', content: 'second message' }));
 
-    const messages = await messagesPromise;
+    // Wait a bit for messages to be processed
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
-    // spawn should only have been called once
+    // spawn should only have been called once — the second message is queued
+    // as pendingMessage, not rejected with an error
     expect(spawn).toHaveBeenCalledTimes(1);
-
-    // The second message should have received an error
-    const errorMessages = messages.filter(
-      (m) => m.type === 'error' && typeof m.content === 'string' &&
-        (m.content as string).includes('already running')
-    );
-    expect(errorMessages.length).toBeGreaterThanOrEqual(1);
 
     ws.close();
   });
