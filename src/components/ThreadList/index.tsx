@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, memo } from 'react';
-import { CheckSquare, Square, MinusSquare, Info } from 'lucide-react';
+import { CheckSquare, Square, MinusSquare } from 'lucide-react';
 import type { Thread, ThreadStatus } from '../../types';
 import { ConfirmModal } from '../ConfirmModal';
 import { KanbanView } from '../KanbanView';
@@ -13,6 +13,7 @@ import { useThreadListKeyboard } from './useThreadListKeyboard';
 import { PAGE_SIZE } from './constants';
 import type { ThreadListProps, BulkAction } from './types';
 import { buildThreadStacks, getStackSize } from '../../utils/threadStacks';
+import { CostInfoTip } from '../CostInfoTip';
 
 // Re-exports for external consumers
 export { SortHeader } from './SortHeader';
@@ -178,7 +179,7 @@ export const ThreadList = memo(function ThreadList({
                 <th>Labels</th>
                 <SortHeader field="lastUpdated" currentField={sortField} direction={sortDirection} onSort={onSort}>Updated</SortHeader>
                 <SortHeader field="contextPercent" currentField={sortField} direction={sortDirection} onSort={onSort}>Context</SortHeader>
-                <SortHeader field="cost" currentField={sortField} direction={sortDirection} onSort={onSort}>Cost <span className="cost-tooltip-wrapper"><Info size={10} className="cost-info-icon" /><span className="cost-tooltip">Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data</span></span></SortHeader>
+                <SortHeader field="cost" currentField={sortField} direction={sortDirection} onSort={onSort}>Cost <CostInfoTip /></SortHeader>
                 <th>Actions</th>
               </tr>
             </thead>

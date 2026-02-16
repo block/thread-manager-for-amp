@@ -150,28 +150,20 @@ tr.clickable-row.focused {
   color: var(--accent-yellow);
 }
 
-.cost-tooltip-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  margin-left: 2px;
-}
-
 .cost-info-icon {
+  display: inline-flex;
   opacity: 0.4;
   vertical-align: middle;
   cursor: help;
+  margin-left: 2px;
 }
 
-.cost-tooltip-wrapper:hover .cost-info-icon {
+.cost-info-icon:hover {
   opacity: 0.8;
 }
 
-.cost-tooltip {
-  display: none;
-  position: absolute;
-  bottom: calc(100% + 6px);
-  right: 0;
+.cost-tooltip-portal {
+  position: fixed;
   width: 260px;
   padding: 8px 10px;
   background: var(--bg-tertiary, #2a2a3e);
@@ -179,14 +171,12 @@ tr.clickable-row.focused {
   border-radius: 6px;
   color: var(--text-secondary, #aaa);
   font-size: 11px;
+  font-weight: 400;
   line-height: 1.4;
   white-space: normal;
-  z-index: 100;
+  z-index: 9999;
   pointer-events: none;
-}
-
-.cost-tooltip-wrapper:hover .cost-tooltip {
-  display: block;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .thread-messages {
