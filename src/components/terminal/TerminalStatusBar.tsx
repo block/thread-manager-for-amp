@@ -1,4 +1,3 @@
-import { Info } from 'lucide-react';
 import { CostInfoTip } from '../CostInfoTip';
 import type { TerminalStatusBarProps } from './types';
 
