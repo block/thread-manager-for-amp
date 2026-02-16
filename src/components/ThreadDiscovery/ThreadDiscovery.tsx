@@ -8,6 +8,7 @@ import {
   Package,
   Search,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { SourceControl } from '../SourceControl';
 import type { Thread, ThreadMetadata } from '../../types';
@@ -87,7 +88,7 @@ export function ThreadDiscovery({
       <div className="discovery-summary">
         <ThreadLabelEditor threadId={threadId} compact />
         
-        {!loading && summary.fileCount > 0 && (
+        {summary.fileCount > 0 && (
           <button 
             className={`summary-chip files ${activeTab === 'changes' ? 'active' : ''}`}
             onClick={() => handleTabClick('changes')}
@@ -96,7 +97,7 @@ export function ThreadDiscovery({
             <span>{summary.fileCount} files</span>
           </button>
         )}
-        {!loading && (summary.commitCount > 0 || summary.prCount > 0) && (
+        {(summary.commitCount > 0 || summary.prCount > 0) && (
           <button 
             className={`summary-chip git ${activeTab === 'git' ? 'active' : ''}`}
             onClick={() => handleTabClick('git')}
@@ -111,7 +112,7 @@ export function ThreadDiscovery({
             )}
           </button>
         )}
-        {!loading && summary.chainCount > 0 && (
+        {summary.chainCount > 0 && (
           <button 
             className={`summary-chip chain ${activeTab === 'chain' ? 'active' : ''}`}
             onClick={() => handleTabClick('chain')}
@@ -120,7 +121,7 @@ export function ThreadDiscovery({
             <span>{summary.chainCount} linked</span>
           </button>
         )}
-        {!loading && summary.relatedCount > 0 && onOpenThread && (
+        {summary.relatedCount > 0 && onOpenThread && (
           <button 
             className={`summary-chip related ${activeTab === 'related' ? 'active' : ''}`}
             onClick={() => handleTabClick('related')}
@@ -129,7 +130,7 @@ export function ThreadDiscovery({
             <span>{summary.relatedCount} related</span>
           </button>
         )}
-        {!loading && artifactCount > 0 && (
+        {artifactCount > 0 && (
           <button 
             className={`summary-chip artifacts ${activeTab === 'artifacts' ? 'active' : ''}`}
             onClick={() => handleTabClick('artifacts')}
@@ -138,7 +139,7 @@ export function ThreadDiscovery({
             <span>{artifactCount} artifact{artifactCount !== 1 ? 's' : ''}</span>
           </button>
         )}
-        {!loading && availableSkillsCount > 0 && (
+        {availableSkillsCount > 0 && (
           <button 
             className={`summary-chip skills ${activeTab === 'skills' ? 'active' : ''}`}
             onClick={() => handleTabClick('skills')}
@@ -151,7 +152,7 @@ export function ThreadDiscovery({
           </button>
         )}
         
-        {!loading && metadata && (
+        {metadata && (
           <div className="summary-linked-issue">
             {metadata.linked_issue_url ? (
               <LinkedIssueBadge url={metadata.linked_issue_url} />
@@ -164,9 +165,13 @@ export function ThreadDiscovery({
             )}
           </div>
         )}
+
+        {loading && (
+          <Loader2 size={12} className="spinning" style={{ opacity: 0.5 }} />
+        )}
         
         <div className="summary-actions">
-          {!loading && uncommittedCount > 0 && (
+          {uncommittedCount > 0 && (
             <button
               className="summary-action-btn has-changes"
               onClick={() => setShowSourceControl(true)}
