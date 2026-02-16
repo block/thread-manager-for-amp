@@ -16,6 +16,7 @@ export const ToolbarSearch = memo(function ToolbarSearch({
         value={searchValue}
         onChange={(e) => onSearchChange(e.target.value)}
         className={styles.searchInput}
+        aria-label="Filter threads"
       />
     </div>
   );

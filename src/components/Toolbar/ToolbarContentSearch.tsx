@@ -94,6 +94,7 @@ export const ToolbarContentSearch = memo(function ToolbarContentSearch({
         onChange={(e) => setFullTextQuery(e.target.value)}
         onFocus={() => searchResults.length > 0 && setShowResults(true)}
         className={styles.searchInput}
+        aria-label="Search all content"
       />
       {fullTextQuery && (
         <button className={styles.searchClear} onClick={handleClear}>

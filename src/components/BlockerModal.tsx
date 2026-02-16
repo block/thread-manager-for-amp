@@ -121,6 +121,7 @@ export function BlockerModal({
                 value={selectedThreadId}
                 onChange={e => setSelectedThreadId(e.target.value)}
                 className="blocker-select"
+                aria-label="Select blocking thread"
               >
                 <option value="">Select a thread...</option>
                 {availableThreads.map(t => (
@@ -135,6 +136,7 @@ export function BlockerModal({
                 onChange={e => setReason(e.target.value)}
                 placeholder="Reason (optional)"
                 className="blocker-reason-input"
+                aria-label="Blocker reason"
               />
               <div className="blocker-add-actions">
                 <button className="modal-btn cancel" onClick={() => setShowAddForm(false)}>

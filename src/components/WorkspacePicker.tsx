@@ -80,6 +80,7 @@ export function WorkspacePicker({ isOpen, onClose, onSelect }: WorkspacePickerPr
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             autoFocus
+            aria-label="Search workspaces"
           />
           {search && (
             <button className="search-clear" onClick={() => setSearch('')}>
@@ -164,6 +165,7 @@ export function WorkspacePicker({ isOpen, onClose, onSelect }: WorkspacePickerPr
                       onChange={(e) => setCustomPath(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
                       autoFocus
+                      aria-label="Custom workspace path"
                     />
                     <button 
                       className="custom-path-btn"
