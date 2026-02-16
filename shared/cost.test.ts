@@ -159,8 +159,8 @@ describe('estimateToolCosts', () => {
     // Simulating T-019c38e7: 4 Task + 1 oracle + 5 finder + 1 read_web_page
     const counts = { Task: 4, oracle: 1, finder: 5, read_web_page: 1 };
     const cost = estimateToolCosts(counts);
-    // 4*7.50 + 0.50 + 5*0.15 + 0.10 = 30 + 0.50 + 0.75 + 0.10 = 31.35
-    expect(cost).toBeCloseTo(31.35, 6);
+    // 4*0.50 + 0.50 + 5*0.15 + 0.40 = 2.00 + 0.50 + 0.75 + 0.40 = 3.65
+    expect(cost).toBeCloseTo(3.65, 6);
   });
 });
 

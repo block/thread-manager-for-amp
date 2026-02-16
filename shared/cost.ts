@@ -33,15 +33,20 @@ const SONNET_OUTPUT_RATE = 15 / 1_000_000;            // $15 per 1M tokens
 // the parent thread's usage data. Estimates are based on empirical analysis
 // comparing visible thread costs to Amp CLI reported costs.
 
+// Conservative estimates — intentionally low to avoid overcounting.
+// Task cost varies wildly ($0.50 for a simple git rebase to $10+ for
+// a complex multi-file implementation), so we use a low flat rate.
+// Complex subagent-heavy threads will undercount; simple threads will
+// be close to accurate.
 export const TOOL_COST_ESTIMATES: Record<string, number> = {
-  Task: 7.50,           // Full subagent session (5-15 turns, own context window)
+  Task: 0.50,           // Full subagent session (actual range: $0.50–$10+)
   oracle: 0.50,         // Single GPT-5.2 reasoning call
   finder: 0.15,         // 1-3 LLM search calls
   librarian: 0.35,      // Multiple LLM calls with GitHub context
   read_thread: 0.10,    // 1 LLM extraction call
   find_thread: 0.03,    // Search query with minimal LLM
-  web_search: 0.07,     // $0.01/search + LLM extraction
-  read_web_page: 0.10,  // 1 LLM call for content extraction
+  web_search: 0.80,     // $0.01/search + LLM extraction + retrieval tokens
+  read_web_page: 0.40,  // 1 LLM call for content extraction
   look_at: 0.10,        // 1 LLM call for image/doc analysis
   handoff: 0.10,        // 1 LLM call for context summary
 };
