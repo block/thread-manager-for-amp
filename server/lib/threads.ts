@@ -3,6 +3,8 @@ import type { Stats } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './constants.js';
+import { calculateCost, estimateToolCosts, isHiddenCostTool } from '../../shared/cost.js';
+import type { ToolCostCounts } from '../../shared/cost.js';
 import { formatRelativeTime, runAmp, stripAnsi } from './utils.js';
 import { getArtifacts, deleteThreadData } from './database.js';
 import { formatMessageContent } from './threadParsing.js';
@@ -203,6 +205,9 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           let cacheRead = 0;
           let contextTokens = 0;
           let maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS;
+          let turns = 0;
+          const hiddenToolCounts: ToolCostCounts = {};
+          const taskPromptLengths: number[] = [];
           
           for (const msg of messages) {
             if (msg.usage) {
@@ -212,16 +217,34 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
               cacheRead += msg.usage.cacheReadInputTokens || 0;
               contextTokens = msg.usage.totalInputTokens || contextTokens;
               maxContextTokens = msg.usage.maxInputTokens || maxContextTokens;
+              turns++;
+            }
+            if (Array.isArray(msg.content)) {
+              for (const block of msg.content) {
+                if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
+                  const toolBlock = block as ToolUseContent;
+                  const name = toolBlock.name;
+                  if (name && isHiddenCostTool(name)) {
+                    hiddenToolCounts[name] = (hiddenToolCounts[name] || 0) + 1;
+                    if (name === 'Task') {
+                      const prompt = (toolBlock.input?.prompt as string) || '';
+                      taskPromptLengths.push(prompt.length);
+                    }
+                  }
+                }
+              }
             }
           }
           
-          // Calculate cost based on model pricing (per 1M tokens)
-          let cost = 0;
-          if (isOpus) {
-            cost = (freshInputTokens * 5 + cacheCreation * 6.25 + cacheRead * 1.5 + totalOutputTokens * 25) / 1_000_000;
-          } else {
-            cost = (freshInputTokens * 3 + cacheCreation * 3.75 + cacheRead * 0.3 + totalOutputTokens * 15) / 1_000_000;
-          }
+          const tokenCost = calculateCost({
+            inputTokens: freshInputTokens,
+            cacheCreationTokens: cacheCreation,
+            cacheReadTokens: cacheRead,
+            outputTokens: totalOutputTokens,
+            isOpus,
+            turns,
+          });
+          const cost = tokenCost + estimateToolCosts(hiddenToolCounts, taskPromptLengths);
           
           const contextPercent = maxContextTokens > 0 
             ? Math.round((contextTokens / maxContextTokens) * 100) 

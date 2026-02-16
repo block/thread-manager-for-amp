@@ -1,3 +1,5 @@
+import { Info } from 'lucide-react';
+import { CostInfoTip } from '../CostInfoTip';
 import type { TerminalStatusBarProps } from './types';
 
 export function TerminalStatusBar({ usage }: TerminalStatusBarProps) {
@@ -16,8 +18,10 @@ export function TerminalStatusBar({ usage }: TerminalStatusBarProps) {
         </div>
       </div>
       <div className="status-item">
-        <span className="status-label">Est. Cost</span>
-        <span className="status-value">${usage.estimatedCost}</span>
+        <span className="status-label">
+          Est. Cost <CostInfoTip />
+        </span>
+        <span className="status-value">~${usage.estimatedCost}</span>
       </div>
     </div>
   );

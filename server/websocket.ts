@@ -7,6 +7,7 @@ import { IncomingMessage, Server } from 'http';
 import { Duplex } from 'stream';
 import type { RunningThreadState, RunningThreadsMap, ThreadImage } from '../shared/types.js';
 import type { WsServerMessage, WsClientMessage } from '../shared/websocket.js';
+import { calculateCost, isHiddenCostTool, TOOL_COST_ESTIMATES, estimateTaskCost } from '../shared/cost.js';
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
 
@@ -100,8 +101,15 @@ interface ThreadUsage {
   maxInputTokens?: number;
 }
 
+interface ThreadContentBlock {
+  type: string;
+  name?: string;
+  input?: { prompt?: string; [key: string]: unknown };
+}
+
 interface ThreadMessage {
   usage?: ThreadUsage;
+  content?: ThreadContentBlock[];
 }
 
 interface ThreadData {
@@ -148,20 +156,14 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
         const totalContext = inputTokens + cacheCreationTokens + cacheReadTokens;
         const contextPercent = Math.round((totalContext / maxTokens) * 100);
 
-        let messageCost: number;
-        if (session.isOpus) {
-          const freshInputCost = inputTokens * 0.000005;
-          const cacheCreationCost = cacheCreationTokens * 0.00000625;
-          const cacheReadCost = cacheReadTokens * 0.0000015;
-          const outputCost = outputTokens * 0.000025;
-          messageCost = freshInputCost + cacheCreationCost + cacheReadCost + outputCost;
-        } else {
-          const freshInputCost = inputTokens * 0.000003;
-          const cacheCreationCost = cacheCreationTokens * 0.00000375;
-          const cacheReadCost = cacheReadTokens * 0.0000003;
-          const outputCost = outputTokens * 0.000015;
-          messageCost = freshInputCost + cacheCreationCost + cacheReadCost + outputCost;
-        }
+        const messageCost = calculateCost({
+          inputTokens,
+          cacheCreationTokens,
+          cacheReadTokens,
+          outputTokens,
+          isOpus: session.isOpus,
+          turns: 1,
+        });
 
         session.cumulativeCost += messageCost;
 
@@ -180,6 +182,24 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
           if (block.type === 'text' && block.text) {
             sendToSession(session, { type: 'text', content: block.text });
           } else if (block.type === 'tool_use' && block.id && block.name) {
+            if (isHiddenCostTool(block.name)) {
+              let toolCost: number;
+              if (block.name === 'Task' && block.input) {
+                const prompt = (block.input.prompt as string) || '';
+                toolCost = estimateTaskCost(prompt.length);
+              } else {
+                toolCost = TOOL_COST_ESTIMATES[block.name] || 0;
+              }
+              session.cumulativeCost += toolCost;
+              sendToSession(session, {
+                type: 'usage',
+                contextPercent: -1,
+                inputTokens: 0,
+                outputTokens: 0,
+                maxTokens: 0,
+                estimatedCost: session.cumulativeCost.toFixed(4),
+              });
+            }
             sendToSession(session, {
               type: 'tool_use',
               id: block.id,
@@ -392,6 +412,8 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
     let cacheRead = 0;
     let contextTokens = 0;
     let maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS;
+    let hiddenToolCost = 0;
+    let turns = 0;
 
     for (const msg of messages) {
       if (msg.usage) {
@@ -401,14 +423,30 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
         cacheRead += msg.usage.cacheReadInputTokens || 0;
         contextTokens = msg.usage.totalInputTokens || contextTokens;
         maxContextTokens = msg.usage.maxInputTokens || maxContextTokens;
+        turns++;
+      }
+      if (msg.content) {
+        for (const block of msg.content) {
+          if (block.type === 'tool_use' && block.name && isHiddenCostTool(block.name)) {
+            if (block.name === 'Task') {
+              const prompt = block.input?.prompt || '';
+              hiddenToolCost += estimateTaskCost(prompt.length);
+            } else {
+              hiddenToolCost += TOOL_COST_ESTIMATES[block.name] || 0;
+            }
+          }
+        }
       }
     }
 
-    if (session.isOpus) {
-      session.cumulativeCost = (freshInputTokens * 5 + cacheCreation * 6.25 + cacheRead * 1.5 + totalOutputTokens * 25) / 1_000_000;
-    } else {
-      session.cumulativeCost = (freshInputTokens * 3 + cacheCreation * 3.75 + cacheRead * 0.3 + totalOutputTokens * 15) / 1_000_000;
-    }
+    session.cumulativeCost = calculateCost({
+      inputTokens: freshInputTokens,
+      cacheCreationTokens: cacheCreation,
+      cacheReadTokens: cacheRead,
+      outputTokens: totalOutputTokens,
+      isOpus: session.isOpus,
+      turns,
+    }) + hiddenToolCost;
 
     const contextPercent = maxContextTokens > 0
       ? Math.round((contextTokens / maxContextTokens) * 100)

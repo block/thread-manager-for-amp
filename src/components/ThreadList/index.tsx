@@ -13,6 +13,7 @@ import { useThreadListKeyboard } from './useThreadListKeyboard';
 import { PAGE_SIZE } from './constants';
 import type { ThreadListProps, BulkAction } from './types';
 import { buildThreadStacks, getStackSize } from '../../utils/threadStacks';
+import { CostInfoTip } from '../CostInfoTip';
 
 // Re-exports for external consumers
 export { SortHeader } from './SortHeader';
@@ -178,7 +179,7 @@ export const ThreadList = memo(function ThreadList({
                 <th>Labels</th>
                 <SortHeader field="lastUpdated" currentField={sortField} direction={sortDirection} onSort={onSort}>Updated</SortHeader>
                 <SortHeader field="contextPercent" currentField={sortField} direction={sortDirection} onSort={onSort}>Context</SortHeader>
-                <SortHeader field="cost" currentField={sortField} direction={sortDirection} onSort={onSort}>Cost</SortHeader>
+                <SortHeader field="cost" currentField={sortField} direction={sortDirection} onSort={onSort}>Cost <CostInfoTip /></SortHeader>
                 <th>Actions</th>
               </tr>
             </thead>

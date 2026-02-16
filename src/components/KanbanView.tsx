@@ -64,7 +64,7 @@ const KanbanCard = memo(function KanbanCard({
             </span>
           )}
           {thread.cost !== undefined && (
-            <span className="kanban-card-cost">${thread.cost.toFixed(2)}</span>
+            <span className="kanban-card-cost" title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data">~${thread.cost.toFixed(2)}</span>
           )}
         </div>
         {thread.workspace && (
