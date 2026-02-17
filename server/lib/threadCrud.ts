@@ -183,10 +183,12 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
             if (rel.type === 'handoff') {
               /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard */
-              if (rel.role === 'parent') {
+              if (rel.role === 'child') {
+                // "I am the child" → threadID is my parent
                 handoffParentId = rel.threadID;
-              } else if (rel.role === 'child') {
+              } else if (rel.role === 'parent') {
               /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+                // "I am the parent" → threadID is my child (use last one seen)
                 handoffChildId = rel.threadID;
               }
             }
