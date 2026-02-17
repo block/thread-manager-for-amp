@@ -19,14 +19,10 @@ export interface Message {
   interrupted?: boolean;
 }
 
-let messageIdCounter = 0;
-function generateId(): string {
-  return `msg-${++messageIdCounter}`;
-}
-
 // Parse a section into individual message blocks
-function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
+function parseSection(text: string, role: 'user' | 'assistant', sectionIndex: number): Message[] {
   const messages: Message[] = [];
+  let localIndex = 0;
   
   if (role === 'assistant') {
     // Remove thinking JSON blocks (can be multi-line with nested content)
@@ -42,7 +38,7 @@ function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
       const textBefore = cleanText.slice(lastIndex, match.index).trim();
       if (textBefore) {
         messages.push({
-          id: generateId(),
+          id: `msg-s${sectionIndex}-${localIndex++}`,
           type: 'assistant',
           content: textBefore,
         });
@@ -57,7 +53,7 @@ function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
       } catch { /* ignore parse errors */ }
       
       messages.push({
-        id: generateId(),
+        id: `msg-s${sectionIndex}-${localIndex++}`,
         type: 'tool_use',
         content: formatToolUse(match[1] ?? '', input),
         toolName: match[1] ?? '',
@@ -71,7 +67,7 @@ function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
     const remainingText = cleanText.slice(lastIndex).trim();
     if (remainingText) {
       messages.push({
-        id: generateId(),
+        id: `msg-s${sectionIndex}-${localIndex}`,
         type: 'assistant',
         content: remainingText,
       });
@@ -87,7 +83,7 @@ function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
       const textBefore = text.slice(lastIndex, match.index).trim();
       if (textBefore) {
         messages.push({
-          id: generateId(),
+          id: `msg-s${sectionIndex}-${localIndex++}`,
           type: 'user',
           content: textBefore,
         });
@@ -98,7 +94,7 @@ function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
       const resultContent = (match[1] ?? '').trim().replace(/\\`\\`\\`/g, '```');
       if (resultContent && resultContent !== 'undefined' && resultContent !== '(no output)') {
         messages.push({
-          id: generateId(),
+          id: `msg-s${sectionIndex}-${localIndex++}`,
           type: 'tool_result',
           content: resultContent,
           success: true,
@@ -112,7 +108,7 @@ function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
     const remainingText = text.slice(lastIndex).trim();
     if (remainingText) {
       messages.push({
-        id: generateId(),
+        id: `msg-s${sectionIndex}-${localIndex}`,
         type: 'user',
         content: remainingText,
       });
@@ -135,6 +131,7 @@ export function parseMarkdownHistory(markdown: string): Message[] {
   // Split by ## User or ## Assistant headers (with optional timestamp comment)
   const sections = withoutTitle.split(/^## (User|Assistant)(?:\s*<!--\s*timestamp:([^>]+)\s*-->)?\s*$/m);
   
+  let sectionIndex = 0;
   for (let i = 1; i < sections.length; i += 3) {
     const role = sections[i] as 'User' | 'Assistant';
     const timestamp = sections[i + 1]?.trim() || undefined;
@@ -142,7 +139,7 @@ export function parseMarkdownHistory(markdown: string): Message[] {
     
     if (!sectionText) continue;
     
-    const sectionMessages = parseSection(sectionText, role.toLowerCase() as 'user' | 'assistant');
+    const sectionMessages = parseSection(sectionText, role.toLowerCase() as 'user' | 'assistant', sectionIndex++);
     
     // Apply timestamp to the first message in this section (the main user/assistant message)
     const firstMessage = sectionMessages[0];
