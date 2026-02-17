@@ -128,11 +128,11 @@ export const Sidebar = memo(function Sidebar({
         state={contextMenu}
         onClose={closeContextMenu}
         onContinue={() => contextMenu.thread && onSelectThread(contextMenu.thread)}
-        onOpenInBrowser={onOpenInBrowser && contextMenu.thread ? () => onOpenInBrowser(contextMenu.thread!.id) : undefined}
-        onCopyId={onCopyThreadId && contextMenu.thread ? () => onCopyThreadId(contextMenu.thread!.id) : undefined}
-        onCopyUrl={onCopyThreadUrl && contextMenu.thread ? () => onCopyThreadUrl(contextMenu.thread!.id) : undefined}
-        onArchive={onArchiveThread && contextMenu.thread ? () => onArchiveThread(contextMenu.thread!.id) : undefined}
-        onDelete={onDeleteThread && contextMenu.thread ? () => onDeleteThread(contextMenu.thread!.id) : undefined}
+        onOpenInBrowser={onOpenInBrowser && contextMenu.thread ? () => onOpenInBrowser(contextMenu.thread?.id ?? '') : undefined}
+        onCopyId={onCopyThreadId && contextMenu.thread ? () => onCopyThreadId(contextMenu.thread?.id ?? '') : undefined}
+        onCopyUrl={onCopyThreadUrl && contextMenu.thread ? () => onCopyThreadUrl(contextMenu.thread?.id ?? '') : undefined}
+        onArchive={onArchiveThread && contextMenu.thread ? () => onArchiveThread(contextMenu.thread?.id ?? '') : undefined}
+        onDelete={onDeleteThread && contextMenu.thread ? () => onDeleteThread(contextMenu.thread?.id ?? '') : undefined}
       />
     </aside>
   );

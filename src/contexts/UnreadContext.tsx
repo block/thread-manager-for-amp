@@ -19,6 +19,7 @@ const UnreadContext = createContext<UnreadContextValue | null>(null);
 export function UnreadProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<UnreadState>({});
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- dynamic key lookups may be undefined at runtime */
   const getUnreadCount = useCallback((threadId: string): number => {
     const threadState = state[threadId];
     if (!threadState) return 0;
@@ -61,6 +62,7 @@ export function UnreadProvider({ children }: { children: ReactNode }) {
       return rest;
     });
   }, []);
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
   return (
     <UnreadContext.Provider value={{ getUnreadCount, updateCurrentCount, markAsSeen, clearThread }}>

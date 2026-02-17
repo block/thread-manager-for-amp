@@ -36,6 +36,7 @@ export function useAppSettings(): UseAppSettingsReturn {
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem('threadListViewMode');
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- saved may be null from localStorage
     return (saved as ViewMode) || 'table';
   });
 

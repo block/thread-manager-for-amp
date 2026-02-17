@@ -92,7 +92,7 @@ export function LinkedIssueEditor({ threadId, currentUrl, onUpdate }: LinkedIssu
           className="linked-issue-input"
           autoFocus
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSave();
+            if (e.key === 'Enter') void handleSave();
             if (e.key === 'Escape') {
               setIsEditing(false);
               setInputValue(currentUrl || '');
@@ -124,7 +124,7 @@ export function LinkedIssueEditor({ threadId, currentUrl, onUpdate }: LinkedIssu
   if (parsed) {
     return (
       <div className="linked-issue-display">
-        <LinkedIssueBadge url={currentUrl!} />
+        <LinkedIssueBadge url={currentUrl ?? ''} />
         <button 
           onClick={() => setIsEditing(true)} 
           className="linked-issue-edit"

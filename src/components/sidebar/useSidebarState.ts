@@ -12,7 +12,7 @@ export function useSidebarState(
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem(PINNED_THREADS_KEY);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
+      return stored ? new Set(JSON.parse(stored) as string[]) : new Set();
     } catch {
       return new Set();
     }
@@ -93,15 +93,18 @@ export function useSidebarState(
         });
       }
       
-      const group = groups.get(workspace)!;
+      const group = groups.get(workspace);
+      if (!group) continue;
       group.threads.push(thread);
       
       if (thread.repo) {
         const repoName = thread.repo.split('/').pop() || thread.repo;
-        if (!group.repos.has(repoName)) {
-          group.repos.set(repoName, []);
+        const repoThreads = group.repos.get(repoName);
+        if (repoThreads) {
+          repoThreads.push(thread);
+        } else {
+          group.repos.set(repoName, [thread]);
         }
-        group.repos.get(repoName)!.push(thread);
       }
     }
     
@@ -165,6 +168,7 @@ export function useSidebarState(
       } else if (e.key === 'Enter' && focusedIndex >= 0) {
         e.preventDefault();
         const thread = visibleThreads[focusedIndex];
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- index may be out of bounds
         if (thread) {
           onSelectThread(thread);
         }
@@ -180,6 +184,7 @@ export function useSidebarState(
   useEffect(() => {
     if (focusedIndex < 0) return;
     const thread = visibleThreads[focusedIndex];
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- index may be out of bounds
     if (!thread) return;
     const el = sidebarContentRef.current?.querySelector(`[data-thread-id="${thread.id}"]`);
     el?.scrollIntoView({ block: 'nearest' });

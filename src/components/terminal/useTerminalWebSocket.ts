@@ -55,7 +55,7 @@ export function useTerminalWebSocket({
 
       ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data) as WsEvent;
+          const data = JSON.parse(event.data as string) as WsEvent;
           
           switch (data.type) {
             case 'ready':

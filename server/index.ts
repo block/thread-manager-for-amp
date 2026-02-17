@@ -62,7 +62,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     return;
   }
 
-  const url = new URL(req.url!, `http://${req.headers.host}`);
+  const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
 
   try {
     // Try each route handler
@@ -103,7 +103,7 @@ async function start(): Promise<void> {
   });
 }
 
-start().catch((err) => {
+start().catch((err: unknown) => {
   console.error('Failed to start server:', err);
   process.exit(1);
 });

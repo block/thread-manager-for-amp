@@ -88,8 +88,9 @@ describe('thread blockers', () => {
     const result = addThreadBlock(threadId, blockerId, 'waiting for API');
     expect(result.status).toBe('blocked');
     expect(result.blockers).toHaveLength(1);
-    expect(result.blockers![0].blocked_by_thread_id).toBe(blockerId);
-    expect(result.blockers![0].reason).toBe('waiting for API');
+    const blocker0 = result.blockers?.[0];
+    expect(blocker0?.blocked_by_thread_id).toBe(blockerId);
+    expect(blocker0?.reason).toBe('waiting for API');
   });
 
   it('removes a blocker and auto-unblocks when no remaining blockers', () => {
@@ -118,7 +119,7 @@ describe('thread blockers', () => {
     const result = removeThreadBlock(threadId, blocker1);
     expect(result.status).toBe('blocked');
     expect(result.blockers).toHaveLength(1);
-    expect(result.blockers![0].blocked_by_thread_id).toBe(blocker2);
+    expect(result.blockers?.[0]?.blocked_by_thread_id).toBe(blocker2);
   });
 
   it('auto-unblocks when blocker is marked done', () => {
@@ -217,7 +218,7 @@ describe('artifacts', () => {
 
     const fetched = getArtifact(created.id);
     expect(fetched).toBeDefined();
-    expect(fetched!.title).toBe('Research Doc');
+    expect(fetched?.title).toBe('Research Doc');
   });
 
   it('lists artifacts for a thread', () => {
@@ -248,8 +249,8 @@ describe('artifacts', () => {
     });
 
     expect(updated).toBeDefined();
-    expect(updated!.title).toBe('Updated');
-    expect(updated!.content).toBe('v2');
+    expect(updated?.title).toBe('Updated');
+    expect(updated?.content).toBe('v2');
   });
 
   it('deletes an artifact', () => {
@@ -265,7 +266,7 @@ describe('artifacts', () => {
 
     const deleted = deleteArtifact(artifact.id);
     expect(deleted).toBeDefined();
-    expect(deleted!.id).toBe(artifact.id);
+    expect(deleted?.id).toBe(artifact.id);
 
     const fetched = getArtifact(artifact.id);
     expect(fetched).toBeUndefined();

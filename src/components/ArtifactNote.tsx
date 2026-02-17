@@ -34,7 +34,7 @@ export function ArtifactNoteEditor({ threadId, artifact, onSave, onCancel }: Art
       });
       
       if (response.ok) {
-        const savedArtifact = await response.json();
+        const savedArtifact = await response.json() as Artifact;
         onSave(savedArtifact);
       }
     } catch (err) {

@@ -22,7 +22,7 @@ function getToolStatus(toolId: string | undefined, msgIndex: number, messages: M
   // For live messages with toolId, first check for matching tool_result
   const result = messages.find(m => m.type === 'tool_result' && m.toolId === toolId);
   if (result) {
-    if (result.content?.includes('Operation cancelled')) return 'cancelled';
+    if (result.content.includes('Operation cancelled')) return 'cancelled';
     if (result.success === false) return 'error';
     return 'success';
   }
@@ -125,7 +125,7 @@ function MessageItem({
             <img 
               src={`data:${msg.image.mediaType};base64,${msg.image.data}`}
               alt="Attached"
-              onClick={() => onViewImage(msg.image!)}
+              onClick={() => msg.image && onViewImage(msg.image)}
             />
           </div>
         )}

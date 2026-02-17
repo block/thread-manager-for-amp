@@ -241,7 +241,7 @@ export function ToolBlock({ toolName, toolInput = {}, onRef, highlighted, status
           </button>
         )}
       </div>
-      {isExpanded && isEditFile && renderEditFileDiff(toolInput.old_str!, toolInput.new_str!)}
+      {isExpanded && isEditFile && renderEditFileDiff(toolInput.old_str ?? '', toolInput.new_str ?? '')}
       {isExpanded && fullCmd && !isEditFile && (
         <div className="tool-block-full">
           <pre>{fullCmd}</pre>

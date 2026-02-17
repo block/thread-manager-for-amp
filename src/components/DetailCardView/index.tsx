@@ -56,13 +56,17 @@ export function DetailCardView({
     
     threads.forEach(thread => {
       const label = getDateLabel(thread.lastUpdatedDate);
-      if (!groups.has(label)) groups.set(label, []);
-      groups.get(label)!.push(thread);
+      const existing = groups.get(label);
+      if (existing) {
+        existing.push(thread);
+      } else {
+        groups.set(label, [thread]);
+      }
     });
     
     return order
       .filter(label => groups.has(label))
-      .map(label => ({ label, threads: groups.get(label)! }));
+      .map(label => ({ label, threads: groups.get(label) ?? [] }));
   }, [threads, groupByDate]);
 
   const toggleGroup = (label: string) => {

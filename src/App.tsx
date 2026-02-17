@@ -120,11 +120,11 @@ function App() {
 
   // Clipboard handlers
   const handleCopyThreadId = useCallback((id: string) => {
-    navigator.clipboard.writeText(id);
+    void navigator.clipboard.writeText(id);
   }, []);
 
   const handleCopyThreadUrl = useCallback((id: string) => {
-    navigator.clipboard.writeText(`https://ampcode.com/threads/${id}`);
+    void navigator.clipboard.writeText(`https://ampcode.com/threads/${id}`);
   }, []);
 
   const handleOpenInBrowser = useCallback((id: string) => {
@@ -412,7 +412,8 @@ function App() {
           isOpen={!!modals.blockerThreadId}
           threadId={modals.blockerThreadId || ''}
           threadTitle={threads.find(t => t.id === modals.blockerThreadId)?.title || ''}
-          blockers={metadata[modals.blockerThreadId || '']?.blockers || []}
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- metadata lookup may be undefined
+          blockers={metadata[modals.blockerThreadId ?? '']?.blockers || []}
           threads={threads}
           onAddBlocker={handleAddBlocker}
           onRemoveBlocker={handleRemoveBlocker}

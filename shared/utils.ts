@@ -1,6 +1,7 @@
 let msgCounter = 0;
 
 export function generateId(): string {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- crypto.randomUUID may not exist in all runtimes
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return `msg-${crypto.randomUUID()}`;
   }

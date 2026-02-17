@@ -22,6 +22,7 @@ export function useRunningThreads(): UseRunningThreadsResult {
         const newKeys = Object.keys(data).sort().join(',');
         if (prevKeys !== newKeys) return data;
         const changed = Object.entries(data).some(([k, v]) => 
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- dynamic key lookup may be undefined
           prev[k]?.status !== v.status
         );
         return changed ? data : prev;
@@ -34,9 +35,9 @@ export function useRunningThreads(): UseRunningThreadsResult {
   }, []);
 
   useEffect(() => {
-    fetchRunningThreads();
+    void fetchRunningThreads();
 
-    intervalRef.current = window.setInterval(fetchRunningThreads, POLL_INTERVAL_MS);
+    intervalRef.current = window.setInterval(() => { void fetchRunningThreads(); }, POLL_INTERVAL_MS);
 
     return () => {
       if (intervalRef.current !== null) {

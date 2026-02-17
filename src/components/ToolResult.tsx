@@ -31,6 +31,7 @@ function tryParseJson(content: string): unknown | null {
 
 function extractNestedResult(content: string): string {
   const parsed = tryParseJson(content);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
   if (parsed && typeof parsed === 'object' && parsed !== null) {
     const obj = parsed as Record<string, unknown>;
     const runResult = obj.run as { result?: unknown } | undefined;
@@ -38,7 +39,7 @@ function extractNestedResult(content: string): string {
       if (typeof runResult.result === 'string') {
         return runResult.result;
       }
-      const output = (runResult.result as { output?: string })?.output;
+      const output = (runResult.result as { output?: string }).output;
       if (output !== undefined) {
         return output;
       }

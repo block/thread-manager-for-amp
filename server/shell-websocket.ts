@@ -145,17 +145,13 @@ export function setupShellWebSocket(server: Server): WebSocketServer {
     ws.on('close', () => {
       clearInterval(pingInterval);
       activeSessions.delete(sessionId);
-      if (ptyProcess) {
-        ptyProcess.kill();
-      }
+      ptyProcess.kill();
     });
 
     ws.on('error', () => {
       clearInterval(pingInterval);
       activeSessions.delete(sessionId);
-      if (ptyProcess) {
-        ptyProcess.kill();
-      }
+      ptyProcess.kill();
     });
   });
 

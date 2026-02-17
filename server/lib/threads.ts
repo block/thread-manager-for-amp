@@ -156,7 +156,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
         const filePath = join(THREADS_DIR, file);
         try {
           const content = await readFile(filePath, 'utf-8');
-          const data: ThreadFile = JSON.parse(content);
+          const data = JSON.parse(content) as ThreadFile;
           const fileStat: Stats = await stat(filePath);
           
           const messages = data.messages || [];
@@ -171,6 +171,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
                 textContent = firstUser.content;
               } else if (Array.isArray(firstUser.content)) {
                 const textBlock = firstUser.content.find(
+                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
                   (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text'
                 );
                 textContent = textBlock?.text || '';
@@ -209,6 +210,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           const hiddenToolCounts: ToolCostCounts = {};
           const taskPromptLengths: number[] = [];
           
+          /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guards for parsed JSON */
           for (const msg of messages) {
             if (msg.usage) {
               freshInputTokens += msg.usage.inputTokens || 0;
@@ -235,6 +237,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
               }
             }
           }
+          /* eslint-enable @typescript-eslint/no-unnecessary-condition */
           
           const tokenCost = calculateCost({
             inputTokens: freshInputTokens,
@@ -262,6 +265,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
             repo = match ? match[1] : repoUrl;
           }
           
+          /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guards for parsed JSON */
           // Extract handoff relationships
           const relationships = data.relationships || [];
           let handoffParentId: string | null = null;
@@ -290,6 +294,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
               }
             }
           }
+          /* eslint-enable @typescript-eslint/no-unnecessary-condition */
           
           return {
             id: file.replace('.json', ''),
@@ -347,7 +352,7 @@ export async function searchThreads(query: string): Promise<SearchResult[]> {
       try {
         const fileStat = await stat(filePath);
         const content = await readFile(filePath, 'utf-8');
-        const data: ThreadFile = JSON.parse(content);
+        const data = JSON.parse(content) as ThreadFile;
         const messages = data.messages || [];
         const threadId = file.replace('.json', '');
         
@@ -360,6 +365,7 @@ export async function searchThreads(query: string): Promise<SearchResult[]> {
             textContent = msg.content;
           } else if (Array.isArray(msg.content)) {
             textContent = msg.content
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
               .filter((c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text')
               .map((c) => c.text || '')
               .join('\n');
@@ -390,6 +396,7 @@ export async function searchThreads(query: string): Promise<SearchResult[]> {
               tc = firstUser.content;
             } else if (Array.isArray(firstUser.content)) {
               const textBlock = firstUser.content.find(
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
                 (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text'
               );
               tc = textBlock?.text || '';
@@ -428,7 +435,7 @@ export async function getThreadChanges(threadId: string): Promise<FileChange[]> 
   
   try {
     const content = await readFile(threadPath, 'utf-8');
-    const data: ThreadFile = JSON.parse(content);
+    const data = JSON.parse(content) as ThreadFile;
     const messages = data.messages || [];
     
     const fileChanges = new Map<string, FileChangesData>();
@@ -436,6 +443,7 @@ export async function getThreadChanges(threadId: string): Promise<FileChange[]> 
     for (const msg of messages) {
       if (msg.role === 'assistant' && Array.isArray(msg.content)) {
         for (const block of msg.content) {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
           if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
             const toolBlock = block as ToolUseContent;
             const { name, input } = toolBlock as { name?: string; input?: ToolUseContent['input'] };
@@ -445,7 +453,8 @@ export async function getThreadChanges(threadId: string): Promise<FileChange[]> 
               if (!fileChanges.has(path)) {
                 fileChanges.set(path, { edits: [], created: true });
               }
-              const fc = fileChanges.get(path)!;
+              const fc = fileChanges.get(path);
+              if (!fc) continue;
               fc.created = true;
               if (input.content) {
                 fc.edits.push({
@@ -459,7 +468,7 @@ export async function getThreadChanges(threadId: string): Promise<FileChange[]> 
               if (!fileChanges.has(path)) {
                 fileChanges.set(path, { edits: [], created: false });
               }
-              fileChanges.get(path)!.edits.push({
+              fileChanges.get(path)?.edits.push({
                 type: 'edit',
                 oldStr: input.old_str || '',
                 newStr: input.new_str || '',
@@ -510,6 +519,7 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     if (!thread?.relationships) return;
     
     for (const rel of thread.relationships) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
       if (rel.type === 'handoff' && rel.role === 'parent' && !visited.has(rel.threadID)) {
         visited.add(rel.threadID);
         const parentThread = threadMap.get(rel.threadID);
@@ -534,6 +544,7 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     if (!thread?.relationships) return;
     
     for (const rel of thread.relationships) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
       if (rel.type === 'handoff' && rel.role === 'child' && !visited.has(rel.threadID)) {
         visited.add(rel.threadID);
         const childThread = threadMap.get(rel.threadID);
@@ -601,7 +612,7 @@ export async function getRelatedThreads(threadId: string): Promise<RelatedThread
 export async function getThreadMarkdown(threadId: string, limit: number = 50, offset: number = 0): Promise<string> {
   const threadPath = join(THREADS_DIR, `${threadId}.json`);
   const content = await readFile(threadPath, 'utf-8');
-  const data: ThreadFile = JSON.parse(content);
+  const data = JSON.parse(content) as ThreadFile;
   
   let messages = data.messages || [];
   const totalMessages = messages.length;
@@ -676,17 +687,18 @@ export async function getThreadImages(threadId: string): Promise<ThreadImage[]> 
   try {
     const threadPath = join(THREADS_DIR, `${threadId}.json`);
     const content = await readFile(threadPath, 'utf-8');
-    const data: ThreadFile = JSON.parse(content);
+    const data = JSON.parse(content) as ThreadFile;
     const messages = data.messages || [];
     
     for (const msg of messages) {
       if (msg.role === 'user' && Array.isArray(msg.content)) {
         for (const block of msg.content) {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
           if (typeof block === 'object' && block !== null && block.type === 'image') {
             const imgBlock = block as ImageContent;
             if (imgBlock.source?.data) {
               images.push({
-                mediaType: imgBlock.mediaType || imgBlock.source?.mediaType || 'image/png',
+                mediaType: imgBlock.mediaType || imgBlock.source.mediaType || 'image/png',
                 data: imgBlock.source.data,
                 sourcePath: imgBlock.sourcePath || null,
               });
@@ -732,7 +744,7 @@ export async function deleteThread(threadId: string): Promise<DeleteResult> {
   
   try {
     const secretsContent = await readFile(secretsPath, 'utf-8');
-    const secrets: SecretsFile = JSON.parse(secretsContent);
+    const secrets = JSON.parse(secretsContent) as SecretsFile;
     const apiKey = secrets.apiKey || secrets.API_KEY || secrets.amp_api_key;
     
     if (!apiKey) {

@@ -27,7 +27,7 @@ export function parseBody<T = Record<string, unknown>>(req: IncomingMessage): Pr
     req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
     req.on('end', () => {
       try {
-        resolve(body ? JSON.parse(body) : {} as T);
+        resolve((body ? JSON.parse(body) : {}) as T);
       } catch {
         reject(new Error('Invalid JSON body'));
       }

@@ -32,7 +32,7 @@ export function HandoffModal({ isOpen, threadId, threadTitle, onConfirm, onCance
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && phase !== 'running') {
       e.preventDefault();
-      handleSubmit();
+      void handleSubmit();
     }
   };
 

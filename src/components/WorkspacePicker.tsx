@@ -52,7 +52,7 @@ export function WorkspacePicker({ isOpen, onClose, onSelect }: WorkspacePickerPr
 
   const handleCustomSubmit = () => {
     if (customPath.trim()) {
-      handleSelect(customPath.trim());
+      void handleSelect(customPath.trim());
     }
   };
 

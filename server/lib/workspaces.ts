@@ -66,7 +66,7 @@ export async function getKnownWorkspaces(getThreadsFn: GetThreadsFn): Promise<Kn
     const threadPath = join(THREADS_DIR, `${thread.id}.json`);
     try {
       const content = await readFile(threadPath, 'utf-8');
-      const data: ThreadData = JSON.parse(content);
+      const data = JSON.parse(content) as ThreadData;
       const trees = data.env?.initial?.trees || [];
       
       for (const tree of trees) {

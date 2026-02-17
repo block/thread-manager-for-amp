@@ -34,9 +34,9 @@ export function PinnedSection({
             <ThreadNode
               key={thread.id}
               thread={thread}
-              status={metadata[thread.id]?.status}
+              status={metadata[thread.id]?.status} // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- metadata lookup may be undefined
               isActive={activeThreadId === thread.id}
-              runningStatus={runningThreads[thread.id]?.status ?? null}
+              runningStatus={runningThreads[thread.id]?.status ?? null} // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- dynamic key lookup may be undefined
               isFocused={focusedThreadId === thread.id}
               isPinned={true}
               onSelect={() => onSelectThread(thread)}

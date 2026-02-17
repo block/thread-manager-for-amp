@@ -17,6 +17,7 @@ const ThreadStatusContext = createContext<ThreadStatusContextValue | null>(null)
 export function ThreadStatusProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ThreadStatusState>({});
 
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- dynamic key lookups may be undefined at runtime */
   const getStatus = useCallback((threadId: string): TabThreadStatus => {
     return state[threadId] || 'idle';
   }, [state]);
@@ -36,6 +37,7 @@ export function ThreadStatusProvider({ children }: { children: ReactNode }) {
       return rest;
     });
   }, []);
+  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
   return (
     <ThreadStatusContext.Provider value={{ getStatus, setStatus, clearStatus }}>
