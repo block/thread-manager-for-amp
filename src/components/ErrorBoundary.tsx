@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return this.props.fallback || (
-        <div style={{ 
+        <div role="alert" style={{ 
           padding: '20px', 
           background: '#1a0a0a', 
           color: '#ff6b6b',

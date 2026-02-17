@@ -142,6 +142,24 @@ function adjust(hex: string, amount: number): string {
   return mix(hex, target, Math.abs(amount));
 }
 
+function contrastRatio(hex1: string, hex2: string): number {
+  const l1 = luminance(hex1);
+  const l2 = luminance(hex2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function ensureContrast(bg: string, fg: string, startFactor: number, minRatio: number): string {
+  let factor = startFactor;
+  while (factor <= 1.0) {
+    const color = mix(bg, fg, factor);
+    if (contrastRatio(color, bg) >= minRatio) return color;
+    factor += 0.05;
+  }
+  return fg;
+}
+
 function overlay(hex: string, alpha: number): string {
   const { r, g, b } = hexToRgb(hex);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
@@ -212,7 +230,7 @@ function createTheme(bg: string, fg: string, accent: string): Theme {
   const accents = deriveAccents(accent, isDark);
   
   const elevate = (amount: number) => adjust(bg, dir * amount);
-  const mutedText = mix(bg, fg, isDark ? 0.55 : 0.5);
+  const mutedText = ensureContrast(bg, fg, isDark ? 0.55 : 0.5, 4.5);
   const secondaryText = mix(bg, fg, isDark ? 0.7 : 0.6);
   
   return {
@@ -336,7 +354,7 @@ function getCyberpunk2077Theme(): Theme {
     text: {
       primary: '#fdfeff',
       secondary: '#6b9eff',
-      muted: '#4a7bd4',
+      muted: '#6b9eff',
     },
     border: {
       default: '#1a1845',
