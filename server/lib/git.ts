@@ -1,10 +1,8 @@
 import { spawn, ChildProcess } from 'child_process';
 import { readFile, stat } from 'fs/promises';
 import { join, resolve, isAbsolute } from 'path';
-import { AMP_HOME } from './constants.js';
 import type { GitStatus, GitFileStatus, FileDiff } from '../../shared/types.js';
-
-const THREADS_DIR = join(AMP_HOME, '.local', 'share', 'amp', 'threads');
+import { THREADS_DIR } from './threadTypes.js';
 
 /**
  * Validates and sanitizes a workspace path to prevent path traversal attacks.

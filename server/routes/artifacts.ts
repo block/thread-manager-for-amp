@@ -9,10 +9,8 @@ import {
 } from '../lib/database.js';
 import { join } from 'path';
 import { mkdir, writeFile, readFile, unlink } from 'fs/promises';
-import { homedir } from 'os';
 import type { Artifact, ArtifactType } from '../../shared/types.js';
-
-const ARTIFACTS_DIR = join(homedir(), '.amp-thread-manager', 'artifacts');
+import { ARTIFACTS_DIR } from '../lib/threadTypes.js';
 
 mkdir(ARTIFACTS_DIR, { recursive: true }).catch(() => {});
 
