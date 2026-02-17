@@ -121,11 +121,11 @@ export function ThemePicker({ currentTheme, onThemeChange }: ThemePickerProps) {
 function getLuminance(hex: string): number {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return 0.5;
-  const r = parseInt(result[1], 16) / 255;
-  const g = parseInt(result[2], 16) / 255;
-  const b = parseInt(result[3], 16) / 255;
-  const [rs, gs, bs] = [r, g, b].map((c) => 
+  const r = parseInt(result[1] ?? '0', 16) / 255;
+  const g = parseInt(result[2] ?? '0', 16) / 255;
+  const b = parseInt(result[3] ?? '0', 16) / 255;
+  const linearized = [r, g, b].map((c) => 
     c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
   );
-  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+  return 0.2126 * (linearized[0] ?? 0) + 0.7152 * (linearized[1] ?? 0) + 0.0722 * (linearized[2] ?? 0);
 }

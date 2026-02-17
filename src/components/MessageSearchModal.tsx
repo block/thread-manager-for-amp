@@ -120,7 +120,8 @@ export function MessageSearchModal({
   useEffect(() => {
     if (resultsRef.current && results.length > 0) {
       const selectedElement = resultsRef.current.children[clampedSelectedIndex] as HTMLElement;
-      selectedElement?.scrollIntoView({ block: 'nearest' }); // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- index may be out of bounds
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+      selectedElement?.scrollIntoView({ block: 'nearest' });
     }
   }, [clampedSelectedIndex, results.length]);
 

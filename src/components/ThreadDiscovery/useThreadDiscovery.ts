@@ -87,7 +87,7 @@ function extractLoadedSkills(messages: Message[]): LoadedSkill[] {
 
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
-    if (msg.type !== 'tool_use' || msg.toolName !== 'skill') continue;
+    if (!msg || msg.type !== 'tool_use' || msg.toolName !== 'skill') continue;
     
     const skillName = msg.toolInput?.name;
     if (!skillName || typeof skillName !== 'string' || seen.has(skillName)) continue;
@@ -204,22 +204,25 @@ export function useThreadDiscovery({
         setSummary(prev => ({ ...prev, fileCount: data.length, editCount: data.reduce((sum, c) => sum + c.editCount, 0) }));
       }});
 
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guards for API response data */
     const p2 = apiGet<ThreadGitActivity>(`/api/thread-git-activity?threadId=${encodeURIComponent(tid)}`)
       .catch((e: unknown) => { console.debug('thread-git-activity:', e instanceof Error ? e.message : String(e)); return null; })
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
       .then((data) => { if (!cancelled) {
         setGitActivity(data);
         const workspace = data?.workspaces?.[0];
         setSummary(prev => ({ ...prev, commitCount: workspace?.commits?.filter(c => c.confidence === 'high').length || 0, prCount: workspace?.prs?.length || 0 }));
       }});
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
     const p3 = apiGet<ThreadChainType>(`/api/thread-chain?threadId=${encodeURIComponent(tid)}`)
       .catch((e: unknown) => { console.debug('thread-chain:', e instanceof Error ? e.message : String(e)); return null; })
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
       .then((data) => { if (!cancelled) {
         setChain(data);
         const chainCount = data ? (data.ancestors?.length || 0) + (data.descendants?.length || 0) : 0;
         setSummary(prev => ({ ...prev, chainCount }));
       }});
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
     const p4 = (onOpenThreadRef.current
       ? apiGet<RelatedThread[]>(`/api/related-threads?threadId=${encodeURIComponent(tid)}`).catch((e: unknown) => { console.debug('related-threads:', e instanceof Error ? e.message : String(e)); return [] as RelatedThread[]; })
@@ -231,11 +234,12 @@ export function useThreadDiscovery({
 
     const p5 = apiGet<GitStatus>(`/api/git-status?threadId=${encodeURIComponent(tid)}`)
       .catch((e: unknown) => { console.debug('git-status:', e instanceof Error ? e.message : String(e)); return null; })
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
       .then((data) => { if (!cancelled) {
         const threadUncommitted = data?.files?.filter(f => f.touchedByThread).length || 0;
         setUncommittedCount(threadUncommitted);
       }});
-    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
     const p6 = apiGet<ThreadImage[]>(`/api/thread-images?threadId=${encodeURIComponent(tid)}`)
       .catch((e: unknown) => { console.debug('thread-images:', e instanceof Error ? e.message : String(e)); return [] as ThreadImage[]; })
@@ -270,7 +274,7 @@ export function useThreadDiscovery({
         `/api/thread-git-activity?threadId=${encodeURIComponent(threadId)}&refresh=1`
       );
       setGitActivity(gitData);
-      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guards for API response data */
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
       const workspace = gitData?.workspaces?.[0];
       setSummary(prev => ({
         ...prev,

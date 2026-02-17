@@ -3,6 +3,12 @@ import { parseMarkdownHistory, type Message } from './parseMarkdown';
 
 const ID_PATTERN = /^msg-\d+$/;
 
+function at<T>(arr: T[], index: number): T {
+  const item = arr[index];
+  if (item === undefined) throw new Error(`Expected item at index ${index}`);
+  return item;
+}
+
 function expectMessage(msg: Message, expected: Partial<Message>) {
   expect(msg.id).toMatch(ID_PATTERN);
   if (expected.type) expect(msg.type).toBe(expected.type);
@@ -36,7 +42,7 @@ title: Test
 Hello, world!`;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(1);
-    expectMessage(messages[0], { type: 'user', content: 'Hello, world!' });
+    expectMessage(at(messages, 0), { type: 'user', content: 'Hello, world!' });
   });
 
   it('parses a single assistant message', () => {
@@ -47,7 +53,7 @@ Hello, world!`;
 Here is my response.`;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(1);
-    expectMessage(messages[0], { type: 'assistant', content: 'Here is my response.' });
+    expectMessage(at(messages, 0), { type: 'assistant', content: 'Here is my response.' });
   });
 
   it('parses user → assistant conversation', () => {
@@ -62,8 +68,8 @@ What is 2+2?
 The answer is 4.`;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(2);
-    expectMessage(messages[0], { type: 'user', content: 'What is 2+2?' });
-    expectMessage(messages[1], { type: 'assistant', content: 'The answer is 4.' });
+    expectMessage(at(messages, 0), { type: 'user', content: 'What is 2+2?' });
+    expectMessage(at(messages, 1), { type: 'assistant', content: 'The answer is 4.' });
   });
 
   it('strips YAML frontmatter', () => {
@@ -79,7 +85,7 @@ model: claude-3.5-sonnet
 Hello`;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(1);
-    expectMessage(messages[0], { type: 'user', content: 'Hello' });
+    expectMessage(at(messages, 0), { type: 'user', content: 'Hello' });
   });
 
   it('parses assistant tool_use blocks', () => {
@@ -97,10 +103,10 @@ Let me check the file.
 Done reading.`;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(3);
-    expectMessage(messages[0], { type: 'assistant', content: 'Let me check the file.' });
-    expectMessage(messages[1], { type: 'tool_use', toolName: 'Read' });
-    expect(messages[1].content).toContain('Read');
-    expectMessage(messages[2], { type: 'assistant', content: 'Done reading.' });
+    expectMessage(at(messages, 0), { type: 'assistant', content: 'Let me check the file.' });
+    expectMessage(at(messages, 1), { type: 'tool_use', toolName: 'Read' });
+    expect(at(messages, 1).content).toContain('Read');
+    expectMessage(at(messages, 2), { type: 'assistant', content: 'Done reading.' });
   });
 
   it('parses tool_use with invalid JSON gracefully', () => {
@@ -114,9 +120,9 @@ Done reading.`;
 \`\`\``;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(1);
-    expectMessage(messages[0], { type: 'tool_use', toolName: 'Bash' });
+    expectMessage(at(messages, 0), { type: 'tool_use', toolName: 'Bash' });
     // Should still produce a message even with invalid JSON
-    expect(messages[0].toolInput).toEqual({});
+    expect(at(messages, 0).toolInput).toEqual({});
   });
 
   it('parses user tool_result blocks', () => {
@@ -130,7 +136,7 @@ file content here
 \`\`\``;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(1);
-    expectMessage(messages[0], { type: 'tool_result', success: true, content: 'file content here' });
+    expectMessage(at(messages, 0), { type: 'tool_result', success: true, content: 'file content here' });
   });
 
   it('skips empty tool results', () => {
@@ -167,7 +173,7 @@ undefined
 Hello with timestamp`;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(1);
-    expectMessage(messages[0], { type: 'user', timestamp: '2025-01-15T10:30:00Z' });
+    expectMessage(at(messages, 0), { type: 'user', timestamp: '2025-01-15T10:30:00Z' });
   });
 
   it('strips thinking JSON blocks from assistant messages', () => {
@@ -180,7 +186,7 @@ Hello with timestamp`;
 Here is my actual response.`;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(1);
-    expectMessage(messages[0], { type: 'assistant', content: 'Here is my actual response.' });
+    expectMessage(at(messages, 0), { type: 'assistant', content: 'Here is my actual response.' });
   });
 
   it('handles multiple tool uses in one assistant section', () => {
@@ -203,10 +209,10 @@ First I'll read, then edit.
 All done.`;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(4);
-    expectMessage(messages[0], { type: 'assistant' });
-    expectMessage(messages[1], { type: 'tool_use', toolName: 'Read' });
-    expectMessage(messages[2], { type: 'tool_use', toolName: 'edit_file' });
-    expectMessage(messages[3], { type: 'assistant', content: 'All done.' });
+    expectMessage(at(messages, 0), { type: 'assistant' });
+    expectMessage(at(messages, 1), { type: 'tool_use', toolName: 'Read' });
+    expectMessage(at(messages, 2), { type: 'tool_use', toolName: 'edit_file' });
+    expectMessage(at(messages, 3), { type: 'assistant', content: 'All done.' });
   });
 
   it('handles multi-turn conversation', () => {
@@ -229,10 +235,10 @@ Question 2
 Answer 2`;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(4);
-    expectMessage(messages[0], { type: 'user', content: 'Question 1' });
-    expectMessage(messages[1], { type: 'assistant', content: 'Answer 1' });
-    expectMessage(messages[2], { type: 'user', content: 'Question 2' });
-    expectMessage(messages[3], { type: 'assistant', content: 'Answer 2' });
+    expectMessage(at(messages, 0), { type: 'user', content: 'Question 1' });
+    expectMessage(at(messages, 1), { type: 'assistant', content: 'Answer 1' });
+    expectMessage(at(messages, 2), { type: 'user', content: 'Question 2' });
+    expectMessage(at(messages, 3), { type: 'assistant', content: 'Answer 2' });
   });
 
   it('unescapes triple backticks in tool use JSON', () => {
@@ -246,7 +252,7 @@ Answer 2`;
 \`\`\``;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(1);
-    expect(messages[0].toolInput?.content).toContain('```');
+    expect(at(messages, 0).toolInput?.content).toContain('```');
   });
 
   it('handles section with no content after header', () => {
@@ -264,7 +270,7 @@ Follow-up`;
     const messages = parseMarkdownHistory(md);
     // Empty assistant section is skipped
     expect(messages).toHaveLength(2);
-    expectMessage(messages[0], { type: 'user', content: 'Hello' });
-    expectMessage(messages[1], { type: 'user', content: 'Follow-up' });
+    expectMessage(at(messages, 0), { type: 'user', content: 'Hello' });
+    expectMessage(at(messages, 1), { type: 'user', content: 'Follow-up' });
   });
 });

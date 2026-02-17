@@ -31,16 +31,20 @@ export function useThreadListKeyboard({
           e.preventDefault();
           setFocusedIndex(prev => Math.max(prev - 1, 0));
           break;
-        case 'Enter':
-          if (focusedIndex >= 0 && focusedIndex < threads.length) {
-            onContinue(threads[focusedIndex]);
+        case 'Enter': {
+          const enterThread = focusedIndex >= 0 ? threads[focusedIndex] : undefined;
+          if (enterThread) {
+            onContinue(enterThread);
           }
           break;
-        case 'x':
-          if (focusedIndex >= 0 && focusedIndex < threads.length) {
-            toggleSelect(threads[focusedIndex].id, e.shiftKey);
+        }
+        case 'x': {
+          const xThread = focusedIndex >= 0 ? threads[focusedIndex] : undefined;
+          if (xThread) {
+            toggleSelect(xThread.id, e.shiftKey);
           }
           break;
+        }
         case 'Escape':
           setFocusedIndex(-1);
           break;

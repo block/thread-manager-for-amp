@@ -52,7 +52,8 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
   useScrollBehavior({ messages, loadingMore, messagesContainerRef });
 
   useEffect(() => {
-    const hasError = messages.length > 0 && messages[messages.length - 1].type === 'error';
+    const lastMessage = messages[messages.length - 1];
+    const hasError = !!lastMessage && lastMessage.type === 'error';
     if (isRunning || isSending) {
       setThreadStatus(threadId, 'running');
     } else if (hasError) {

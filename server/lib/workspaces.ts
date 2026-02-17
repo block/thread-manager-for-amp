@@ -50,7 +50,7 @@ export async function getRepoFromGitConfig(repoPath: string): Promise<string | n
     
     const config = await readFile(configPath, 'utf-8');
     const match = config.match(/url\s*=\s*.*[:/]([^/]+\/[^/]+?)(?:\.git)?$/m);
-    return match ? match[1] : null;
+    return match?.[1] ?? null;
   } catch {
     return null;
   }

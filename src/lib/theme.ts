@@ -104,9 +104,9 @@ interface RGB { r: number; g: number; b: number; }
 function hexToRgb(hex: string): RGB {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16),
+    r: parseInt(result[1] ?? '80', 16),
+    g: parseInt(result[2] ?? '80', 16),
+    b: parseInt(result[3] ?? '80', 16),
   } : { r: 128, g: 128, b: 128 };
 }
 
@@ -117,10 +117,13 @@ function rgbToHex({ r, g, b }: RGB): string {
 
 function luminance(hex: string): number {
   const { r, g, b } = hexToRgb(hex);
-  const [rs, gs, bs] = [r, g, b].map((c) => {
+  const mapped = [r, g, b].map((c) => {
     const s = c / 255;
     return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
   });
+  const rs = mapped[0] ?? 0;
+  const gs = mapped[1] ?? 0;
+  const bs = mapped[2] ?? 0;
   return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
 }
 

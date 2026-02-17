@@ -38,7 +38,7 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
 
     // Walk up to parents
     let currentId = t.id;
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Map.get() may return undefined */
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
     while (true) {
       const parentId = childToParent.get(currentId);
       if (!parentId || visited.has(parentId)) break;
@@ -51,6 +51,7 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
 
     // Walk down to children
     currentId = t.id;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
     while (true) {
       const childId = parentToChild.get(currentId);
       if (!childId || visited.has(childId)) break;
@@ -60,7 +61,6 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
       chainMembers.push(child);
       currentId = childId;
     }
-    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
     // Pick the most recently updated thread as head
     chainMembers.sort((a, b) => {
@@ -70,6 +70,7 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
     });
 
     const head = chainMembers[0];
+    if (!head) continue;
     const ancestors = chainMembers.slice(1);
 
     // Mark all as processed

@@ -36,7 +36,7 @@ export function useAppSettings(): UseAppSettingsReturn {
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem('threadListViewMode');
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- saved may be null from localStorage
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
     return (saved as ViewMode) || 'table';
   });
 
@@ -47,7 +47,7 @@ export function useAppSettings(): UseAppSettingsReturn {
 
   const [currentTheme, setCurrentTheme] = useState<string>(() => {
     const themeName = loadSavedTheme();
-    return getPresetByName(themeName)?.name || THEME_PRESETS[0].name;
+    return getPresetByName(themeName)?.name ?? THEME_PRESETS[0]?.name ?? 'Cyberpunk 2077';
   });
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
@@ -59,7 +59,8 @@ export function useAppSettings(): UseAppSettingsReturn {
 
   useEffect(() => {
     const themeName = loadSavedTheme();
-    const preset = getPresetByName(themeName) || THEME_PRESETS[0];
+    const preset = getPresetByName(themeName) ?? THEME_PRESETS[0];
+    if (!preset) return;
     const theme = getThemeForPreset(preset);
     applyTheme(theme);
   }, []);

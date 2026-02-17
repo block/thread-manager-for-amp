@@ -97,16 +97,13 @@ export function useFilters({ threads, metadata }: UseFiltersOptions): UseFilters
     }
 
     if (filterLabel) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- dynamic key lookup may be undefined
       result = result.filter((t) => threadLabels[t.id]?.includes(filterLabel));
     }
 
     if (filterStatus) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- metadata lookup may be undefined at runtime
       result = result.filter((t) => (metadata[t.id]?.status || 'active') === filterStatus);
     }
 
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- metadata lookups may be undefined at runtime */
     result.sort((a, b) => {
       let cmp: number;
       if (sortField === 'title') {
@@ -127,7 +124,6 @@ export function useFilters({ threads, metadata }: UseFiltersOptions): UseFilters
       }
       return sortDirection === 'asc' ? cmp : -cmp;
     });
-    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
     return result;
   }, [threads, debouncedSearch, sortField, sortDirection, filterRepo, filterWorkspace, filterLabel, filterStatus, threadLabels, metadata]);

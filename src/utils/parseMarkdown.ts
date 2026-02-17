@@ -52,15 +52,15 @@ function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
       let input: ToolInput = {};
       try {
         // Unescape triple backticks that were escaped during formatting
-        const jsonStr = match[2].replace(/\\`\\`\\`/g, '```');
+        const jsonStr = (match[2] ?? '').replace(/\\`\\`\\`/g, '```');
         input = JSON.parse(jsonStr) as ToolInput;
       } catch { /* ignore parse errors */ }
       
       messages.push({
         id: generateId(),
         type: 'tool_use',
-        content: formatToolUse(match[1], input),
-        toolName: match[1],
+        content: formatToolUse(match[1] ?? '', input),
+        toolName: match[1] ?? '',
         toolInput: input,
       });
       
@@ -95,7 +95,7 @@ function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
       
       // Add the tool result (skip empty/no output ones)
       // Unescape triple backticks that were escaped during formatting
-      const resultContent = match[1].trim().replace(/\\`\\`\\`/g, '```');
+      const resultContent = (match[1] ?? '').trim().replace(/\\`\\`\\`/g, '```');
       if (resultContent && resultContent !== 'undefined' && resultContent !== '(no output)') {
         messages.push({
           id: generateId(),
@@ -145,8 +145,9 @@ export function parseMarkdownHistory(markdown: string): Message[] {
     const sectionMessages = parseSection(sectionText, role.toLowerCase() as 'user' | 'assistant');
     
     // Apply timestamp to the first message in this section (the main user/assistant message)
-    if (sectionMessages.length > 0 && timestamp) {
-      sectionMessages[0].timestamp = timestamp;
+    const firstMessage = sectionMessages[0];
+    if (firstMessage && timestamp) {
+      firstMessage.timestamp = timestamp;
     }
     
     messages.push(...sectionMessages);

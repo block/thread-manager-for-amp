@@ -61,7 +61,7 @@ export function WorkspaceSourceControlModal({
         setGitStatus(data);
         
         // Auto-select first file if available
-        if (data.files.length > 0 && !selectedFileRef.current) {
+        if (data.files.length > 0 && !selectedFileRef.current && data.files[0]) {
           setSelectedFile(data.files[0].path);
         }
       } catch (err) {

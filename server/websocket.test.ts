@@ -108,7 +108,8 @@ describe('concurrent spawn race condition', () => {
     });
 
     // Simulate child process completing by emitting 'close'
-    const firstChild = (spawn as ReturnType<typeof vi.fn>).mock.results[0].value as EventEmitter;
+    const result = (spawn as ReturnType<typeof vi.fn>).mock.results[0];
+    const firstChild = result?.value as EventEmitter;
     firstChild.emit('close', 0);
 
     // Wait for the 'done' message

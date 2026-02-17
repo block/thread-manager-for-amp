@@ -36,14 +36,16 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
     if (!activeThreadId || threadActions.openThreads.length < 2) return;
     const idx = threadActions.openThreads.findIndex(t => t.id === activeThreadId);
     const prevIdx = idx > 0 ? idx - 1 : threadActions.openThreads.length - 1;
-    threadActions.setActiveThreadId(threadActions.openThreads[prevIdx].id);
+    const prevThread = threadActions.openThreads[prevIdx];
+    if (prevThread) threadActions.setActiveThreadId(prevThread.id);
   }, [activeThreadId, threadActions]);
 
   const handleSwitchToNext = useCallback(() => {
     if (!activeThreadId || threadActions.openThreads.length < 2) return;
     const idx = threadActions.openThreads.findIndex(t => t.id === activeThreadId);
     const nextIdx = idx < threadActions.openThreads.length - 1 ? idx + 1 : 0;
-    threadActions.setActiveThreadId(threadActions.openThreads[nextIdx].id);
+    const nextThread = threadActions.openThreads[nextIdx];
+    if (nextThread) threadActions.setActiveThreadId(nextThread.id);
   }, [activeThreadId, threadActions]);
 
   const handleCopyThreadId = useCallback((id: string) => {
@@ -239,7 +241,6 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
           isOpen={!!modals.blockerThreadId}
           threadId={modals.blockerThreadId || ''}
           threadTitle={threads.find(t => t.id === modals.blockerThreadId)?.title || ''}
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- metadata lookup may be undefined
           blockers={metadata[modals.blockerThreadId ?? '']?.blockers || []}
           threads={threads}
           onAddBlocker={handleAddBlocker}

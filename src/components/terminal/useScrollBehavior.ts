@@ -58,7 +58,6 @@ export function useScrollBehavior({
 
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- array may be empty, making index -1
     const currentLastId = lastMessage?.id ?? null;
     const messagesChanged = currentLastId !== prevLastMessageId.current;
 

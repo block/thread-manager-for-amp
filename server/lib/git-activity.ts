@@ -246,10 +246,15 @@ function parseGitLog(output: string): RawCommit[] {
     if (lines.length < 1) continue;
 
     const firstLine = lines[0];
+    if (!firstLine) continue;
     const parts = firstLine.split('\t');
     if (parts.length < 5) continue;
 
-    const [sha, commitTime, authorName, authorEmail, subject] = parts;
+    const sha = parts[0] ?? '';
+    const commitTime = parts[1] ?? '';
+    const authorName = parts[2] ?? '';
+    const authorEmail = parts[3] ?? '';
+    const subject = parts[4] ?? '';
     const files = lines.slice(1).filter(f => f.trim());
 
     commits.push({
@@ -345,10 +350,10 @@ function parseGitHubRepo(remoteUrl: string | undefined | null): string | null {
   if (!remoteUrl) return null;
 
   const sshMatch = remoteUrl.match(/git@github\.com:([^/]+\/[^/.]+)(?:\.git)?$/);
-  if (sshMatch) return sshMatch[1];
+  if (sshMatch?.[1]) return sshMatch[1];
 
   const httpsMatch = remoteUrl.match(/github\.com\/([^/]+\/[^/.]+)(?:\.git)?$/);
-  if (httpsMatch) return httpsMatch[1];
+  if (httpsMatch?.[1]) return httpsMatch[1];
 
   return null;
 }
@@ -518,17 +523,20 @@ async function updatePrIndex(threadId: string, prs: LinkedPR[]): Promise<void> {
   const index = await loadPrIndex();
 
   for (const key of Object.keys(index)) {
-    index[key] = index[key].filter(id => id !== threadId);
+    const entries = index[key];
+    if (!entries) continue;
+    const filtered = entries.filter(id => id !== threadId);
+    index[key] = filtered;
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- TODO: refactor to use Map
-    if (index[key].length === 0) delete index[key];
+    if (filtered.length === 0) delete index[key];
   }
 
   for (const pr of prs) {
     const key = `${pr.repo}#${pr.number}`;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for dynamic object keys
     if (!index[key]) index[key] = [];
-    if (!index[key].includes(threadId)) {
-      index[key].push(threadId);
+    const arr = index[key] ?? [];
+    if (!arr.includes(threadId)) {
+      arr.push(threadId);
     }
   }
 
@@ -604,7 +612,7 @@ export async function getThreadGitActivity(threadId: string, forceRefresh = fals
 
       const remotes = tree.remotes || tree.repository?.remotes || [];
       const originRemote = remotes.find(r => r.name === 'origin') || remotes[0];
-      const repoUrl = originRemote?.url || tree.repository?.url; // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- originRemote may be undefined from find()
+      const repoUrl = originRemote?.url || tree.repository?.url;
       const repo = parseGitHubRepo(repoUrl);
 
       const rawCommits = await getCommitsInWindow(workspacePath, timeWindow.startISO, timeWindow.endISO);

@@ -188,9 +188,11 @@ describe('estimateToolCosts', () => {
 
   it('estimates cost for multiple tool types without Task prompts', () => {
     const counts = { oracle: 1, finder: 3 };
+    const oracleCost = TOOL_COST_ESTIMATES.oracle ?? 0;
+    const finderCost = TOOL_COST_ESTIMATES.finder ?? 0;
     const expected =
-      TOOL_COST_ESTIMATES.oracle * 1 +
-      TOOL_COST_ESTIMATES.finder * 3;
+      oracleCost * 1 +
+      finderCost * 3;
     expect(estimateToolCosts(counts)).toBeCloseTo(expected, 6);
   });
 

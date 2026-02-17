@@ -57,6 +57,10 @@ export function BaseModal({
 
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
+        if (!first || !last) {
+          e.preventDefault();
+          return;
+        }
 
         if (e.shiftKey) {
           if (document.activeElement === first) {
@@ -94,9 +98,7 @@ export function BaseModal({
     const raf = requestAnimationFrame(() => {
       if (!modalRef.current) return;
       const focusable = modalRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-      if (focusable.length > 0) {
-        focusable[0].focus();
-      }
+      focusable[0]?.focus();
     });
 
     return () => cancelAnimationFrame(raf);

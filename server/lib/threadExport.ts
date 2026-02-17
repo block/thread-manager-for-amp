@@ -96,7 +96,7 @@ export async function getThreadImages(threadId: string): Promise<ThreadImage[]> 
     for (const msg of messages) {
       if (msg.role === 'user' && Array.isArray(msg.content)) {
         for (const block of msg.content) {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
           if (typeof block === 'object' && block !== null && block.type === 'image') {
             const imgBlock = block as ImageContent;
             if (imgBlock.source?.data) {

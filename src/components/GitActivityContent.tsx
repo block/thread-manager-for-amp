@@ -65,7 +65,8 @@ export function GitActivityContent({ activity }: GitActivityContentProps) {
   }
 
   const workspace = activity.workspaces[0];
-  
+  if (!workspace) return null;
+
   if (workspace.error) {
     return <div className="discovery-empty">Error loading git data</div>;
   }

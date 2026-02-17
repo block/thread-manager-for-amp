@@ -128,7 +128,7 @@ export function useThreadActions({
         )
       );
       const failures = results.filter(
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- explicit for readability
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
         r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)
       );
       if (failures.length > 0) {

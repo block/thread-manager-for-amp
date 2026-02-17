@@ -168,7 +168,6 @@ export function useSidebarState(
       } else if (e.key === 'Enter' && focusedIndex >= 0) {
         e.preventDefault();
         const thread = visibleThreads[focusedIndex];
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- index may be out of bounds
         if (thread) {
           onSelectThread(thread);
         }
@@ -184,7 +183,6 @@ export function useSidebarState(
   useEffect(() => {
     if (focusedIndex < 0) return;
     const thread = visibleThreads[focusedIndex];
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- index may be out of bounds
     if (!thread) return;
     const el = sidebarContentRef.current?.querySelector(`[data-thread-id="${thread.id}"]`);
     el?.scrollIntoView({ block: 'nearest' });

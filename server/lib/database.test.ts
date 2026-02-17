@@ -65,7 +65,7 @@ describe('thread metadata CRUD', () => {
     updateThreadStatus(id, 'active');
     const all = getAllThreadMetadata();
     expect(all[id]).toBeDefined();
-    expect(all[id].status).toBe('active');
+    expect(all[id]?.status).toBe('active');
   });
 });
 
@@ -276,7 +276,7 @@ describe('deleteThreadData (cascade)', () => {
 
     const result = deleteThreadData(threadId);
     expect(result.artifacts).toHaveLength(1);
-    expect(result.artifacts[0].title).toBe('will be deleted');
+    expect(result.artifacts[0]?.title).toBe('will be deleted');
 
     // Metadata should be gone — returns default
     const metadata = getThreadMetadata(threadId);

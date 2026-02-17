@@ -164,7 +164,7 @@ export const KanbanView = memo(function KanbanView({
     };
     
     for (const entry of entries) {
-      const status = metadata[entry.thread.id]?.status || 'active'; // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- metadata lookup may be undefined
+      const status = metadata[entry.thread.id]?.status || 'active';
       result[status].push(entry);
     }
     
@@ -185,7 +185,7 @@ export const KanbanView = memo(function KanbanView({
     e.preventDefault();
     const threadId = e.dataTransfer.getData('threadId');
     if (threadId && onStatusChange) {
-      const currentStatus = metadata[threadId]?.status || 'active'; // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- metadata lookup may be undefined
+      const currentStatus = metadata[threadId]?.status || 'active';
       if (currentStatus !== targetStatus) {
         onStatusChange(threadId, targetStatus);
       }

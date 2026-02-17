@@ -30,7 +30,6 @@ const TOOL_ICONS: Record<string, typeof FileText> = {
 
 function getToolIcon(toolName?: string) {
   if (!toolName) return null;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- dynamic key lookup may miss
   const Icon = TOOL_ICONS[toolName] || Terminal;
   return <Icon size={12} />;
 }
