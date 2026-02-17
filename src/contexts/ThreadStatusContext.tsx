@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useMemo, type ReactNode } from 'react';
 
 export type TabThreadStatus = 'idle' | 'running' | 'error';
 
@@ -16,9 +16,16 @@ const ThreadStatusContext = createContext<ThreadStatusContextValue | null>(null)
 
 export function ThreadStatusProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ThreadStatusState>({});
+
+  // Ref-based approach: getStatus reads from a ref so the callback identity
+  // is stable forever, preventing cascading re-renders of all consumers when
+  // any single thread's status changes.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   const getStatus = useCallback((threadId: string): TabThreadStatus => {
-    return state[threadId] || 'idle';
-  }, [state]);
+    return stateRef.current[threadId] || 'idle';
+  }, []);
 
   const setStatus = useCallback((threadId: string, status: TabThreadStatus) => {
     setState(prev => {
@@ -36,8 +43,13 @@ export function ThreadStatusProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const value = useMemo<ThreadStatusContextValue>(
+    () => ({ getStatus, setStatus, clearStatus }),
+    [getStatus, setStatus, clearStatus],
+  );
+
   return (
-    <ThreadStatusContext.Provider value={{ getStatus, setStatus, clearStatus }}>
+    <ThreadStatusContext.Provider value={value}>
       {children}
     </ThreadStatusContext.Provider>
   );

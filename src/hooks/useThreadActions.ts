@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { apiPost, apiDelete, apiPatch } from '../api/client';
 import type { Thread, ThreadStatus } from '../types';
 
@@ -227,7 +227,7 @@ export function useThreadActions({
     }
   }, [threads, handleArchive]);
 
-  return {
+  return useMemo<UseThreadActionsReturn>(() => ({
     openThreads,
     activeThreadId,
     focusThreadId,
@@ -248,5 +248,26 @@ export function useThreadActions({
     handleArchiveOldThreads,
     handoffThreadId,
     setHandoffThreadId,
-  };
+  }), [
+    openThreads,
+    activeThreadId,
+    focusThreadId,
+    setActiveThreadId,
+    setFocusThreadId,
+    handleContinue,
+    handleCloseThread,
+    handleCloseAll,
+    handleArchive,
+    handleDelete,
+    handleBulkArchive,
+    handleBulkDelete,
+    handleBulkStatusChange,
+    handleCreateThreadInWorkspace,
+    handleHandoffConfirm,
+    handleRenameThread,
+    handleArchiveAndClose,
+    handleArchiveOldThreads,
+    handoffThreadId,
+    setHandoffThreadId,
+  ]);
 }

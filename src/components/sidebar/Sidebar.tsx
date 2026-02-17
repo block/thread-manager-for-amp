@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 import { SidebarHeader } from './SidebarHeader';
 import { SidebarSearch } from './SidebarSearch';
 import { PinnedSection } from './PinnedSection';
@@ -46,6 +46,21 @@ export const Sidebar = memo(function Sidebar({
 
   const runningCount = Object.keys(runningThreads).length;
 
+  // Stable callback so PinnedSection's memo() isn't defeated
+  const handleTogglePinnedExpanded = useCallback(() => {
+    setPinnedExpanded(prev => !prev);
+  }, [setPinnedExpanded]);
+
+  // Pre-compute stable toggle callbacks per workspace to avoid inline closures
+  // that would defeat WorkspaceNode's memo()
+  const workspaceToggleCallbacks = useMemo(() => {
+    const map = new Map<string, () => void>();
+    for (const group of workspaceGroups) {
+      map.set(group.workspace, () => toggleWorkspace(group.workspace));
+    }
+    return map;
+  }, [workspaceGroups, toggleWorkspace]);
+
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`} tabIndex={0}>
       <SidebarHeader
@@ -71,7 +86,7 @@ export const Sidebar = memo(function Sidebar({
             activeThreadId={activeThreadId}
             runningThreads={runningThreads}
             expanded={pinnedExpanded}
-            onToggleExpanded={() => setPinnedExpanded(!pinnedExpanded)}
+            onToggleExpanded={handleTogglePinnedExpanded}
             focusedThreadId={focusedThreadId}
             onSelectThread={onSelectThread}
             onArchiveThread={onArchiveThread}
@@ -87,7 +102,7 @@ export const Sidebar = memo(function Sidebar({
             group={group}
             metadata={metadata}
             expanded={expandedWorkspaces.has(group.workspace)}
-            onToggle={() => toggleWorkspace(group.workspace)}
+            onToggle={workspaceToggleCallbacks.get(group.workspace) ?? (() => toggleWorkspace(group.workspace))}
             onSelectThread={onSelectThread}
             activeThreadId={activeThreadId}
             runningThreads={runningThreads}

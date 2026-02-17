@@ -1,8 +1,9 @@
+import { memo, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Pin } from 'lucide-react';
 import { ThreadNode } from './ThreadNode';
 import type { PinnedSectionProps } from './types';
 
-export function PinnedSection({
+export const PinnedSection = memo(function PinnedSection({
   threads,
   metadata,
   activeThreadId,
@@ -16,6 +17,28 @@ export function PinnedSection({
   onTogglePin,
   onContextMenu,
 }: PinnedSectionProps) {
+  // Stable callback maps keyed by thread ID to avoid inline arrows in .map()
+  // that would defeat memo() on ThreadNode
+  const threadCallbacks = useMemo(() => {
+    const map = new Map<string, {
+      onSelect: () => void;
+      onArchive: (() => void) | undefined;
+      onOpenInBrowser: (() => void) | undefined;
+      onTogglePin: () => void;
+      onContextMenu: (e: React.MouseEvent) => void;
+    }>();
+    for (const thread of threads) {
+      map.set(thread.id, {
+        onSelect: () => onSelectThread(thread),
+        onArchive: onArchiveThread ? () => onArchiveThread(thread.id) : undefined,
+        onOpenInBrowser: onOpenInBrowser ? () => onOpenInBrowser(thread.id) : undefined,
+        onTogglePin: () => onTogglePin(thread.id),
+        onContextMenu: (e: React.MouseEvent) => onContextMenu(e, thread),
+      });
+    }
+    return map;
+  }, [threads, onSelectThread, onArchiveThread, onOpenInBrowser, onTogglePin, onContextMenu]);
+
   if (threads.length === 0) return null;
 
   return (
@@ -30,24 +53,27 @@ export function PinnedSection({
       </button>
       {expanded && (
         <div className="sidebar-node-children">
-          {threads.map(thread => (
-            <ThreadNode
-              key={thread.id}
-              thread={thread}
-              status={metadata[thread.id]?.status}
-              isActive={activeThreadId === thread.id}
-              runningStatus={runningThreads[thread.id]?.status ?? null}
-              isFocused={focusedThreadId === thread.id}
-              isPinned={true}
-              onSelect={() => onSelectThread(thread)}
-              onArchive={onArchiveThread ? () => onArchiveThread(thread.id) : undefined}
-              onOpenInBrowser={onOpenInBrowser ? () => onOpenInBrowser(thread.id) : undefined}
-              onTogglePin={() => onTogglePin(thread.id)}
-              onContextMenu={(e) => onContextMenu(e, thread)}
-            />
-          ))}
+          {threads.map(thread => {
+            const cbs = threadCallbacks.get(thread.id);
+            return (
+              <ThreadNode
+                key={thread.id}
+                thread={thread}
+                status={metadata[thread.id]?.status}
+                isActive={activeThreadId === thread.id}
+                runningStatus={runningThreads[thread.id]?.status ?? null}
+                isFocused={focusedThreadId === thread.id}
+                isPinned={true}
+                onSelect={cbs?.onSelect ?? (() => onSelectThread(thread))}
+                onArchive={cbs?.onArchive}
+                onOpenInBrowser={cbs?.onOpenInBrowser}
+                onTogglePin={cbs?.onTogglePin ?? (() => onTogglePin(thread.id))}
+                onContextMenu={cbs?.onContextMenu ?? ((e) => onContextMenu(e, thread))}
+              />
+            );
+          })}
         </div>
       )}
     </div>
   );
-}
+});
