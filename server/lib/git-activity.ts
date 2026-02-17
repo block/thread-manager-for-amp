@@ -519,6 +519,7 @@ async function updatePrIndex(threadId: string, prs: LinkedPR[]): Promise<void> {
 
   for (const key of Object.keys(index)) {
     index[key] = index[key].filter(id => id !== threadId);
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- TODO: refactor to use Map
     if (index[key].length === 0) delete index[key];
   }
 

@@ -132,6 +132,7 @@ export function useModals(): UseModalsReturn {
     }
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- TODO: will be async when context analysis is implemented
   const handleContextAnalyze = useCallback(async (activeThreadId: string | undefined) => {
     if (!activeThreadId) return;
     setOutputModal({ 
@@ -164,7 +165,7 @@ export function useModals(): UseModalsReturn {
         setOutputModal({ title: 'Skill Added', content: result.output });
       } catch (err) {
         console.error('Failed to add skill:', err);
-        setOutputModal({ title: 'Error', content: `Failed to add skill: ${err}` });
+        setOutputModal({ title: 'Error', content: `Failed to add skill: ${String(err)}` });
       }
     }
   }, []);
@@ -177,7 +178,7 @@ export function useModals(): UseModalsReturn {
         setOutputModal({ title: 'Skill Removed', content: result.output });
       } catch (err) {
         console.error('Failed to remove skill:', err);
-        setOutputModal({ title: 'Error', content: `Failed to remove skill: ${err}` });
+        setOutputModal({ title: 'Error', content: `Failed to remove skill: ${String(err)}` });
       }
     }
   }, []);
@@ -190,7 +191,7 @@ export function useModals(): UseModalsReturn {
         setOutputModal({ title: `Skill: ${name}`, content: result.output });
       } catch (err) {
         console.error('Failed to get skill info:', err);
-        setOutputModal({ title: 'Error', content: `Failed to invoke skill: ${err}` });
+        setOutputModal({ title: 'Error', content: `Failed to invoke skill: ${String(err)}` });
       }
     }
   }, []);

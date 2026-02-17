@@ -28,7 +28,7 @@ export function formatToolUse(name: string, input: ToolInput): string {
     case 'create_file':
       return `Create ${shortenPath(input.path || '')}`;
     default:
-      return `${name}`;
+      return name;
   }
 }
 

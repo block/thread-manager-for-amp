@@ -87,6 +87,7 @@ export function formatMessageContent(content: MessageContent): string {
         // Escape triple backticks to prevent markdown code block from closing prematurely
         resultContent = resultContent.replace(/```/g, '\\`\\`\\`');
         const toolId = resultBlock.tool_use_id || (resultBlock as unknown as Record<string, unknown>).toolUseID || '';
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions -- TODO: type-narrow toolId
         return `**Tool Result:** \`${toolId}\`\n\n\`\`\`\n${resultContent}\n\`\`\``;
       }
       // Skip image blocks - they contain large base64 data

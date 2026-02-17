@@ -116,5 +116,6 @@ export async function callAmpInternalAPI<T = unknown>(
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/only-throw-error -- TODO: wrap lastError in a proper Error
   throw lastError;
 }
