@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseMarkdownHistory, type Message } from './parseMarkdown';
 
-const ID_PATTERN = /^msg-\d+$/;
+const ID_PATTERN = /^msg-s\d+-\d+$/;
 
 function at<T>(arr: T[], index: number): T {
   const item = arr[index];
@@ -253,6 +253,21 @@ Answer 2`;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(1);
     expect(at(messages, 0).toolInput?.content).toContain('```');
+  });
+
+  it('produces stable IDs across calls', () => {
+    const md = `# Thread
+
+## User
+
+Hello
+
+## Assistant
+
+Hi there`;
+    const a = parseMarkdownHistory(md);
+    const b = parseMarkdownHistory(md);
+    expect(a.map(m => m.id)).toEqual(b.map(m => m.id));
   });
 
   it('handles section with no content after header', () => {
