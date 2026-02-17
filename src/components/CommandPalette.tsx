@@ -108,7 +108,7 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
       currentCategory = cmd.category;
       groupedCommands.push({ category: cmd.category, items: [] });
     }
-    groupedCommands[groupedCommands.length - 1].items.push(cmd);
+    groupedCommands[groupedCommands.length - 1]?.items.push(cmd);
   }
 
   let globalIndex = 0;

@@ -32,13 +32,14 @@ export async function searchThreads(query: string): Promise<SearchResult[]> {
         const matches: SearchMatch[] = [];
         for (let i = 0; i < messages.length; i++) {
           const msg = messages[i];
+          if (!msg) continue;
           let textContent = '';
           
           if (typeof msg.content === 'string') {
             textContent = msg.content;
           } else if (Array.isArray(msg.content)) {
             textContent = msg.content
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
               .filter((c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text')
               .map((c) => c.text || '')
               .join('\n');
@@ -69,8 +70,8 @@ export async function searchThreads(query: string): Promise<SearchResult[]> {
               tc = firstUser.content;
             } else if (Array.isArray(firstUser.content)) {
               const textBlock = firstUser.content.find(
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
-                (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text'
+               // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+               (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text'
               );
               tc = textBlock?.text || '';
             }

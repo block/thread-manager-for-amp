@@ -159,7 +159,6 @@ export function useTerminalManager({
     if (activeId === threadId) {
       const idx = threads.findIndex(t => t.id === threadId);
       const nextThread = threads[idx + 1] || threads[idx - 1];
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- array index may be out of bounds
       if (nextThread) setSelectedId(nextThread.id);
     }
     onClose(threadId);

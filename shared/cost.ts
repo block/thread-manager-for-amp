@@ -63,7 +63,8 @@ export function estimateTaskCost(promptLength: number): number {
   for (const tier of TASK_COST_TIERS) {
     if (promptLength < tier.maxChars) return tier.cost;
   }
-  return TASK_COST_TIERS[TASK_COST_TIERS.length - 1].cost;
+  const lastTier = TASK_COST_TIERS[TASK_COST_TIERS.length - 1];
+  return lastTier?.cost ?? 0;
 }
 
 // ── Per-turn overhead ────────────────────────────────────────────────────

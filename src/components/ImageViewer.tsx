@@ -10,7 +10,6 @@ interface ImageViewerProps {
 
 export function ImageViewer({ images, currentIndex, onClose, onNavigate }: ImageViewerProps) {
   const current = images[currentIndex];
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for out-of-bounds index
   if (!current) return null;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

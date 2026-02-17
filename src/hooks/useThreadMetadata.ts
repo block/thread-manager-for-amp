@@ -24,7 +24,6 @@ export function useThreadMetadata() {
   }, [fetchAll]);
 
   const getMetadata = useCallback((threadId: string): ThreadMetadata => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- dynamic key lookup may be undefined
     return metadata[threadId] || { thread_id: threadId, status: 'active' };
   }, [metadata]);
 

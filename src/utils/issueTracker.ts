@@ -14,7 +14,7 @@ export function parseIssueUrl(url: string): ParsedIssue | null {
     // Linear: https://linear.app/TEAM/issue/TEAM-123/...
     if (parsed.hostname === 'linear.app') {
       const match = url.match(/\/issue\/([A-Z]+-\d+)/i);
-      if (match) {
+      if (match?.[1]) {
         return {
           type: 'linear',
           id: match[1].toUpperCase(),
@@ -50,7 +50,7 @@ export function parseIssueUrl(url: string): ParsedIssue | null {
     // Jira: https://jira.example.com/browse/PROJ-123
     if (url.includes('/browse/')) {
       const match = url.match(/\/browse\/([A-Z]+-\d+)/i);
-      if (match) {
+      if (match?.[1]) {
         return {
           type: 'jira',
           id: match[1].toUpperCase(),

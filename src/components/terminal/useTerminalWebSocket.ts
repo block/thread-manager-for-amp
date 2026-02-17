@@ -161,7 +161,10 @@ export function useTerminalWebSocket({
                   const lastUserIdx = prev.findLastIndex(m => m.type === 'user');
                   if (lastUserIdx === -1) return prev;
                   const updated = [...prev];
-                  updated[lastUserIdx] = { ...updated[lastUserIdx], interrupted: true };
+                  const existing = updated[lastUserIdx];
+                  if (existing) {
+                    updated[lastUserIdx] = { ...existing, interrupted: true };
+                  }
                   return updated;
                 });
               }

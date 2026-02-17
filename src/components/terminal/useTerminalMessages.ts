@@ -44,7 +44,7 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
         ]);
         
         const totalMatch = markdown.match(/totalMessages:\s*(\d+)/);
-        const totalMessages = totalMatch ? parseInt(totalMatch[1], 10) : 0;
+        const totalMessages = totalMatch?.[1] ? parseInt(totalMatch[1], 10) : 0;
         
         const historyMessages = parseMarkdownHistory(markdown);
         if (historyMessages.length > 0) {
@@ -87,7 +87,7 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
       );
       
       const totalMatch = markdown.match(/totalMessages:\s*(\d+)/);
-      const totalMessages = totalMatch ? parseInt(totalMatch[1], 10) : 0;
+      const totalMessages = totalMatch?.[1] ? parseInt(totalMatch[1], 10) : 0;
       
       const olderMessages = parseMarkdownHistory(markdown);
       if (olderMessages.length > 0) {
@@ -127,7 +127,7 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
         const currentMessages = messagesRef.current;
         const markdown = await apiGetText(`/api/thread-history?threadId=${encodeURIComponent(threadId)}`);
         const totalMatch = markdown.match(/totalMessages:\s*(\d+)/);
-        const totalMessages = totalMatch ? parseInt(totalMatch[1], 10) : 0;
+        const totalMessages = totalMatch?.[1] ? parseInt(totalMatch[1], 10) : 0;
         
         // If there are more messages than we have, reload
         if (totalMessages > currentMessages.length) {

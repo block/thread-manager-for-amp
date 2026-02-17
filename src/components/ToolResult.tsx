@@ -31,7 +31,7 @@ function tryParseJson(content: string): unknown | null {
 
 function extractNestedResult(content: string): string {
   const parsed = tryParseJson(content);
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
   if (parsed && typeof parsed === 'object' && parsed !== null) {
     const obj = parsed as Record<string, unknown>;
     const runResult = obj.run as { result?: unknown } | undefined;
@@ -62,7 +62,7 @@ function isEditFileDiffResult(parsed: unknown): parsed is DiffResult {
 
 function extractDiffContent(diffStr: string): string {
   const match = diffStr.match(/```diff\n([\s\S]*?)```/);
-  return match ? match[1] : diffStr;
+  return match?.[1] ?? diffStr;
 }
 
 function renderDiff(diffContent: string): React.ReactNode {

@@ -15,12 +15,14 @@ export function createLoadingState(title: string, stepLabels: string[]): Loading
 
 export function advanceStep(state: LoadingState): LoadingState {
   const newSteps = [...state.steps];
-  if (state.currentStepIndex < newSteps.length) {
-    newSteps[state.currentStepIndex] = { ...newSteps[state.currentStepIndex], status: 'complete' };
+  const currentStep = newSteps[state.currentStepIndex];
+  if (currentStep) {
+    newSteps[state.currentStepIndex] = { label: currentStep.label, status: 'complete' };
   }
   const nextIndex = state.currentStepIndex + 1;
-  if (nextIndex < newSteps.length) {
-    newSteps[nextIndex] = { ...newSteps[nextIndex], status: 'running' };
+  const nextStep = newSteps[nextIndex];
+  if (nextStep) {
+    newSteps[nextIndex] = { label: nextStep.label, status: 'running' };
   }
   return {
     ...state,
@@ -40,8 +42,9 @@ export function completeAllSteps(state: LoadingState): LoadingState {
 export function setStepError(state: LoadingState, errorIndex?: number): LoadingState {
   const idx = errorIndex ?? state.currentStepIndex;
   const newSteps = [...state.steps];
-  if (idx < newSteps.length) {
-    newSteps[idx] = { ...newSteps[idx], status: 'error' };
+  const step = newSteps[idx];
+  if (step) {
+    newSteps[idx] = { label: step.label, status: 'error' };
   }
   return { ...state, steps: newSteps };
 }

@@ -21,7 +21,7 @@ function formatShortCommand(name: string, input: ToolInput): { text: string; cwd
   switch (lowerName) {
     case 'bash': {
       const cmd = input.cmd || '';
-      const firstLine = cmd.split('\n')[0].trim();
+      const firstLine = (cmd.split('\n')[0] ?? '').trim();
       if (!firstLine) {
         return { text: '(empty command)', cwd: input.cwd ? shortenPath(input.cwd) : undefined };
       }

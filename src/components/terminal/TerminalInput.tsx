@@ -42,7 +42,7 @@ export function TerminalInput({
         const reader = new FileReader();
         reader.onload = () => {
           const dataUrl = reader.result as string;
-          const base64 = dataUrl.split(',')[1];
+          const base64 = dataUrl.split(',')[1] ?? '';
           const mediaType = item.type;
           onPendingImageSet({ data: base64, mediaType });
         };
@@ -87,7 +87,7 @@ export function TerminalInput({
             const reader = new FileReader();
             reader.onload = () => {
               const dataUrl = reader.result as string;
-              const base64 = dataUrl.split(',')[1];
+              const base64 = dataUrl.split(',')[1] ?? '';
               onPendingImageSet({ data: base64, mediaType: imageType });
             };
             reader.readAsDataURL(blob);

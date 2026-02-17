@@ -83,7 +83,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
                 textContent = firstUser.content;
               } else if (Array.isArray(firstUser.content)) {
                 const textBlock = firstUser.content.find(
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
+                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
                   (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text'
                 );
                 textContent = textBlock?.text || '';
@@ -122,7 +122,6 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           const hiddenToolCounts: ToolCostCounts = {};
           const taskPromptLengths: number[] = [];
           
-          /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guards for parsed JSON */
           for (const msg of messages) {
             if (msg.usage) {
               freshInputTokens += msg.usage.inputTokens || 0;
@@ -135,6 +134,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
             }
             if (Array.isArray(msg.content)) {
               for (const block of msg.content) {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
                 if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
                   const toolBlock = block as ToolUseContent;
                   const name = toolBlock.name;
@@ -149,8 +149,6 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
               }
             }
           }
-          /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-          
           const tokenCost = calculateCost({
             inputTokens: freshInputTokens,
             cacheCreationTokens: cacheCreation,
@@ -174,19 +172,21 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           let repo: string | null = null;
           if (repoUrl) {
             const match = repoUrl.match(/[:/]([^/]+\/[^/]+?)(?:\.git)?$/);
-            repo = match ? match[1] : repoUrl;
+            repo = match?.[1] ?? repoUrl;
           }
           
-          /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guards for parsed JSON */
           // Extract handoff relationships
           const relationships = data.relationships || [];
           let handoffParentId: string | null = null;
           let handoffChildId: string | null = null;
           for (const rel of relationships) {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
             if (rel.type === 'handoff') {
+              /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard */
               if (rel.role === 'parent') {
                 handoffParentId = rel.threadID;
               } else if (rel.role === 'child') {
+              /* eslint-enable @typescript-eslint/no-unnecessary-condition */
                 handoffChildId = rel.threadID;
               }
             }
@@ -197,6 +197,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           for (const msg of messages) {
             if (msg.role === 'assistant' && Array.isArray(msg.content)) {
               for (const block of msg.content) {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
                 if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
                   const toolBlock = block as ToolUseContent;
                   if (toolBlock.input?.path) {
@@ -206,8 +207,6 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
               }
             }
           }
-          /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-          
           return {
             id: file.replace('.json', ''),
             title,
@@ -236,8 +235,9 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
     
     const validThreads = threads.filter((t): t is Thread => t !== null);
     
-    const nextCursor = validThreads.length > 0 && hasMore
-      ? validThreads[validThreads.length - 1].id
+    const lastThread = validThreads[validThreads.length - 1];
+    const nextCursor = lastThread && hasMore
+      ? lastThread.id
       : null;
     
     return {
@@ -269,7 +269,7 @@ export async function getThreadChanges(threadId: string): Promise<FileChange[]> 
     for (const msg of messages) {
       if (msg.role === 'assistant' && Array.isArray(msg.content)) {
         for (const block of msg.content) {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
           if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
             const toolBlock = block as ToolUseContent;
             const { name, input } = toolBlock as { name?: string; input?: ToolUseContent['input'] };

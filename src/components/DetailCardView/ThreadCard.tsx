@@ -53,9 +53,7 @@ export function ThreadCard({
   stackAncestors,
 }: ThreadCardProps) {
   const meta = metadata[thread.id];
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- meta may be undefined at runtime
   const status = meta?.status || 'active';
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- meta may be undefined at runtime
   const blockerCount = meta?.blockers?.length || 0;
   const touchedFiles = thread.touchedFiles || [];
   const hasStack = stackSize && stackSize > 1;
@@ -146,7 +144,7 @@ export function ThreadCard({
           </div>
         )}
 
-        {meta?.linked_issue_url && ( // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- meta may be undefined
+        {meta?.linked_issue_url && (
           <div className="detail-card-issue">
             <LinkedIssueBadge url={meta.linked_issue_url} compact />
           </div>
@@ -167,13 +165,13 @@ export function ThreadCard({
             return (
               <div
                 key={ancestor.id}
-                className={`detail-card stack-child status-${ancestorMeta?.status || 'active'}`} // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- metadata lookup may be undefined
+                className={`detail-card stack-child status-${ancestorMeta?.status || 'active'}`}
                 onClick={() => onContinue(ancestor)}
               >
                 <div className="detail-card-header">
                   <ThreadStatusBadge
                     threadId={ancestor.id}
-                    status={ancestorMeta?.status || 'active'} // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- metadata lookup may be undefined
+                    status={ancestorMeta?.status || 'active'}
                     onStatusChange={(s) => onStatusChange?.(ancestor.id, s)}
                     compact
                   />

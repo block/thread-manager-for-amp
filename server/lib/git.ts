@@ -185,10 +185,14 @@ export async function getWorkspaceGitStatus(
       return { error: 'No workspace found', files: [] };
     }
 
-    const workspaceUri = trees[0].uri;
+    const firstTree = trees[0];
+    if (!firstTree) {
+      return { error: 'No workspace found', files: [] };
+    }
+    const workspaceUri = firstTree.uri;
     const rawWorkspacePath = workspaceUri.replace('file://', '');
     const workspacePath = await validateWorkspacePath(rawWorkspacePath);
-    const workspaceName = trees[0].displayName;
+    const workspaceName = firstTree.displayName;
 
     const touchedFiles = new Set<string>();
     const messages = data.messages || [];

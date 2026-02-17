@@ -94,7 +94,6 @@ export const WorkspaceNode = memo(function WorkspaceNode({
                       <ThreadNode
                         key={thread.id}
                         thread={thread}
-                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- metadata lookup may be undefined at runtime
                         status={metadata[thread.id]?.status}
                         isActive={activeThreadId === thread.id}
                         runningStatus={runningThreads?.[thread.id]?.status ?? null}
@@ -117,7 +116,6 @@ export const WorkspaceNode = memo(function WorkspaceNode({
               <ThreadNode
                 key={thread.id}
                 thread={thread}
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- metadata lookup may be undefined at runtime
                 status={metadata[thread.id]?.status}
                 isActive={activeThreadId === thread.id}
                 runningStatus={runningThreads?.[thread.id]?.status ?? null}
@@ -132,14 +130,17 @@ export const WorkspaceNode = memo(function WorkspaceNode({
             ))
           )}
         </div>
-        {group.threads.length > 0 && group.threads[0].workspacePath && (
-          <WorkspaceSourceControl
-            workspacePath={group.threads[0].workspacePath}
-            expanded={scmExpanded}
-            onToggle={() => setScmExpanded(!scmExpanded)}
-            refreshKey={scmRefreshKey}
-          />
-        )}
+        {(() => {
+          const firstThread = group.threads[0];
+          return firstThread?.workspacePath ? (
+            <WorkspaceSourceControl
+              workspacePath={firstThread.workspacePath}
+              expanded={scmExpanded}
+              onToggle={() => setScmExpanded(!scmExpanded)}
+              refreshKey={scmRefreshKey}
+            />
+          ) : null;
+        })()}
       </>
       )}
     </div>

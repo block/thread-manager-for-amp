@@ -23,7 +23,7 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     if (!thread?.relationships) return;
     
     for (const rel of thread.relationships) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
       if (rel.type === 'handoff' && rel.role === 'parent' && !visited.has(rel.threadID)) {
         visited.add(rel.threadID);
         const parentThread = threadMap.get(rel.threadID);
@@ -48,7 +48,7 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     if (!thread?.relationships) return;
     
     for (const rel of thread.relationships) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
       if (rel.type === 'handoff' && rel.role === 'child' && !visited.has(rel.threadID)) {
         visited.add(rel.threadID);
         const childThread = threadMap.get(rel.threadID);

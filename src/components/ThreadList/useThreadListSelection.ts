@@ -26,7 +26,8 @@ export function useThreadListSelection({ threads, paginatedThreads }: UseThreadL
         if (lastIdx !== -1 && currentIdx !== -1) {
           const [start, end] = lastIdx < currentIdx ? [lastIdx, currentIdx] : [currentIdx, lastIdx];
           for (let i = start; i <= end; i++) {
-            next.add(threads[i].id);
+            const t = threads[i];
+            if (t) next.add(t.id);
           }
           return next;
         }

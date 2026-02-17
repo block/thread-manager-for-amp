@@ -22,7 +22,6 @@ export function useRunningThreads(): UseRunningThreadsResult {
         const newKeys = Object.keys(data).sort().join(',');
         if (prevKeys !== newKeys) return data;
         const changed = Object.entries(data).some(([k, v]) => 
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- dynamic key lookup may be undefined
           prev[k]?.status !== v.status
         );
         return changed ? data : prev;
