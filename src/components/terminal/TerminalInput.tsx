@@ -106,7 +106,7 @@ export function TerminalInput({
   return (
     <div className="terminal-input-area">
       {isActive && statusMessage && (
-        <div className="terminal-status-indicator">
+        <div className="terminal-status-indicator" aria-live="polite" role="status">
           <Loader2 size={12} className="spinning" />
           <span className="terminal-status-message">{statusMessage}</span>
           <span className="terminal-status-hint">Esc to cancel</span>

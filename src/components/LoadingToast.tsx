@@ -50,7 +50,7 @@ export function LoadingToast({ state, onComplete }: LoadingToastProps) {
 
   if (state) {
     return (
-      <div className="loading-toast">
+      <div className="loading-toast" aria-live="polite" role="status">
         <LoadingSteps state={state} />
       </div>
     );
@@ -58,7 +58,7 @@ export function LoadingToast({ state, onComplete }: LoadingToastProps) {
 
   if (animationPhase && savedState) {
     return (
-      <div className={`loading-toast ${animationPhase === 'exiting' ? 'exiting' : ''}`}>
+      <div className={`loading-toast ${animationPhase === 'exiting' ? 'exiting' : ''}`} aria-live="polite" role="status">
         <LoadingSteps state={completeAllSteps(savedState)} />
       </div>
     );
