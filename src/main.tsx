@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { UnreadProvider } from './contexts/UnreadContext'
 import { ThreadStatusProvider } from './contexts/ThreadStatusContext'
+import { SettingsProvider } from './contexts/SettingsContext'
 import './index.css'
 import App from './App.tsx'
 
@@ -10,11 +11,13 @@ import App from './App.tsx'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <ThreadStatusProvider>
-        <UnreadProvider>
-          <App />
-        </UnreadProvider>
-      </ThreadStatusProvider>
+      <SettingsProvider>
+        <ThreadStatusProvider>
+          <UnreadProvider>
+            <App />
+          </UnreadProvider>
+        </ThreadStatusProvider>
+      </SettingsProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

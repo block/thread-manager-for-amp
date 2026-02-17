@@ -5,6 +5,7 @@ import { ToolbarSearch } from './ToolbarSearch';
 import { ToolbarContentSearch } from './ToolbarContentSearch';
 import { ToolbarFilters } from './ToolbarFilters';
 import { ToolbarViewSwitcher } from './ToolbarViewSwitcher';
+import { useSettingsContext } from '../../contexts/SettingsContext';
 import type { ToolbarProps } from './types';
 import styles from './Toolbar.module.css';
 
@@ -26,13 +27,8 @@ export const Toolbar = memo(function Toolbar({
   onWorkspaceChange,
   onLabelChange,
   onStatusChange,
-  viewMode,
-  onViewModeChange,
-  groupByDate,
-  onGroupByDateChange,
-  currentTheme,
-  onThemeChange,
 }: ToolbarProps) {
+  const { viewMode, handleViewModeChange, groupByDate, handleGroupByDateChange, currentTheme, setCurrentTheme } = useSettingsContext();
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -87,7 +83,7 @@ export const Toolbar = memo(function Toolbar({
         </div>
 
         <div className={styles.headerRight}>
-          <ThemePicker currentTheme={currentTheme} onThemeChange={onThemeChange} />
+          <ThemePicker currentTheme={currentTheme} onThemeChange={setCurrentTheme} />
           
           <button
             onClick={onRefresh}
@@ -122,9 +118,9 @@ export const Toolbar = memo(function Toolbar({
         />
         <ToolbarViewSwitcher
           viewMode={viewMode}
-          onViewModeChange={onViewModeChange}
+          onViewModeChange={handleViewModeChange}
           groupByDate={groupByDate}
-          onGroupByDateChange={onGroupByDateChange}
+          onGroupByDateChange={handleGroupByDateChange}
         />
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { useAppSettings } from '../hooks/useAppSettings';
-import type { ViewMode } from '../components/Toolbar';
+import type { ViewMode } from '../types';
 
 type TerminalLayout = 'tabs' | 'split' | 'grid';
 

@@ -5,8 +5,6 @@ export const PINNED_THREADS_KEY = 'amp-thread-manager-pinned-threads';
 export interface SidebarProps {
   threads: Thread[];
   metadata: Record<string, ThreadMetadata>;
-  collapsed: boolean;
-  onToggleCollapse: () => void;
   onSelectThread: (thread: Thread) => void;
   activeThreadId?: string;
   runningThreads?: RunningThreadsMap;
@@ -15,7 +13,6 @@ export interface SidebarProps {
   onDeleteThread?: (threadId: string) => void;
   onCopyThreadId?: (threadId: string) => void;
   onCopyThreadUrl?: (threadId: string) => void;
-  scmRefreshKey?: number;
   onOpenTerminal?: () => void;
   terminalMinimized?: boolean;
 }

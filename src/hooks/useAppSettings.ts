@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { ViewMode } from '../components/Toolbar';
+import type { ViewMode } from '../types';
 import {
   applyTheme,
   loadSavedTheme,

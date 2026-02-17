@@ -1,6 +1,6 @@
-import type { Thread, ThreadStatus, SearchResult } from '../../types';
+import type { Thread, ThreadStatus, SearchResult, ViewMode } from '../../types';
 
-export type ViewMode = 'table' | 'kanban' | 'cards';
+export type { ViewMode };
 
 export const STATUS_OPTIONS: { value: ThreadStatus; label: string }[] = [
   { value: 'active', label: 'Active' },
@@ -33,12 +33,6 @@ export interface ToolbarProps {
   onWorkspaceChange: (workspace: string | null) => void;
   onLabelChange: (label: string | null) => void;
   onStatusChange: (status: ThreadStatus | null) => void;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
-  groupByDate: boolean;
-  onGroupByDateChange: (value: boolean) => void;
-  currentTheme: string;
-  onThemeChange: (themeName: string) => void;
 }
 
 export interface ToolbarSearchProps {

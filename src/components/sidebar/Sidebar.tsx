@@ -5,13 +5,12 @@ import { PinnedSection } from './PinnedSection';
 import { WorkspaceNode } from './WorkspaceNode';
 import { SidebarContextMenu } from './SidebarContextMenu';
 import { useSidebarState } from './useSidebarState';
+import { useSettingsContext } from '../../contexts/SettingsContext';
 import type { SidebarProps } from './types';
 
 export const Sidebar = memo(function Sidebar({
   threads,
   metadata,
-  collapsed,
-  onToggleCollapse,
   onSelectThread,
   activeThreadId,
   runningThreads = {},
@@ -20,10 +19,10 @@ export const Sidebar = memo(function Sidebar({
   onDeleteThread,
   onCopyThreadId,
   onCopyThreadUrl,
-  scmRefreshKey,
   onOpenTerminal,
   terminalMinimized,
 }: SidebarProps) {
+  const { sidebarCollapsed: collapsed, handleToggleSidebar: onToggleCollapse, scmRefreshKey } = useSettingsContext();
   const {
     expandedWorkspaces,
     searchQuery,

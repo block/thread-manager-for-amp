@@ -1,17 +1,16 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Terminal } from '../Terminal';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { X, Columns, Grid2X2, Maximize, Square, Minus, ChevronUp, GripHorizontal } from 'lucide-react';
 import { TerminalTabs } from './TerminalTabs';
-import { useTerminalManager, type LayoutMode } from './useTerminalManager';
+import { useTerminalManager } from './useTerminalManager';
+import { useSettingsContext } from '../../contexts/SettingsContext';
 import type { Thread } from '../../types';
 
 interface TerminalManagerProps {
   threads: Thread[];
   onClose: (threadId: string) => void;
   onCloseAll: () => void;
-  layout?: LayoutMode;
-  onLayoutChange?: (layout: LayoutMode) => void;
   onActiveChange?: (threadId: string) => void;
   onHandoff?: (threadId: string) => void;
   onNewThread?: () => void;
@@ -23,17 +22,13 @@ export const TerminalManager = memo(function TerminalManager({
   threads, 
   onClose, 
   onCloseAll,
-  layout: externalLayout,
-  onLayoutChange,
   onActiveChange,
   onHandoff,
   onNewThread,
   onOpenThread,
   focusThreadId,
 }: TerminalManagerProps) {
-  const [internalLayout, setInternalLayout] = useState<LayoutMode>('tabs');
-  const layout = externalLayout ?? internalLayout;
-  const setLayout = onLayoutChange ?? setInternalLayout;
+  const { terminalLayout: layout, setTerminalLayout: setLayout } = useSettingsContext();
 
   const {
     activeId,
