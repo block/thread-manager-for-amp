@@ -26,9 +26,10 @@ Open http://localhost:5173
 1. Fork and clone the repository
 2. Create a feature branch: `git checkout -b my-feature`
 3. Make your changes
-4. Run checks: `pnpm check` (lint + typecheck + build)
-5. Commit with a descriptive message
-6. Open a pull request
+4. Run tests: `pnpm test`
+5. Run checks: `pnpm check` (lint + typecheck + build)
+6. Commit with a descriptive message
+7. Open a pull request
 
 ## Project Structure
 
@@ -43,14 +44,17 @@ Open http://localhost:5173
 - React: functional components with hooks
 - No Express — the server uses Node's built-in `http` module
 - Server route handlers return `true` if handled, `false` to pass to the next handler
+- All modals use `BaseModal` wrapper (`role="dialog"`, focus trap, ESC-to-close)
+- All inputs require `aria-label` or associated `<label>`
+- Shared utilities (`stripAnsi`, `generateId`, `calculateCost`) live in `shared/`
+- Tests are co-located (`*.test.ts` next to source files)
 
 ## Adding Features
 
-See the [README](README.md) for common workflows:
-- Adding a new API endpoint
-- Adding a new modal
-- Adding a new command
-- Adding a new theme
+- **New API endpoint**: Add route handler in `server/routes/`, return `true` if handled
+- **New modal**: Use `BaseModal` wrapper, add `aria-label` to inputs
+- **New shared utility**: Add to `shared/` with a co-located test file
+- **New context**: Add provider in `src/contexts/`, mount in `src/main.tsx`
 
 ## Reporting Issues
 

@@ -77,6 +77,12 @@ When working with multiple Amp threads simultaneously — across repos, features
 │  └── lib/            # Theme system, utilities           │
 └─────────────────────────────────────────────────────────┘
                            │
+┌─────────────────────────────────────────────────────────┐
+│               Shared (shared/)                           │
+│  types.ts, websocket.ts, validation.ts, cost.ts,         │
+│  utils.ts, constants.ts                                  │
+└─────────────────────────────────────────────────────────┘
+                           │
                     HTTP + WebSocket
                            │
 ┌─────────────────────────────────────────────────────────┐
@@ -91,7 +97,10 @@ When working with multiple Amp threads simultaneously — across repos, features
 │  │   ├── skills.ts   # Amp skills + MCP management       │
 │  │   └── artifacts.ts # Notes + image storage            │
 │  └── lib/            # Core logic                        │
-│      ├── threads.ts  # Thread file parsing               │
+│      ├── threadCrud.ts    # Thread CRUD operations        │
+│      ├── threadSearch.ts  # Search + related threads      │
+│      ├── threadExport.ts  # Markdown + image export       │
+│      ├── threadChain.ts   # Handoff chains                │
 │      ├── database.ts # SQLite for local metadata         │
 │      ├── amp-api.ts  # Amp internal API client           │
 │      ├── git.ts      # Git operations                    │
@@ -139,6 +148,8 @@ When working with multiple Amp threads simultaneously — across repos, features
 | `pnpm check` | Lint + typecheck + build |
 | `pnpm lint` | ESLint |
 | `pnpm typecheck` | TypeScript type check |
+| `pnpm test` | Run tests (Vitest) |
+| `pnpm test:watch` | Run tests in watch mode |
 
 ## Configuration
 
@@ -178,7 +189,8 @@ Set a different port: `PORT=3002 pnpm dev`
 - **Database**: SQLite via better-sqlite3
 - **WebSocket**: `ws` for real-time agent streaming
 - **Terminal**: xterm.js + node-pty for shell sessions
-- **Styling**: CSS modules + CSS custom properties (no UI framework)
+- **Testing**: Vitest, Testing Library
+- **Styling**: CSS custom properties (no UI framework)
 
 ## License
 
