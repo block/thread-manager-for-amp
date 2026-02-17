@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, memo, lazy, Suspense } from 'react';
 import { ChevronDown, ChevronRight, Check, Loader2, XCircle, Ban } from 'lucide-react';
 import { getToolIcon, getToolLabel, shortenPath, type ToolInput } from '../utils/format';
 
@@ -175,7 +175,7 @@ function getStatusClass(status: ToolStatus): string {
   }
 }
 
-export function ToolBlock({ toolName, toolInput = {}, onRef, highlighted, status, result }: ToolBlockProps) {
+export const ToolBlock = memo(function ToolBlock({ toolName, toolInput = {}, onRef, highlighted, status, result }: ToolBlockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
   const shortCmdResult = formatShortCommand(toolName, toolInput);
@@ -259,4 +259,4 @@ export function ToolBlock({ toolName, toolInput = {}, onRef, highlighted, status
       )}
     </div>
   );
-}
+});

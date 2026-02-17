@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useId, useMemo } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { MarkdownContent } from './MarkdownContent';
 
@@ -94,52 +94,47 @@ function renderDiff(diffContent: string): React.ReactNode {
   );
 }
 
-let jsonKeyCounter = 0;
-function getJsonKey(prefix: string): string {
-  return `${prefix}-${++jsonKeyCounter}`;
-}
-
-function highlightJson(json: unknown, indent = 0): React.ReactNode[] {
+function highlightJson(json: unknown, keyGen: () => string, indent = 0): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   const spaces = '  '.repeat(indent);
   
   if (json === null) {
-    nodes.push(<span key={getJsonKey('null')} className="json-null">null</span>);
+    nodes.push(<span key={keyGen()} className="json-null">null</span>);
   } else if (typeof json === 'boolean') {
-    nodes.push(<span key={getJsonKey('bool')} className="json-boolean">{json.toString()}</span>);
+    nodes.push(<span key={keyGen()} className="json-boolean">{json.toString()}</span>);
   } else if (typeof json === 'number') {
-    nodes.push(<span key={getJsonKey('num')} className="json-number">{json}</span>);
+    nodes.push(<span key={keyGen()} className="json-number">{json}</span>);
   } else if (typeof json === 'string') {
     const escaped = json.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    nodes.push(<span key={getJsonKey('str')} className="json-string">"{escaped}"</span>);
+    nodes.push(<span key={keyGen()} className="json-string">"{escaped}"</span>);
   } else if (Array.isArray(json)) {
     if (json.length === 0) {
-      nodes.push(<span key={getJsonKey('empty-arr')} className="json-bracket">[]</span>);
+      nodes.push(<span key={keyGen()} className="json-bracket">[]</span>);
     } else {
-      nodes.push(<span key={getJsonKey('open-arr')} className="json-bracket">[</span>, '\n');
+      nodes.push(<span key={keyGen()} className="json-bracket">[</span>, '\n');
       json.forEach((item, i) => {
         nodes.push(spaces + '  ');
-        nodes.push(...highlightJson(item, indent + 1));
-        if (i < json.length - 1) nodes.push(<span key={getJsonKey('comma')} className="json-punctuation">,</span>);
+        nodes.push(...highlightJson(item, keyGen, indent + 1));
+        if (i < json.length - 1) nodes.push(<span key={keyGen()} className="json-punctuation">,</span>);
         nodes.push('\n');
       });
-      nodes.push(spaces, <span key={getJsonKey('close-arr')} className="json-bracket">]</span>);
+      nodes.push(spaces, <span key={keyGen()} className="json-bracket">]</span>);
     }
   } else if (typeof json === 'object') {
     const entries = Object.entries(json as Record<string, unknown>);
     if (entries.length === 0) {
-      nodes.push(<span key={getJsonKey('empty-obj')} className="json-bracket">{'{}'}</span>);
+      nodes.push(<span key={keyGen()} className="json-bracket">{'{}'}</span>);
     } else {
-      nodes.push(<span key={getJsonKey('open-obj')} className="json-bracket">{'{'}</span>, '\n');
+      nodes.push(<span key={keyGen()} className="json-bracket">{'{'}</span>, '\n');
       entries.forEach(([key, value], i) => {
         nodes.push(spaces + '  ');
-        nodes.push(<span key={getJsonKey(`key-${key}`)} className="json-key">"{key}"</span>);
-        nodes.push(<span key={getJsonKey(`colon-${key}`)} className="json-punctuation">: </span>);
-        nodes.push(...highlightJson(value, indent + 1));
-        if (i < entries.length - 1) nodes.push(<span key={getJsonKey('comma')} className="json-punctuation">,</span>);
+        nodes.push(<span key={keyGen()} className="json-key">"{key}"</span>);
+        nodes.push(<span key={keyGen()} className="json-punctuation">: </span>);
+        nodes.push(...highlightJson(value, keyGen, indent + 1));
+        if (i < entries.length - 1) nodes.push(<span key={keyGen()} className="json-punctuation">,</span>);
         nodes.push('\n');
       });
-      nodes.push(spaces, <span key={getJsonKey('close-obj')} className="json-bracket">{'}'}</span>);
+      nodes.push(spaces, <span key={keyGen()} className="json-bracket">{'}'}</span>);
     }
   }
   return nodes;
@@ -147,6 +142,7 @@ function highlightJson(json: unknown, indent = 0): React.ReactNode[] {
 
 export function ToolResult({ content, success, onRef }: ToolResultProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const instanceId = useId();
   
   const extractedContent = useMemo(() => extractNestedResult(content), [content]);
   
@@ -177,10 +173,12 @@ export function ToolResult({ content, success, onRef }: ToolResultProps) {
       return renderDiff(diffContent);
     }
     if (contentType.type === 'json') {
-      return <pre className="json-highlighted">{highlightJson(contentType.parsed)}</pre>;
+      let counter = 0;
+      const keyGen = () => `${instanceId}-${++counter}`;
+      return <pre className="json-highlighted">{highlightJson(contentType.parsed, keyGen)}</pre>;
     }
     return null;
-  }, [contentType]);
+  }, [contentType, instanceId]);
 
   if (!extractedContent.trim()) {
     return null;

@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useMemo, useState } from 'react';
 import { Minimap, type MinimapItem } from '../Minimap';
 import { ThreadDiscovery } from '../ThreadDiscovery';
 import { MessageSearchModal } from '../MessageSearchModal';
@@ -126,7 +126,7 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [embedded, openSearch, containerRef]);
 
-  const minimapItems: MinimapItem[] = messages
+  const minimapItems: MinimapItem[] = useMemo(() => messages
     .filter(msg => msg.type !== 'tool_result')
     .map((msg) => {
       let label = msg.type === 'user' ? 'User:' : 'Assistant:';
@@ -147,7 +147,7 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
         type = 'error';
       }
       return { id: msg.id, type, label, preview: preview + (msg.content.length > 30 ? '…' : ''), toolName: msg.toolName };
-    });
+    }), [messages]);
 
   const showContextWarning = checkContextWarning(messages);
 
