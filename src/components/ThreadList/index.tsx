@@ -32,6 +32,7 @@ export type { ViewMode } from '../Toolbar';
 export const ThreadList = memo(function ThreadList({ 
   threads, 
   metadata,
+  threadLabels,
   sortField, 
   sortDirection, 
   onSort, 
@@ -50,6 +51,16 @@ export const ThreadList = memo(function ThreadList({
   const [bulkAction, setBulkAction] = useState<BulkAction | null>(null);
   const [requestedPage, setRequestedPage] = useState(1);
   const [expandedStacks, setExpandedStacks] = useState<Set<string>>(new Set());
+
+  // Pre-compute label objects per thread to pass as stable initialLabels
+  const threadLabelObjects = useMemo(() => {
+    if (!threadLabels) return undefined;
+    const map: Record<string, { name: string }[]> = {};
+    for (const [id, names] of Object.entries(threadLabels)) {
+      map[id] = names.map(name => ({ name }));
+    }
+    return map;
+  }, [threadLabels]);
 
   // Build thread stacks from handoff relationships
   const entries = useMemo(() => buildThreadStacks(threads), [threads]);
@@ -193,6 +204,7 @@ export const ThreadList = memo(function ThreadList({
                     <ThreadRow
                       thread={entry.thread}
                       metadata={metadata[entry.thread.id]}
+                      initialLabels={threadLabelObjects?.[entry.thread.id]}
                       selected={selectedIds.has(entry.thread.id)}
                       focused={focusedThreadId === entry.thread.id}
                       onContinue={onContinue}
@@ -210,6 +222,7 @@ export const ThreadList = memo(function ThreadList({
                           key={ancestor.id}
                           thread={ancestor}
                           metadata={metadata[ancestor.id]}
+                          initialLabels={threadLabelObjects?.[ancestor.id]}
                           selected={selectedIds.has(ancestor.id)}
                           focused={focusedThreadId === ancestor.id}
                           onContinue={onContinue}

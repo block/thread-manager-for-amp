@@ -44,6 +44,48 @@ export async function handleMetadataRoutes(
     const running = getRunningThreads();
     return jsonResponse(res, running);
   }
+  // GET /api/thread-labels-batch?threadIds=id1,id2,... - Get Amp labels for multiple threads
+  if (url.pathname === '/api/thread-labels-batch' && req.method === 'GET') {
+    const threadIdsParam = url.searchParams.get('threadIds');
+    if (!threadIdsParam) {
+      return jsonResponse(res, { error: 'threadIds required' }, 400);
+    }
+
+    const threadIds = threadIdsParam.split(',').map(id => decodeURIComponent(id)).filter(Boolean);
+    if (threadIds.length === 0) {
+      return jsonResponse(res, {});
+    }
+
+    // Cap at 100 to prevent abuse
+    const capped = threadIds.slice(0, 100);
+    const results: Record<string, { name: string }[]> = {};
+
+    // Fetch all in parallel server-side (single HTTP call from client)
+    const settled = await Promise.allSettled(
+      capped.map(async (threadId) => {
+        try {
+          const labels = await callAmpInternalAPI<{ name: string }[]>('getThreadLabels', { thread: threadId });
+          return { threadId, labels };
+        } catch (err) {
+          const error = err as Error;
+          if (error.message?.includes('Permission denied')) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+            return { threadId, labels: [] as { name: string }[] };
+          }
+          throw err;
+        }
+      })
+    );
+
+    for (const result of settled) {
+      if (result.status === 'fulfilled') {
+        results[result.value.threadId] = result.value.labels;
+      }
+      // Silently skip rejected — individual thread failures shouldn't break the batch
+    }
+
+    return jsonResponse(res, results);
+  }
+
   // GET /api/thread-labels?threadId=xxx - Get Amp labels for a thread
   if (url.pathname === '/api/thread-labels' && req.method === 'GET') {
     const threadId = url.searchParams.get('threadId');

@@ -8,6 +8,7 @@ import type { ThreadRowProps } from './types';
 export const ThreadRow = memo(function ThreadRow({
   thread,
   metadata,
+  initialLabels,
   selected,
   focused,
   onContinue,
@@ -85,6 +86,7 @@ export const ThreadRow = memo(function ThreadRow({
       <td className="thread-labels" onClick={(e) => e.stopPropagation()}>
         <ThreadLabelEditor
           threadId={thread.id}
+          initialLabels={initialLabels}
           compact
         />
       </td>

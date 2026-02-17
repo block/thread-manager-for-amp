@@ -6,6 +6,7 @@ export type BulkAction = 'archive' | 'delete';
 export interface ThreadListProps {
   threads: Thread[];
   metadata: Record<string, ThreadMetadata>;
+  threadLabels?: Record<string, string[]>;
   sortField: SortField;
   sortDirection: SortDirection;
   onSort: (field: SortField) => void;
@@ -23,6 +24,7 @@ export interface ThreadListProps {
 export interface ThreadRowProps {
   thread: Thread;
   metadata: ThreadMetadata | undefined;
+  initialLabels?: { name: string }[];
   selected: boolean;
   focused: boolean;
   onContinue: (thread: Thread) => void;
