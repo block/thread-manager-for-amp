@@ -82,6 +82,8 @@ export const SearchableSelect = memo(function SearchableSelect({
         className={`searchable-select-trigger ${open ? 'open' : ''} ${value ? 'has-value' : ''}`}
         onClick={() => setOpen(!open)}
         type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
       >
         {icon && <span className="searchable-select-icon">{icon}</span>}
         <span className="searchable-select-label">{displayLabel}</span>
