@@ -26,3 +26,4 @@ dist-ssr
 **/.agents/knowledge/
 thoughts/
 .server-port
+.hermit/
