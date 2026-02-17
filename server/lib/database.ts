@@ -76,8 +76,18 @@ function createDatabase(dbPath: string): DatabaseType {
   return instance;
 }
 
-// Initialize with default path
-let db: DatabaseType = createDatabase(DEFAULT_DB_PATH);
+// Lazy initialization — deferred until first use or explicit initDatabase() call
+let db: DatabaseType | null = null;
+
+function getDb(): DatabaseType {
+  if (!db) {
+    db = createDatabase(DEFAULT_DB_PATH);
+    statements = prepareStatements(db);
+    deleteStmts = prepareDeleteStatements(db);
+    console.warn(`📦 Database initialized at ${DEFAULT_DB_PATH}`);
+  }
+  return db;
+}
 
 // Database row types
 interface ThreadMetadataRow {
@@ -243,7 +253,14 @@ function prepareStatements(instance: DatabaseType): Statements {
   };
 }
 
-let statements: Statements = prepareStatements(db);
+let statements: Statements | null = null;
+
+function getStatements(): Statements {
+  if (!statements) {
+    statements = prepareStatements(getDb());
+  }
+  return statements;
+}
 
 // Extended metadata type with blockers array
 interface ThreadMetadataWithBlockers extends ThreadMetadataRow {
@@ -253,7 +270,8 @@ interface ThreadMetadataWithBlockers extends ThreadMetadataRow {
 
 // API functions
 export function getThreadMetadata(threadId: string): ThreadMetadataWithBlockers {
-  const metadata = statements.getMetadata.get(threadId);
+  const stmts = getStatements();
+  const metadata = stmts.getMetadata.get(threadId);
   if (!metadata) {
     return { 
       thread_id: threadId, 
@@ -266,7 +284,7 @@ export function getThreadMetadata(threadId: string): ThreadMetadataWithBlockers 
   }
   
   // Get blockers
-  const blockers = statements.getBlockers.all(threadId);
+  const blockers = stmts.getBlockers.all(threadId);
   const result: ThreadMetadataWithBlockers = {
     ...metadata,
     blockers: blockers.map((b) => ({
@@ -280,15 +298,16 @@ export function getThreadMetadata(threadId: string): ThreadMetadataWithBlockers 
 }
 
 export function getAllThreadMetadata(): Record<string, ThreadMetadataWithBlockers> {
-  const all = statements.getAllMetadata.all();
+  const stmts = getStatements();
+  const all = stmts.getAllMetadata.all();
   const blockedSet = new Set(
-    statements.getBlockedThreads.all().map((r) => r.thread_id)
+    stmts.getBlockedThreads.all().map((r) => r.thread_id)
   );
   
   // Create a map for quick lookup
   const metadataMap: Record<string, ThreadMetadataWithBlockers> = {};
   for (const m of all) {
-    const blockers = statements.getBlockers.all(m.thread_id);
+    const blockers = stmts.getBlockers.all(m.thread_id);
     metadataMap[m.thread_id] = {
       ...m,
       blockers: blockers.map((b) => ({
@@ -307,13 +326,14 @@ export function updateThreadStatus(
   threadId: string,
   status: ThreadStatus
 ): ThreadMetadataWithBlockers {
-  statements.updateStatus.run({ thread_id: threadId, status });
+  const stmts = getStatements();
+  stmts.updateStatus.run({ thread_id: threadId, status });
   
   // If marking as done, auto-unblock threads blocked by this one
   if (status === 'done') {
-    const blocking = statements.getBlocking.all(threadId);
+    const blocking = stmts.getBlocking.all(threadId);
     for (const block of blocking) {
-      statements.removeBlock.run({
+      stmts.removeBlock.run({
         thread_id: block.thread_id,
         blocked_by_thread_id: threadId,
       });
@@ -328,16 +348,17 @@ export function addThreadBlock(
   blockedByThreadId: string,
   reason: string | null = null
 ): ThreadMetadataWithBlockers {
-  statements.addBlock.run({
+  const stmts = getStatements();
+  stmts.addBlock.run({
     thread_id: threadId,
     blocked_by_thread_id: blockedByThreadId,
     reason,
   });
   
   // Auto-set status to blocked if not already
-  const metadata = statements.getMetadata.get(threadId);
+  const metadata = stmts.getMetadata.get(threadId);
   if (!metadata || metadata.status !== 'blocked') {
-    statements.updateStatus.run({ thread_id: threadId, status: 'blocked' });
+    stmts.updateStatus.run({ thread_id: threadId, status: 'blocked' });
   }
   
   return getThreadMetadata(threadId);
@@ -347,17 +368,18 @@ export function removeThreadBlock(
   threadId: string,
   blockedByThreadId: string
 ): ThreadMetadataWithBlockers {
-  statements.removeBlock.run({
+  const stmts = getStatements();
+  stmts.removeBlock.run({
     thread_id: threadId,
     blocked_by_thread_id: blockedByThreadId,
   });
   
   // Check if still blocked by other threads
-  const remainingBlockers = statements.getBlockers.all(threadId);
+  const remainingBlockers = stmts.getBlockers.all(threadId);
   if (remainingBlockers.length === 0) {
-    const metadata = statements.getMetadata.get(threadId);
+    const metadata = stmts.getMetadata.get(threadId);
     if (metadata && metadata.status === 'blocked') {
-      statements.updateStatus.run({ thread_id: threadId, status: 'active' });
+      stmts.updateStatus.run({ thread_id: threadId, status: 'active' });
     }
   }
   
@@ -365,14 +387,14 @@ export function removeThreadBlock(
 }
 
 export function getThreadsBlockedBy(threadId: string): ThreadBlockRow[] {
-  return statements.getBlocking.all(threadId);
+  return getStatements().getBlocking.all(threadId);
 }
 
 export function updateLinkedIssue(
   threadId: string,
   url: string | null
 ): ThreadMetadataWithBlockers {
-  statements.updateLinkedIssue.run({
+  getStatements().updateLinkedIssue.run({
     thread_id: threadId,
     linked_issue_url: url || null,
   });
@@ -381,11 +403,11 @@ export function updateLinkedIssue(
 
 // Artifact functions
 export function getArtifacts(threadId: string): Artifact[] {
-  return statements.getArtifacts.all(threadId);
+  return getStatements().getArtifacts.all(threadId);
 }
 
 export function getArtifact(id: number): Artifact | undefined {
-  return statements.getArtifact.get(id);
+  return getStatements().getArtifact.get(id);
 }
 
 interface CreateArtifactParams {
@@ -405,7 +427,7 @@ export function createArtifact({
   filePath = null,
   mediaType = null,
 }: CreateArtifactParams): Artifact {
-  const result = statements.createArtifact.run({
+  const result = getStatements().createArtifact.run({
     thread_id: threadId,
     type,
     title,
@@ -429,13 +451,13 @@ export function updateArtifact(
   id: number,
   { title, content }: UpdateArtifactParams
 ): Artifact | undefined {
-  statements.updateArtifact.run({ id, title: title ?? null, content: content ?? null });
+  getStatements().updateArtifact.run({ id, title: title ?? null, content: content ?? null });
   return getArtifact(id);
 }
 
 export function deleteArtifact(id: number): Artifact | undefined {
   const artifact = getArtifact(id);
-  statements.deleteArtifact.run(id);
+  getStatements().deleteArtifact.run(id);
   return artifact;
 }
 
@@ -454,7 +476,14 @@ function prepareDeleteStatements(instance: DatabaseType): DeleteStatements {
   };
 }
 
-let deleteStmts: DeleteStatements = prepareDeleteStatements(db);
+let deleteStmts: DeleteStatements | null = null;
+
+function getDeleteStmts(): DeleteStatements {
+  if (!deleteStmts) {
+    deleteStmts = prepareDeleteStatements(getDb());
+  }
+  return deleteStmts;
+}
 
 interface DeleteThreadDataResult {
   artifacts: Artifact[];
@@ -465,9 +494,10 @@ export function deleteThreadData(threadId: string): DeleteThreadDataResult {
   const artifacts = getArtifacts(threadId);
   
   // Delete all related records
-  deleteStmts.artifacts.run(threadId);
-  deleteStmts.blocks.run(threadId, threadId);
-  deleteStmts.metadata.run(threadId);
+  const delStmts = getDeleteStmts();
+  delStmts.artifacts.run(threadId);
+  delStmts.blocks.run(threadId, threadId);
+  delStmts.metadata.run(threadId);
   
   return { artifacts };
 }
@@ -477,7 +507,3 @@ export function initDatabase(dbPath: string): void {
   statements = prepareStatements(db);
   deleteStmts = prepareDeleteStatements(db);
 }
-
-console.warn(`📦 Database initialized at ${DEFAULT_DB_PATH}`);
-
-export default db;
