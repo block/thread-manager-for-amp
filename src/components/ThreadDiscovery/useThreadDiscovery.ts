@@ -193,31 +193,37 @@ export function useThreadDiscovery({
   onOpenThreadRef.current = onOpenThread;
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
     setLoading(true);
     const tid = threadId;
 
-    const p1 = apiGet<FileChange[]>(`/api/thread-changes?threadId=${encodeURIComponent(tid)}`)
-      .catch((e: unknown) => { console.debug('thread-changes:', e instanceof Error ? e.message : String(e)); return [] as FileChange[]; })
-      .then((data) => { if (!cancelled) {
+    const suppress = (e: unknown) => {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      console.debug(e instanceof Error ? e.message : String(e));
+    };
+
+    const p1 = apiGet<FileChange[]>(`/api/thread-changes?threadId=${encodeURIComponent(tid)}`, signal)
+      .catch((e: unknown) => { suppress(e); return [] as FileChange[]; })
+      .then((data) => { if (!signal.aborted) {
         setChanges(data);
         setSummary(prev => ({ ...prev, fileCount: data.length, editCount: data.reduce((sum, c) => sum + c.editCount, 0) }));
       }});
 
-    const p2 = apiGet<ThreadGitActivity>(`/api/thread-git-activity?threadId=${encodeURIComponent(tid)}`)
-      .catch((e: unknown) => { console.debug('thread-git-activity:', e instanceof Error ? e.message : String(e)); return null; })
+    const p2 = apiGet<ThreadGitActivity>(`/api/thread-git-activity?threadId=${encodeURIComponent(tid)}`, signal)
+      .catch((e: unknown) => { suppress(e); return null; })
       /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
-      .then((data) => { if (!cancelled) {
+      .then((data) => { if (!signal.aborted) {
         setGitActivity(data);
         const workspace = data?.workspaces?.[0];
         setSummary(prev => ({ ...prev, commitCount: workspace?.commits?.filter(c => c.confidence === 'high').length || 0, prCount: workspace?.prs?.length || 0 }));
       }});
       /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
-    const p3 = apiGet<ThreadChainType>(`/api/thread-chain?threadId=${encodeURIComponent(tid)}`)
-      .catch((e: unknown) => { console.debug('thread-chain:', e instanceof Error ? e.message : String(e)); return null; })
+    const p3 = apiGet<ThreadChainType>(`/api/thread-chain?threadId=${encodeURIComponent(tid)}`, signal)
+      .catch((e: unknown) => { suppress(e); return null; })
       /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
-      .then((data) => { if (!cancelled) {
+      .then((data) => { if (!signal.aborted) {
         setChain(data);
         const chainCount = data ? (data.ancestors?.length || 0) + (data.descendants?.length || 0) : 0;
         setSummary(prev => ({ ...prev, chainCount }));
@@ -225,33 +231,33 @@ export function useThreadDiscovery({
       /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
     const p4 = (onOpenThreadRef.current
-      ? apiGet<RelatedThread[]>(`/api/related-threads?threadId=${encodeURIComponent(tid)}`).catch((e: unknown) => { console.debug('related-threads:', e instanceof Error ? e.message : String(e)); return [] as RelatedThread[]; })
+      ? apiGet<RelatedThread[]>(`/api/related-threads?threadId=${encodeURIComponent(tid)}`, signal).catch((e: unknown) => { suppress(e); return [] as RelatedThread[]; })
       : Promise.resolve([] as RelatedThread[])
-    ).then((data) => { if (!cancelled) {
+    ).then((data) => { if (!signal.aborted) {
       setRelated(data);
       setSummary(prev => ({ ...prev, relatedCount: data.length }));
     }});
 
-    const p5 = apiGet<GitStatus>(`/api/git-status?threadId=${encodeURIComponent(tid)}`)
-      .catch((e: unknown) => { console.debug('git-status:', e instanceof Error ? e.message : String(e)); return null; })
+    const p5 = apiGet<GitStatus>(`/api/git-status?threadId=${encodeURIComponent(tid)}`, signal)
+      .catch((e: unknown) => { suppress(e); return null; })
       /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
-      .then((data) => { if (!cancelled) {
+      .then((data) => { if (!signal.aborted) {
         const threadUncommitted = data?.files?.filter(f => f.touchedByThread).length || 0;
         setUncommittedCount(threadUncommitted);
       }});
       /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
-    const p6 = apiGet<ThreadImage[]>(`/api/thread-images?threadId=${encodeURIComponent(tid)}`)
-      .catch((e: unknown) => { console.debug('thread-images:', e instanceof Error ? e.message : String(e)); return [] as ThreadImage[]; })
-      .then((data) => { if (!cancelled) { setImages(data); }});
+    const p6 = apiGet<ThreadImage[]>(`/api/thread-images?threadId=${encodeURIComponent(tid)}`, signal)
+      .catch((e: unknown) => { suppress(e); return [] as ThreadImage[]; })
+      .then((data) => { if (!signal.aborted) { setImages(data); }});
 
-    const p7 = apiGet<Artifact[]>(`/api/artifacts?threadId=${encodeURIComponent(tid)}`)
-      .catch((e: unknown) => { console.debug('artifacts:', e instanceof Error ? e.message : String(e)); return [] as Artifact[]; })
-      .then((data) => { if (!cancelled) { setSavedArtifacts(data); }});
+    const p7 = apiGet<Artifact[]>(`/api/artifacts?threadId=${encodeURIComponent(tid)}`, signal)
+      .catch((e: unknown) => { suppress(e); return [] as Artifact[]; })
+      .then((data) => { if (!signal.aborted) { setSavedArtifacts(data); }});
 
-    const p8 = apiGet<SkillsSummary>('/api/skills-summary')
-      .catch((e: unknown) => { console.debug('skills-summary:', e instanceof Error ? e.message : String(e)); return { count: 0, skills: [] } as SkillsSummary; })
-      .then((data) => { if (!cancelled) {
+    const p8 = apiGet<SkillsSummary>('/api/skills-summary', signal)
+      .catch((e: unknown) => { suppress(e); return { count: 0, skills: [] } as SkillsSummary; })
+      .then((data) => { if (!signal.aborted) {
         setAvailableSkillsCount(data.count);
         setAvailableSkills(data.skills);
       }});
@@ -259,12 +265,12 @@ export function useThreadDiscovery({
     // Set loading=false one tick after all data setters have been applied,
     // so chips from the final fetch render before the spinner disappears.
     void Promise.all([p1, p2, p3, p4, p5, p6, p7, p8]).then(() => {
-      if (!cancelled) {
-        requestAnimationFrame(() => { if (!cancelled) setLoading(false); });
+      if (!signal.aborted) {
+        requestAnimationFrame(() => { if (!signal.aborted) setLoading(false); });
       }
     });
 
-    return () => { cancelled = true; };
+    return () => { controller.abort(); };
   }, [threadId]);
 
   const handleRefresh = useCallback(async () => {
