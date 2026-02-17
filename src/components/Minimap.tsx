@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, memo } from 'react';
 import { FileText, Search, Terminal, User, Bot, AlertCircle, ChevronUp, Loader2 } from 'lucide-react';
 
 export interface MinimapItem {
@@ -55,7 +55,7 @@ function getItemColor(item: MinimapItem): string {
   return 'minimap-assistant';
 }
 
-export function Minimap({ items, activeId, onItemClick, hasMoreMessages, loadingMore, onLoadMore }: MinimapProps) {
+export const Minimap = memo(function Minimap({ items, activeId, onItemClick, hasMoreMessages, loadingMore, onLoadMore }: MinimapProps) {
   const activeRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const prevItemCount = useRef(0);
@@ -124,4 +124,4 @@ export function Minimap({ items, activeId, onItemClick, hasMoreMessages, loading
       </div>
     </div>
   );
-}
+});

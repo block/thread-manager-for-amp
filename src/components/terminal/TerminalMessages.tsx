@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { ToolBlock, type ToolStatus } from '../ToolBlock';
 import { ToolResult } from '../ToolResult';
@@ -7,86 +7,132 @@ import { Timestamp } from '../Timestamp';
 import type { TerminalMessagesProps } from './types';
 import type { Message, AttachedImage } from '../../utils/parseMarkdown';
 
-function getToolStatus(toolId: string | undefined, msgIndex: number, messages: Message[]): ToolStatus {
-  // Check if there are subsequent non-tool-result messages (user input or assistant response)
-  // which indicates the conversation continued past this tool
-  const hasSubsequentMessage = messages.slice(msgIndex + 1).some(
-    m => m.type === 'assistant' || m.type === 'user'
-  );
-  
-  // If no toolId (parsed from history), use subsequent message check
-  if (!toolId) {
-    return hasSubsequentMessage ? 'success' : 'running';
+interface PrecomputedData {
+  toolStatusMap: Map<string, ToolStatus>;
+  subagentResultMap: Map<string, string>;
+  toolIdToToolName: Map<string, string>;
+  toolIdToToolInput: Map<string, Record<string, unknown>>;
+}
+
+function buildPrecomputedData(messages: Message[]): PrecomputedData {
+  const toolStatusMap = new Map<string, ToolStatus>();
+  const subagentResultMap = new Map<string, string>();
+  const toolIdToToolName = new Map<string, string>();
+  const toolIdToToolInput = new Map<string, Record<string, unknown>>();
+
+  // Build tool_result index: toolId → result message
+  const toolResultByToolId = new Map<string, Message>();
+  // Track which indices have a subsequent user/assistant message after them
+  let lastUserOrAssistantIndex = -1;
+
+  // First pass: find the last user/assistant message index and index tool_results
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (!msg) continue;
+    if (msg.type === 'tool_result' && msg.toolId) {
+      toolResultByToolId.set(msg.toolId, msg);
+    }
+    if ((msg.type === 'user' || msg.type === 'assistant') && lastUserOrAssistantIndex === -1) {
+      lastUserOrAssistantIndex = i;
+    }
   }
-  
-  // For live messages with toolId, first check for matching tool_result
-  const result = messages.find(m => m.type === 'tool_result' && m.toolId === toolId);
-  if (result) {
-    if (result.content.includes('Operation cancelled')) return 'cancelled';
-    if (result.success === false) return 'error';
-    return 'success';
+
+  // Second pass: compute status for each tool_use and build lookup maps
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    if (!msg) continue;
+
+    if (msg.type === 'tool_use') {
+      const key = msg.id;
+      const hasSubsequentMessage = i < lastUserOrAssistantIndex;
+
+      // Build toolId → toolName/toolInput lookup for tool_result rendering
+      if (msg.toolId) {
+        if (msg.toolName) toolIdToToolName.set(msg.toolId, msg.toolName);
+        if (msg.toolInput) toolIdToToolInput.set(msg.toolId, msg.toolInput);
+      }
+
+      // Compute status
+      let status: ToolStatus;
+      if (!msg.toolId) {
+        status = hasSubsequentMessage ? 'success' : 'running';
+      } else {
+        const result = toolResultByToolId.get(msg.toolId);
+        if (result) {
+          if (result.content.includes('Operation cancelled')) {
+            status = 'cancelled';
+          } else if (result.success === false) {
+            status = 'error';
+          } else {
+            status = 'success';
+          }
+        } else if (hasSubsequentMessage) {
+          status = 'success';
+        } else {
+          status = 'running';
+        }
+      }
+      toolStatusMap.set(key, status);
+
+      // Subagent result lookup
+      if (msg.toolName === 'Task' && msg.toolId) {
+        const result = toolResultByToolId.get(msg.toolId);
+        if (result) {
+          subagentResultMap.set(msg.id, result.content);
+        }
+      }
+    }
   }
-  
-  // Fallback: if no tool_result but there are subsequent messages, tool completed
-  // This handles tools like Task that don't send explicit tool_result events
-  if (hasSubsequentMessage) {
-    return 'success';
-  }
-  
-  return 'running';
+
+  return { toolStatusMap, subagentResultMap, toolIdToToolName, toolIdToToolInput };
 }
 
 interface MessageItemProps {
   msg: Message;
-  msgIndex: number;
-  messages: Message[];
-  activeMinimapId?: string;
-  onRef: (id: string, el: HTMLDivElement | null) => void;
+  highlighted: boolean;
+  toolStatus?: ToolStatus;
+  toolResultContent?: string;
+  toolName?: string;
+  toolInputPath?: string;
+  registerRef: (id: string, el: HTMLDivElement | null) => void;
   onViewImage: (image: AttachedImage) => void;
 }
 
-function MessageItem({
+const MessageItem = memo(function MessageItem({
   msg,
-  msgIndex,
-  messages,
-  activeMinimapId,
-  onRef,
+  highlighted,
+  toolStatus,
+  toolResultContent,
+  toolName,
+  toolInputPath,
+  registerRef,
   onViewImage,
 }: MessageItemProps) {
   if (msg.type === 'tool_use') {
-    const status = getToolStatus(msg.toolId, msgIndex, messages);
-    const isSubagent = msg.toolName === 'Task';
-    
-    // Find matching tool_result to show inline for subagents
-    const toolResult = isSubagent 
-      ? messages.find(m => m.type === 'tool_result' && m.toolId === msg.toolId)
-      : undefined;
-    
     return (
       <ToolBlock
         toolName={msg.toolName || ''}
         toolInput={msg.toolInput}
-        onRef={(el) => onRef(msg.id, el)}
-        highlighted={msg.id === activeMinimapId}
-        status={status}
-        result={toolResult?.content}
+        onRef={(el) => registerRef(msg.id, el)}
+        highlighted={highlighted}
+        status={toolStatus}
+        result={toolResultContent}
       />
     );
   }
-  
+
   if (msg.type === 'tool_result') {
-    const toolUse = messages.find(m => m.type === 'tool_use' && m.toolId === msg.toolId);
-    const toolName = toolUse?.toolName || msg.toolName;
-    
+    const resolvedToolName = toolName || msg.toolName;
+
     // Hide tool_result for subagents - shown inline in ToolBlock
-    if (toolName === 'Task') {
+    if (resolvedToolName === 'Task') {
       return null;
     }
-    if (toolName === 'look_at') {
+    if (resolvedToolName === 'look_at') {
       return null;
     }
-    if (toolName === 'Read') {
-      const path = toolUse?.toolInput?.path || '';
+    if (resolvedToolName === 'Read') {
+      const path = toolInputPath || '';
       if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(path)) {
         return null;
       }
@@ -95,15 +141,15 @@ function MessageItem({
       <ToolResult
         content={msg.content}
         success={msg.success ?? true}
-        onRef={(el) => onRef(msg.id, el)}
+        onRef={(el) => registerRef(msg.id, el)}
       />
     );
   }
 
   return (
-    <div 
-      ref={(el) => onRef(msg.id, el)}
-      className={`chat-message chat-message-${msg.type} ${msg.id === activeMinimapId ? 'highlighted' : ''}`}
+    <div
+      ref={(el) => registerRef(msg.id, el)}
+      className={`chat-message chat-message-${msg.type} ${highlighted ? 'highlighted' : ''}`}
     >
       <div className="chat-avatar">
         {msg.type === 'user' ? '👤' : msg.type === 'error' ? '❌' : '⚡'}
@@ -122,7 +168,7 @@ function MessageItem({
         </div>
         {msg.image && (
           <div className="chat-image-attachment">
-            <img 
+            <img
               src={`data:${msg.image.mediaType};base64,${msg.image.data}`}
               alt="Attached"
               onClick={() => msg.image && onViewImage(msg.image)}
@@ -135,7 +181,7 @@ function MessageItem({
       </div>
     </div>
   );
-}
+});
 
 export const TerminalMessages = memo(function TerminalMessages({
   messages,
@@ -149,10 +195,17 @@ export const TerminalMessages = memo(function TerminalMessages({
   onLoadMore,
   onViewImage,
 }: TerminalMessagesProps) {
+  const precomputed = useMemo(() => buildPrecomputedData(messages), [messages]);
+
+  const registerRef = useCallback((id: string, el: HTMLDivElement | null) => {
+    if (el) messageRefs.current.set(id, el);
+    else messageRefs.current.delete(id);
+  }, [messageRefs]);
+
   return (
     <div className="terminal-messages" ref={messagesContainerRef}>
       {hasMoreMessages && (
-        <button 
+        <button
           className="load-more-btn"
           onClick={onLoadMore}
           disabled={loadingMore}
@@ -167,32 +220,34 @@ export const TerminalMessages = memo(function TerminalMessages({
           )}
         </button>
       )}
-      
+
       {isLoading && (
         <div className="terminal-loading">
           <Loader2 size={20} className="spinning" />
           <span>Loading thread history...</span>
         </div>
       )}
-      
+
       {!isLoading && messages.length === 0 && (
         <div className="terminal-empty">
           No messages yet. Start the conversation below.
         </div>
       )}
 
-      {messages.map((msg, index) => (
+      {messages.map((msg) => (
         <MessageItem
           key={msg.id}
           msg={msg}
-          msgIndex={index}
-          messages={messages}
-          activeMinimapId={activeMinimapId}
-          onRef={(id, el) => { if (el) messageRefs.current.set(id, el); }}
+          highlighted={msg.id === activeMinimapId}
+          toolStatus={precomputed.toolStatusMap.get(msg.id)}
+          toolResultContent={precomputed.subagentResultMap.get(msg.id)}
+          toolName={msg.toolId ? precomputed.toolIdToToolName.get(msg.toolId) : undefined}
+          toolInputPath={msg.toolId ? precomputed.toolIdToToolInput.get(msg.toolId)?.path as string | undefined : undefined}
+          registerRef={registerRef}
           onViewImage={onViewImage}
         />
       ))}
-      
+
       <div ref={messagesEndRef} style={{ height: 1, flexShrink: 0 }} />
     </div>
   );
