@@ -36,11 +36,15 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
   }, [threadId, messages.length, updateCurrentCount]);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function loadHistory() {
       try {
         const [markdown, threadImages] = await Promise.all([
-          apiGetText(`/api/thread-history?threadId=${encodeURIComponent(threadId)}`),
-          apiGet<ThreadImage[]>(`/api/thread-images?threadId=${encodeURIComponent(threadId)}`).catch((e: unknown) => { console.debug('thread-images:', e instanceof Error ? e.message : String(e)); return []; }),
+          apiGetText(`/api/thread-history?threadId=${encodeURIComponent(threadId)}`, controller.signal),
+          apiGet<ThreadImage[]>(`/api/thread-images?threadId=${encodeURIComponent(threadId)}`, controller.signal).catch((e: unknown) => {
+            if (e instanceof DOMException && e.name === 'AbortError') return [];
+            console.debug('thread-images:', e instanceof Error ? e.message : String(e)); return [];
+          }),
         ]);
         
         const totalMatch = markdown.match(/totalMessages:\s*(\d+)/);
@@ -70,11 +74,13 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
           setHasMoreMessages(historyMessages.length < totalMessages);
         }
       } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') return;
         console.error('Failed to load history:', e);
       }
-      setIsLoading(false);
+      if (!controller.signal.aborted) setIsLoading(false);
     }
     void loadHistory();
+    return () => { controller.abort(); };
   }, [threadId]);
 
   const loadMoreMessages = useCallback(async () => {

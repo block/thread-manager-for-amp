@@ -13,10 +13,14 @@ export class ApiError extends Error {
 }
 
 function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  
-  return fetch(url, { ...options, signal: controller.signal })
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
+
+  const signal = options.signal
+    ? AbortSignal.any([options.signal, timeoutController.signal])
+    : timeoutController.signal;
+
+  return fetch(url, { ...options, signal })
     .finally(() => clearTimeout(timeoutId));
 }
 
@@ -32,13 +36,13 @@ async function handleResponse<T>(response: Response, parser: (res: Response) => 
   return parser(response);
 }
 
-export async function apiGet<T>(url: string): Promise<T> {
-  const response = await fetchWithTimeout(url);
+export async function apiGet<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetchWithTimeout(url, { signal });
   return handleResponse(response, (res) => res.json() as Promise<T>);
 }
 
-export async function apiGetText(url: string): Promise<string> {
-  const response = await fetchWithTimeout(url);
+export async function apiGetText(url: string, signal?: AbortSignal): Promise<string> {
+  const response = await fetchWithTimeout(url, { signal });
   return handleResponse(response, (res) => res.text());
 }
 
