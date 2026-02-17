@@ -15,6 +15,8 @@ interface UseTerminalWebSocketOptions {
 
 export type AgentStatus = 'idle' | 'waiting' | 'streaming' | 'running_tools';
 
+const MAX_RECONNECT_ATTEMPTS = 10;
+
 export function useTerminalWebSocket({
   threadId,
   setMessages,
@@ -25,6 +27,8 @@ export function useTerminalWebSocket({
   const [isSending, setIsSending] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [agentStatus, setAgentStatus] = useState<AgentStatus>('idle');
+  const [connectionError, setConnectionError] = useState(false);
+  const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const [, setNoResponseDetected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const gotResponseRef = useRef(false);
@@ -51,6 +55,7 @@ export function useTerminalWebSocket({
           errorTimeout = null;
         }
         reconnectAttempt = 0;
+        setConnectionError(false);
       };
 
       ws.onmessage = (event) => {
@@ -197,10 +202,16 @@ export function useTerminalWebSocket({
         if (isCleanedUp) return;
 
         if (wasConnected && event.code !== 1000) {
-          // Auto-reconnect with exponential backoff (max ~10s)
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempt), 10000);
           reconnectAttempt++;
-          console.warn(`[Terminal] Connection lost, reconnecting in ${delay}ms (attempt ${reconnectAttempt})`);
+          if (reconnectAttempt > MAX_RECONNECT_ATTEMPTS) {
+            console.error(`[Terminal] Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached for thread ${threadId}`);
+            setConnectionError(true);
+            setMessages(prev => [...prev, { id: generateId(), type: 'error', content: `Connection lost. Failed to reconnect after ${MAX_RECONNECT_ATTEMPTS} attempts.` }]);
+            return;
+          }
+          // Auto-reconnect with exponential backoff (max ~10s)
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempt - 1), 10000);
+          console.warn(`[Terminal] Connection lost, reconnecting in ${delay}ms (attempt ${reconnectAttempt}/${MAX_RECONNECT_ATTEMPTS})`);
           setMessages(prev => [...prev, { id: generateId(), type: 'system' as const, content: 'Connection lost. Reconnecting...' }]);
           reconnectTimeout = setTimeout(connect, delay);
         }
@@ -215,7 +226,7 @@ export function useTerminalWebSocket({
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       wsRef.current?.close();
     };
-  }, [threadId, setMessages, setUsage, setIsLoading]);
+  }, [threadId, reconnectTrigger, setMessages, setUsage, setIsLoading]);
 
   const sendMessage = useCallback((content: string, image?: { data: string; mediaType: string }) => {
     if (!wsRef.current || !isConnected) return false;
@@ -245,14 +256,21 @@ export function useTerminalWebSocket({
     }
   }, [isSending, isRunning]);
 
+  const reconnect = useCallback(() => {
+    setConnectionError(false);
+    setReconnectTrigger(prev => prev + 1);
+  }, []);
+
   return {
     isConnected,
     isSending,
     isRunning,
     agentStatus,
+    connectionError,
     setIsSending,
     sendMessage,
     cancelOperation,
+    reconnect,
     generateId,
   };
 }
