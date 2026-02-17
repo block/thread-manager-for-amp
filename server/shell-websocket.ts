@@ -57,7 +57,13 @@ export function setupShellWebSocket(server: Server): WebSocketServer {
         rows: 30,
         cwd,
         env: {
-          ...process.env,
+          ...Object.fromEntries(
+            Object.entries(process.env).filter(([k]) => {
+              // Strip Hermit-injected vars that conflict with nvm/fnm in user shells
+              const upper = k.toUpperCase();
+              return upper !== 'NPM_CONFIG_PREFIX' && upper !== 'HERMIT_ENV';
+            })
+          ),
           TERM: 'xterm-256color',
           COLORTERM: 'truecolor',
         } as Record<string, string>,
