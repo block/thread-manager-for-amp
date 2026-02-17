@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { useThreadActions, type UseThreadActionsReturn, type UseThreadActionsOptions } from '../hooks/useThreadActions';
 import type { Thread, ThreadMetadata, ThreadStatus } from '../types';
 
@@ -45,7 +45,7 @@ export function ThreadProvider({
     removeBlocker,
   });
 
-  const value: ThreadContextValue = {
+  const value = useMemo<ThreadContextValue>(() => ({
     ...threadActions,
     threads,
     metadata,
@@ -55,7 +55,7 @@ export function ThreadProvider({
     updateStatus,
     addBlocker,
     removeBlocker,
-  };
+  }), [threadActions, threads, metadata, loading, error, refetch, updateStatus, addBlocker, removeBlocker]);
 
   return (
     <ThreadContext.Provider value={value}>
