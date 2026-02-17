@@ -178,7 +178,7 @@ export function MessageSearchModal({
           </button>
         </div>
         
-        <div className="message-search-results" ref={resultsRef}>
+        <div className="message-search-results" ref={resultsRef} role="listbox" aria-label="Search results">
           {query && results.length === 0 && (
             <div className="message-search-empty">No results found</div>
           )}
@@ -186,6 +186,8 @@ export function MessageSearchModal({
             <div
               key={result.message.id}
               className={`message-search-result ${index === clampedSelectedIndex ? 'selected' : ''}`}
+              role="option"
+              aria-selected={index === clampedSelectedIndex}
               onClick={() => handleResultClick(result)}
             >
               <div className={`message-search-result-type type-${result.message.type}`}>
