@@ -507,6 +507,61 @@
   overflow-y: auto;
 }
 
+/* Mermaid diagram display */
+.mermaid-container {
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.mermaid-diagram {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-loading {
+  padding: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.mermaid-error {
+  padding: 12px;
+}
+
+.mermaid-error-label {
+  color: var(--accent-red, #ff6b6b);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.mermaid-error-detail {
+  margin: 0 0 8px;
+  padding: 8px;
+  background: rgba(255, 100, 100, 0.1);
+  border-radius: 4px;
+  color: var(--accent-red, #ff6b6b);
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+
+.mermaid-source {
+  margin: 0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+
 /* Edit file diff display */
 .edit-diff {
   margin: 8px 12px 10px 42px;
