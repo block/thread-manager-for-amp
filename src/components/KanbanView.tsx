@@ -35,9 +35,17 @@ const KanbanCard = memo(function KanbanCard({
     <div className={`kanban-card-wrapper ${hasStack ? 'has-stack' : ''} ${isExpanded ? 'expanded' : ''}`}>
       <div
         className={`kanban-card ${isFocused ? 'focused' : ''}`}
+        role="button"
+        tabIndex={0}
         draggable
         onDragStart={(e) => onDragStart(e, thread)}
         onClick={() => onContinue(thread)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onContinue(thread);
+          }
+        }}
       >
         <div className="kanban-card-header">
           <div className="kanban-card-title">{thread.title}</div>
@@ -98,7 +106,15 @@ const KanbanCard = memo(function KanbanCard({
               <div
                 key={ancestor.id}
                 className={`kanban-card stack-child status-${ancestorStatus}`}
+                role="button"
+                tabIndex={0}
                 onClick={() => onContinue(ancestor)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onContinue(ancestor);
+                  }
+                }}
               >
                 <div className="kanban-card-title">{ancestor.title}</div>
                 <div className="kanban-card-meta">

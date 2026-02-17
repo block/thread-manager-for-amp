@@ -146,7 +146,7 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
         />
       </div>
 
-      <div className="command-palette-list" ref={listRef} onMouseMove={handleMouseMove}>
+      <div className="command-palette-list" ref={listRef} role="listbox" aria-label="Commands" onMouseMove={handleMouseMove}>
         {groupedCommands.map(group => (
           <div key={group.category} className="command-group">
             {group.items.map(cmd => {
@@ -156,6 +156,9 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
                 <div
                   key={cmd.id}
                   className={`command-item ${isSelected ? 'selected' : ''} ${cmd.disabled ? 'disabled' : ''}`}
+                  role="option"
+                  aria-selected={isSelected}
+                  aria-disabled={cmd.disabled}
                   onClick={() => executeCommand(cmd)}
                   onMouseEnter={() => !isKeyboardNav && setSelectedIndex(itemIndex)}
                 >
