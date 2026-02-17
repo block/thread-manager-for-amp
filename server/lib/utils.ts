@@ -10,11 +10,6 @@ interface RunAmpOptions {
   stdio?: StdioOptions;
 }
 
-export function sendJson(res: ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(body));
-}
-
 export function jsonResponse(res: ServerResponse, data: unknown, status: number = 200): boolean {
   res.writeHead(status, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
@@ -36,8 +31,8 @@ export function parseBody<T = Record<string, unknown>>(req: IncomingMessage): Pr
   });
 }
 
-export function sendError(res: ServerResponse, status: number, message: string): void {
-  sendJson(res, status, { error: message });
+export function sendError(res: ServerResponse, status: number, message: string): boolean {
+  return jsonResponse(res, { error: message }, status);
 }
 
 export function getParam(url: URL, name: string): string {

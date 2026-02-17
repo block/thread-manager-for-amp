@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { sendJson, sendError, getParam, parseBody } from '../lib/utils.js';
+import { jsonResponse, sendError, getParam, parseBody } from '../lib/utils.js';
 import { CORS_HEADERS } from '../lib/constants.js';
 import {
   getThreads,
@@ -30,59 +30,54 @@ export async function handleThreadRoutes(
       const limit = parseInt(url.searchParams.get('limit') || '50', 10);
       const cursor = url.searchParams.get('cursor') || null;
       const result = await getThreads({ limit, cursor });
-      sendJson(res, 200, result);
+      return jsonResponse(res, result);
     } catch (err) {
-      sendError(res, 500, (err as Error).message);
+      return sendError(res, 500, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/search') {
     try {
       const query = getParam(url, 'q');
       const results = await searchThreads(query);
-      sendJson(res, 200, results);
+      return jsonResponse(res, results);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/related-threads') {
     try {
       const threadId = getParam(url, 'threadId');
       const related = await getRelatedThreads(threadId);
-      sendJson(res, 200, related);
+      return jsonResponse(res, related);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/thread-chain') {
     try {
       const threadId = getParam(url, 'threadId');
       const chain = await getThreadChain(threadId);
-      sendJson(res, 200, chain);
+      return jsonResponse(res, chain);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/thread-changes') {
     try {
       const threadId = getParam(url, 'threadId');
       const changes = await getThreadChanges(threadId);
-      sendJson(res, 200, changes);
+      return jsonResponse(res, changes);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/thread-history') {
@@ -95,7 +90,7 @@ export async function handleThreadRoutes(
       res.end(history);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
     return true;
   }
@@ -104,80 +99,71 @@ export async function handleThreadRoutes(
     try {
       const threadId = getParam(url, 'threadId');
       const images = await getThreadImages(threadId);
-      sendJson(res, 200, images);
+      return jsonResponse(res, images);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/thread-archive') {
     if (req.method !== 'POST') {
-      sendError(res, 405, 'Method not allowed');
-      return true;
+      return sendError(res, 405, 'Method not allowed');
     }
     try {
       const body = await parseBody<{ threadId?: string }>(req);
       const threadId = body.threadId;
       if (!threadId) throw new Error('threadId required');
       await archiveThread(threadId);
-      sendJson(res, 200, { success: true });
+      return jsonResponse(res, { success: true });
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/thread-delete') {
     if (req.method !== 'DELETE') {
-      sendError(res, 405, 'Method not allowed');
-      return true;
+      return sendError(res, 405, 'Method not allowed');
     }
     try {
       const body = await parseBody<{ threadId?: string }>(req);
       const threadId = body.threadId;
       if (!threadId) throw new Error('threadId required');
       const result = await deleteThread(threadId);
-      sendJson(res, 200, result);
+      return jsonResponse(res, result);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/thread-new') {
     if (req.method !== 'POST') {
-      sendError(res, 405, 'Method not allowed');
-      return true;
+      return sendError(res, 405, 'Method not allowed');
     }
     try {
       const body = await parseBody<{ workspace?: string }>(req);
       const workspacePath = body.workspace || null;
       const result = await createThread(workspacePath);
-      sendJson(res, 200, result);
+      return jsonResponse(res, result);
     } catch (err) {
-      sendError(res, 500, (err as Error).message);
+      return sendError(res, 500, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/workspaces') {
     try {
       const workspaces = await getKnownWorkspaces();
-      sendJson(res, 200, workspaces);
+      return jsonResponse(res, workspaces);
     } catch (err) {
-      sendError(res, 500, (err as Error).message);
+      return sendError(res, 500, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/thread-handoff') {
     if (req.method !== 'POST') {
-      sendError(res, 405, 'Method not allowed');
-      return true;
+      return sendError(res, 405, 'Method not allowed');
     }
     try {
       const body = await parseBody<{ threadId?: string; goal?: string }>(req);
@@ -185,18 +171,16 @@ export async function handleThreadRoutes(
       if (!threadId) throw new Error('threadId required');
       const goal = body.goal || undefined;
       const result = await handoffThread(threadId, goal);
-      sendJson(res, 200, result);
+      return jsonResponse(res, result);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/thread-rename') {
     if (req.method !== 'PATCH') {
-      sendError(res, 405, 'Method not allowed');
-      return true;
+      return sendError(res, 405, 'Method not allowed');
     }
     try {
       const body = await parseBody<{ threadId?: string; name?: string }>(req);
@@ -205,30 +189,27 @@ export async function handleThreadRoutes(
       if (!threadId) throw new Error('threadId required');
       if (!name) throw new Error('name required');
       await renameThread(threadId, name);
-      sendJson(res, 200, { success: true });
+      return jsonResponse(res, { success: true });
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
-    return true;
   }
 
   if (pathname === '/api/thread-share') {
     if (req.method !== 'POST') {
-      sendError(res, 405, 'Method not allowed');
-      return true;
+      return sendError(res, 405, 'Method not allowed');
     }
     try {
       const body = await parseBody<{ threadId?: string }>(req);
       const threadId = body.threadId;
       if (!threadId) throw new Error('threadId required');
       const result = await shareThread(threadId);
-      sendJson(res, 200, result);
+      return jsonResponse(res, result);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
-      sendError(res, status, (err as Error).message);
+      return sendError(res, status, (err as Error).message);
     }
-    return true;
   }
 
   return false;
