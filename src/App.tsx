@@ -5,7 +5,7 @@ import { useRunningThreads } from './hooks/useRunningThreads';
 import { useThreadActions } from './hooks/useThreadActions';
 import { useModals } from './hooks/useModals';
 import { useFilters } from './hooks/useFilters';
-import { useAppSettings } from './hooks/useAppSettings';
+import { useSettingsContext } from './contexts/SettingsContext';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 import { ThreadList } from './components/ThreadList';
@@ -49,8 +49,8 @@ function App() {
   // Filters hook
   const filters = useFilters({ threads, metadata });
 
-  // App settings hook
-  const settings = useAppSettings();
+  // App settings from context
+  const settings = useSettingsContext();
 
   // Loading state for refresh
   const [refreshLoading, setRefreshLoading] = useState<LoadingState | null>(null);
@@ -298,8 +298,6 @@ function App() {
         <Sidebar
           threads={threads}
           metadata={metadata}
-          collapsed={settings.sidebarCollapsed}
-          onToggleCollapse={settings.handleToggleSidebar}
           onSelectThread={handleContinueWithTracking}
           activeThreadId={threadActions.activeThreadId}
           runningThreads={runningThreads}
@@ -308,7 +306,6 @@ function App() {
           onDeleteThread={threadActions.handleDelete}
           onCopyThreadId={handleCopyThreadId}
           onCopyThreadUrl={handleCopyThreadUrl}
-          scmRefreshKey={settings.scmRefreshKey}
           onOpenTerminal={modals.shellTerminal?.minimized ? modals.restoreShellTerminal : modals.openShellTerminal}
           terminalMinimized={modals.shellTerminal?.minimized}
         />
@@ -332,12 +329,6 @@ function App() {
             onWorkspaceChange={filters.setFilterWorkspace}
             onLabelChange={filters.setFilterLabel}
             onStatusChange={filters.setFilterStatus}
-            viewMode={settings.viewMode}
-            onViewModeChange={settings.handleViewModeChange}
-            groupByDate={settings.groupByDate}
-            onGroupByDateChange={settings.handleGroupByDateChange}
-            currentTheme={settings.currentTheme}
-            onThemeChange={settings.setCurrentTheme}
           />
 
           {error && <div className="error">Error: {error}</div>}
@@ -370,8 +361,6 @@ function App() {
           threads={threadActions.openThreads}
           onClose={threadActions.handleCloseThread}
           onCloseAll={threadActions.handleCloseAll}
-          layout={settings.terminalLayout}
-          onLayoutChange={settings.setTerminalLayout}
           onActiveChange={threadActions.setActiveThreadId}
           onHandoff={handleHandoff}
           onNewThread={handleNewThread}
