@@ -10,7 +10,7 @@ import { isWsClientMessage } from '../shared/validation.js';
 import { calculateCost, isHiddenCostTool, TOOL_COST_ESTIMATES, estimateTaskCost } from '../shared/cost.js';
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
-import { THREADS_DIR, ARTIFACTS_DIR } from './lib/threadTypes.js';
+import { THREADS_DIR, ARTIFACTS_DIR, type ThreadFile, type ToolUseContent } from './lib/threadTypes.js';
 
 // Grace period before killing child process on disconnect (30 seconds)
 const DISCONNECT_GRACE_PERIOD_MS = 30_000;
@@ -96,35 +96,6 @@ interface AmpStreamEvent {
   tool_use_id?: string;
   is_error?: boolean;
   result?: string | Record<string, unknown>;
-}
-
-interface ThreadUsage {
-  inputTokens?: number;
-  outputTokens?: number;
-  cacheCreationInputTokens?: number;
-  cacheReadInputTokens?: number;
-  totalInputTokens?: number;
-  maxInputTokens?: number;
-}
-
-interface ThreadContentBlock {
-  type: string;
-  name?: string;
-  input?: { prompt?: string; [key: string]: unknown };
-}
-
-interface ThreadMessage {
-  usage?: ThreadUsage;
-  content?: ThreadContentBlock[];
-}
-
-interface ThreadData {
-  env?: {
-    initial?: {
-      tags?: string[];
-    };
-  };
-  messages?: ThreadMessage[];
 }
 
 // ── Safe WS send ────────────────────────────────────────────────────────
@@ -446,7 +417,7 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
   try {
     const threadPath = join(THREADS_DIR, `${session.threadId}.json`);
     const content = await readFile(threadPath, 'utf-8');
-    const data = JSON.parse(content) as ThreadData;
+    const data = JSON.parse(content) as ThreadFile;
     const tags = data.env?.initial?.tags || [];
     const modelTag = tags.find((t: string) => t.startsWith('model:'));
     if (modelTag) {
@@ -473,14 +444,17 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
         maxContextTokens = msg.usage.maxInputTokens || maxContextTokens;
         turns++;
       }
-      if (msg.content) {
+      if (msg.content && Array.isArray(msg.content)) {
         for (const block of msg.content) {
-          if (block.type === 'tool_use' && block.name && isHiddenCostTool(block.name)) {
-            if (block.name === 'Task') {
-              const prompt = block.input?.prompt || '';
+          if (typeof block === 'string' || block.type !== 'tool_use') continue;
+          const tool = block as ToolUseContent;
+          if (tool.name && isHiddenCostTool(tool.name)) {
+            if (tool.name === 'Task') {
+              const rawPrompt = tool.input?.prompt;
+              const prompt = typeof rawPrompt === 'string' ? rawPrompt : '';
               hiddenToolCost += estimateTaskCost(prompt.length);
             } else {
-              hiddenToolCost += TOOL_COST_ESTIMATES[block.name] || 0;
+              hiddenToolCost += TOOL_COST_ESTIMATES[tool.name] || 0;
             }
           }
         }

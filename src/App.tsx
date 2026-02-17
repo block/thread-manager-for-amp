@@ -7,7 +7,7 @@ import { useSettingsContext } from './contexts/SettingsContext';
 import { ThreadList } from './components/ThreadList';
 import { Toolbar } from './components/Toolbar';
 import { TerminalManager } from './components/TerminalManager';
-import { Sidebar } from './components/Sidebar';
+import { Sidebar } from './components/sidebar';
 import { LoadingToast } from './components/LoadingToast';
 import { AppModals } from './components/AppModals';
 import { createLoadingState, advanceStep, type LoadingState } from './utils/loadingState';

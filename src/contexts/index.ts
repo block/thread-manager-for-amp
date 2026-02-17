@@ -8,3 +8,5 @@ export {
   type ShellTerminalState,
   type UseModalsReturn,
 } from './ModalContext';
+export { ThreadStatusProvider, useThreadStatus, type TabThreadStatus } from './ThreadStatusContext';
+export { UnreadProvider, useUnread } from './UnreadContext';

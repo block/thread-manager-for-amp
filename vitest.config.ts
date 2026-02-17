@@ -9,6 +9,7 @@ export default defineConfig({
           name: 'frontend',
           environment: 'jsdom',
           include: ['src/**/*.test.{ts,tsx}', 'shared/*.test.ts'],
+          exclude: ['shared/dist/**'],
           setupFiles: ['./src/test-setup.ts'],
         },
       },
