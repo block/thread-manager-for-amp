@@ -1,7 +1,6 @@
 import { spawn, ChildProcess } from 'child_process';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import { homedir } from 'os';
 import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage, Server } from 'http';
 import { Duplex } from 'stream';
@@ -11,9 +10,7 @@ import { isWsClientMessage } from '../shared/validation.js';
 import { calculateCost, isHiddenCostTool, TOOL_COST_ESTIMATES, estimateTaskCost } from '../shared/cost.js';
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
-
-const THREADS_DIR = join(AMP_HOME, '.local', 'share', 'amp', 'threads');
-const ARTIFACTS_DIR = join(homedir(), '.amp-thread-manager', 'artifacts');
+import { THREADS_DIR, ARTIFACTS_DIR } from './lib/threadTypes.js';
 
 // Grace period before killing child process on disconnect (30 seconds)
 const DISCONNECT_GRACE_PERIOD_MS = 30_000;

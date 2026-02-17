@@ -3,6 +3,7 @@ import { readFile, writeFile, mkdir, stat } from 'fs/promises';
 import type { Stats } from 'fs';
 import { join, dirname, isAbsolute, relative, basename } from 'path';
 import { AMP_HOME } from './constants.js';
+import { THREADS_DIR } from './threadTypes.js';
 import type {
   ThreadGitActivity,
   WorkspaceGitActivity,
@@ -11,7 +12,6 @@ import type {
   LinkedPR,
 } from '../../shared/types.js';
 
-const THREADS_DIR = join(AMP_HOME, '.local', 'share', 'amp', 'threads');
 const CACHE_DIR = join(AMP_HOME, '.local', 'share', 'amp-thread-manager', 'cache', 'thread-git');
 const PR_INDEX_PATH = join(AMP_HOME, '.local', 'share', 'amp-thread-manager', 'cache', 'pr-index.json');
 

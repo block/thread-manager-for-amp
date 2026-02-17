@@ -5,8 +5,8 @@
 import { readFile, readdir, stat, access } from 'fs/promises';
 import { join } from 'path';
 import { homedir } from 'os';
-import { AMP_HOME } from './constants.js';
 import type { KnownWorkspace } from '../../shared/types.js';
+import { THREADS_DIR } from './threadTypes.js';
 
 interface ThreadListResult {
   threads: Array<{
@@ -31,8 +31,6 @@ interface ThreadData {
 }
 
 type GetThreadsFn = (options: { limit: number }) => Promise<ThreadListResult>;
-
-const THREADS_DIR = join(AMP_HOME, '.local', 'share', 'amp', 'threads');
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
