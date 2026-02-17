@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useMemo, memo } from 'react';
+import React, { useState, useCallback, useMemo, memo, lazy, Suspense } from 'react';
 import { CheckSquare, Square, MinusSquare } from 'lucide-react';
 import type { Thread, ThreadStatus } from '../../types';
 import { ConfirmModal } from '../ConfirmModal';
-import { KanbanView } from '../KanbanView';
-import { DetailCardView } from '../DetailCardView';
+const KanbanView = lazy(() => import('../KanbanView').then(m => ({ default: m.KanbanView })));
+const DetailCardView = lazy(() => import('../DetailCardView').then(m => ({ default: m.DetailCardView })));
 import { SortHeader } from './SortHeader';
 import { ThreadRow } from './ThreadRow';
 import { BulkActionBar } from './BulkActionBar';
@@ -143,26 +143,30 @@ export const ThreadList = memo(function ThreadList({
         />
 
         {viewMode === 'kanban' && (
-          <KanbanView
-            threads={threads}
-            metadata={metadata}
-            onContinue={onContinue}
-            onStatusChange={onStatusChange}
-            focusedId={focusedThreadId}
-          />
+          <Suspense fallback={<div className="loading">Loading view...</div>}>
+            <KanbanView
+              threads={threads}
+              metadata={metadata}
+              onContinue={onContinue}
+              onStatusChange={onStatusChange}
+              focusedId={focusedThreadId}
+            />
+          </Suspense>
         )}
 
         {viewMode === 'cards' && (
-          <DetailCardView
-            threads={threads}
-            metadata={metadata}
-            onContinue={onContinue}
-            onArchive={onArchive}
-            onDelete={onDelete}
-            onStatusChange={onStatusChange}
-            focusedId={focusedThreadId}
-            groupByDate={groupByDate}
-          />
+          <Suspense fallback={<div className="loading">Loading view...</div>}>
+            <DetailCardView
+              threads={threads}
+              metadata={metadata}
+              onContinue={onContinue}
+              onArchive={onArchive}
+              onDelete={onDelete}
+              onStatusChange={onStatusChange}
+              focusedId={focusedThreadId}
+              groupByDate={groupByDate}
+            />
+          </Suspense>
         )}
 
         {viewMode === 'table' && (
