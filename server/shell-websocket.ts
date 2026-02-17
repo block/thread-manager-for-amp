@@ -88,7 +88,7 @@ export function setupShellWebSocket(server: Server): WebSocketServer {
     let isAlive = true;
     const pingInterval = setInterval(() => {
       if (!isAlive) {
-        console.log(`[SHELL] No pong received for session ${sessionId}, terminating stale connection`);
+        console.warn(`[SHELL] No pong received for session ${sessionId}, terminating stale connection`);
         ws.terminate();
         return;
       }

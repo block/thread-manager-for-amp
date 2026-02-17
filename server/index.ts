@@ -97,9 +97,9 @@ async function start(): Promise<void> {
   writeFileSync(PORT_FILE, String(port), 'utf-8');
 
   server.listen(port, '127.0.0.1', () => {
-    console.log(`🚀 Thread Manager for Amp running at http://localhost:${port}`);
-    console.log(`📡 WebSocket server ready`);
-    console.log(`💻 Shell WebSocket ready at /shell`);
+    console.warn(`🚀 Thread Manager for Amp running at http://localhost:${port}`);
+    console.warn(`📡 WebSocket server ready`);
+    console.warn(`💻 Shell WebSocket ready at /shell`);
   });
 }
 

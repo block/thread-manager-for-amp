@@ -519,11 +519,11 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
 function startGracePeriod(session: ThreadSession, reason: string): void {
   if (session.killTimeout) return; // already ticking
 
-  console.log(`[WS] ${reason} for thread ${session.threadId}, starting ${DISCONNECT_GRACE_PERIOD_MS / 1000}s grace period`);
+  console.warn(`[WS] ${reason} for thread ${session.threadId}, starting ${DISCONNECT_GRACE_PERIOD_MS / 1000}s grace period`);
   session.currentWs = null;
 
   session.killTimeout = setTimeout(() => {
-    console.log(`[WS] Grace period expired for thread ${session.threadId}, killing child process`);
+    console.warn(`[WS] Grace period expired for thread ${session.threadId}, killing child process`);
     session.child?.kill('SIGTERM');
     session.child = null;
     session.killTimeout = null;
@@ -567,7 +567,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
       if (session.killTimeout) {
         clearTimeout(session.killTimeout);
         session.killTimeout = null;
-        console.log(`[WS] Reconnected within grace period for thread ${threadId}`);
+        console.warn(`[WS] Reconnected within grace period for thread ${threadId}`);
       }
       // Swap the socket pointer — child listeners will now route here
       session.currentWs = ws;
@@ -593,7 +593,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
     let isAlive = true;
     const pingInterval = setInterval(() => {
       if (!isAlive) {
-        console.log(`[WS] No pong received for thread ${threadId}, terminating stale connection`);
+        console.warn(`[WS] No pong received for thread ${threadId}, terminating stale connection`);
         ws.terminate();
         return;
       }
@@ -619,7 +619,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
     // ── Client messages ─────────────────────────────────────────────────
     ws.on('message', (data: Buffer) => {
       // Ignore messages from stale sockets
-      if (session!.currentWs !== ws) return;
+      if (session.currentWs !== ws) return;
 
       const msg = data.toString();
       try {
@@ -628,21 +628,21 @@ export function setupWebSocket(server: Server): WebSocketServer {
           const image = parsed.image
             ? ({ data: parsed.image.data, mediaType: parsed.image.mediaType } as ThreadImage)
             : null;
-          void spawnAmpOnSession(session!, parsed.content, image).catch((err) => {
+          void spawnAmpOnSession(session, parsed.content, image).catch((err) => {
             console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
-            sendToSession(session!, { type: 'error', content: 'Failed to process message' });
+            sendToSession(session, { type: 'error', content: 'Failed to process message' });
           });
         } else if (parsed.type === 'cancel') {
-          if (session!.child) {
-            session!.child.kill('SIGINT');
-            sendToSession(session!, { type: 'cancelled' });
+          if (session.child) {
+            session.child.kill('SIGINT');
+            sendToSession(session, { type: 'cancelled' });
           }
         }
       } catch {
         if (msg.trim()) {
-          void spawnAmpOnSession(session!, msg.trim()).catch((err) => {
+          void spawnAmpOnSession(session, msg.trim()).catch((err) => {
             console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
-            sendToSession(session!, { type: 'error', content: 'Failed to process message' });
+            sendToSession(session, { type: 'error', content: 'Failed to process message' });
           });
         }
       }
@@ -653,10 +653,10 @@ export function setupWebSocket(server: Server): WebSocketServer {
       clearInterval(pingInterval);
 
       // Only act if this is still the current socket for the session
-      if (session!.currentWs !== ws) return;
+      if (session.currentWs !== ws) return;
 
-      if (session!.child) {
-        startGracePeriod(session!, 'Connection closed');
+      if (session.child) {
+        startGracePeriod(session, 'Connection closed');
       } else {
         sessions.delete(threadId);
       }
@@ -666,10 +666,10 @@ export function setupWebSocket(server: Server): WebSocketServer {
       console.error('[WS] WebSocket error:', err);
       clearInterval(pingInterval);
 
-      if (session!.currentWs !== ws) return;
+      if (session.currentWs !== ws) return;
 
-      if (session!.child) {
-        startGracePeriod(session!, 'Connection error');
+      if (session.child) {
+        startGracePeriod(session, 'Connection error');
       } else {
         sessions.delete(threadId);
       }

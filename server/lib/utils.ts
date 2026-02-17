@@ -24,7 +24,7 @@ export function jsonResponse(res: ServerResponse, data: unknown, status: number 
 export function parseBody<T = Record<string, unknown>>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', (chunk: Buffer) => { body += chunk; });
+    req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
     req.on('end', () => {
       try {
         resolve(body ? JSON.parse(body) : {} as T);
