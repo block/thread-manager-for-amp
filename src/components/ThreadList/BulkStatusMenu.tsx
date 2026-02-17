@@ -27,6 +27,8 @@ export function BulkStatusMenu({ onStatusChange }: BulkStatusMenuProps) {
       <button
         className="bulk-btn status"
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
       >
         <Circle size={14} />
         Status

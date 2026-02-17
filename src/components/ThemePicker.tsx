@@ -110,6 +110,8 @@ export function ThemePicker({ currentTheme, onThemeChange }: ThemePickerProps) {
         className="theme-picker-btn"
         onClick={() => setIsOpen(!isOpen)}
         title="Change theme"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
       >
         <Palette size={16} />
       </button>

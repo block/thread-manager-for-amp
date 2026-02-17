@@ -101,6 +101,8 @@ export const ThreadStatusBadge = memo(function ThreadStatusBadge({ threadId, sta
           setIsOpen(!isOpen);
         }}
         disabled={updating}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
       >
         <Icon size={compact ? 10 : 12} />
         {!compact && <span>{config.label}</span>}
