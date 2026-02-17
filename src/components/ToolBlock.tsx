@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { ChevronDown, ChevronRight, Check, Loader2, XCircle, Ban } from 'lucide-react';
 import { getToolIcon, getToolLabel, shortenPath, type ToolInput } from '../utils/format';
+
+const MermaidDiagram = lazy(() => import('./MermaidDiagram').then(m => ({ default: m.MermaidDiagram })));
 
 export type ToolStatus = 'running' | 'success' | 'error' | 'cancelled' | undefined;
 
@@ -181,6 +183,7 @@ export function ToolBlock({ toolName, toolInput = {}, onRef, highlighted, status
   const shortCwd = typeof shortCmdResult === 'object' ? shortCmdResult.cwd : undefined;
   const fullCmd = formatFullCommand(toolName, toolInput);
   const isEditFile = toolName === 'edit_file' && toolInput.old_str && toolInput.new_str;
+  const isMermaid = toolName === 'mermaid' && !!toolInput.code;
   const isSubagent = toolName === 'Task';
   
   // Only show expand if full command exists and is longer than short version
@@ -241,8 +244,15 @@ export function ToolBlock({ toolName, toolInput = {}, onRef, highlighted, status
           </button>
         )}
       </div>
+      {isMermaid && (
+        <div className="tool-block-full mermaid-container">
+          <Suspense fallback={<div className="mermaid-loading">Loading diagram…</div>}>
+            <MermaidDiagram code={toolInput.code as string} />
+          </Suspense>
+        </div>
+      )}
       {isExpanded && isEditFile && renderEditFileDiff(toolInput.old_str ?? '', toolInput.new_str ?? '')}
-      {isExpanded && fullCmd && !isEditFile && (
+      {isExpanded && fullCmd && !isEditFile && !isMermaid && (
         <div className="tool-block-full">
           <pre>{fullCmd}</pre>
         </div>
