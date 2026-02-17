@@ -1,5 +1,6 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import {
+  initDatabase,
   getThreadMetadata,
   getAllThreadMetadata,
   updateThreadStatus,
@@ -15,27 +16,17 @@ import {
   deleteThreadData,
 } from './database.js';
 
-// Use unique thread IDs per test run to avoid collisions with real data
+// Use in-memory database for tests — no file I/O, fast, deterministic
+beforeAll(() => {
+  initDatabase(':memory:');
+});
+
+// Use unique thread IDs per test run to avoid collisions
 const prefix = `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-let testIds: string[] = [];
 
 function makeId(suffix: string): string {
-  const id = `T-${prefix}-${suffix}`;
-  testIds.push(id);
-  return id;
+  return `T-${prefix}-${suffix}`;
 }
-
-afterEach(() => {
-  // Clean up all test threads
-  for (const id of testIds) {
-    try {
-      deleteThreadData(id);
-    } catch {
-      // Ignore cleanup errors
-    }
-  }
-  testIds = [];
-});
 
 describe('thread metadata CRUD', () => {
   it('returns default metadata for unknown thread', () => {
