@@ -3,7 +3,7 @@ import { CheckSquare, Square, MinusSquare } from 'lucide-react';
 import type { Thread, ThreadStatus } from '../../types';
 import { ConfirmModal } from '../ConfirmModal';
 const KanbanView = lazy(() => import('../KanbanView').then(m => ({ default: m.KanbanView })));
-const DetailCardView = lazy(() => import('../DetailCardView').then(m => ({ default: m.DetailCardView })));
+const DetailCardView = lazy(() => import('../DetailCardView/index').then(m => ({ default: m.DetailCardView })));
 import { SortHeader } from './SortHeader';
 import { ThreadRow } from './ThreadRow';
 import { BulkActionBar } from './BulkActionBar';

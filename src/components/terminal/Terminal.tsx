@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useMemo, useState } from 'react';
 import { Minimap, type MinimapItem } from '../Minimap';
-import { ThreadDiscovery } from '../ThreadDiscovery';
+import { ThreadDiscovery } from '../ThreadDiscovery/index';
 import { MessageSearchModal } from '../MessageSearchModal';
 import { ImageViewer } from '../ImageViewer';
 import { apiGet, apiPatch } from '../../api/client';

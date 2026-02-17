@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Terminal } from '../Terminal';
+import { Terminal } from '../terminal';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { X, Columns, Grid2X2, Maximize, Square, Minus, ChevronUp, GripHorizontal } from 'lucide-react';
 import { TerminalTabs } from './TerminalTabs';
