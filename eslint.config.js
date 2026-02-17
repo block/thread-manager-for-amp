@@ -22,9 +22,7 @@ const sharedStrictOverrides = {
   '@typescript-eslint/no-unsafe-argument': 'warn',
   '@typescript-eslint/no-unsafe-call': 'warn',
   '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false, properties: false, arguments: false } }],
-  '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
   '@typescript-eslint/use-unknown-in-catch-callback-variable': 'warn',
-  '@typescript-eslint/restrict-plus-operands': 'warn',
 }
 
 export default defineConfig([
@@ -45,7 +43,7 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['warn', { allow: ['warn', 'error', 'debug'] }],
       ...sharedStrictOverrides,
     },
   },
@@ -63,7 +61,7 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['warn', { allow: ['warn', 'error', 'debug'] }],
       ...sharedStrictOverrides,
     },
   },

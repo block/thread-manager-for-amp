@@ -200,7 +200,7 @@ export function useTerminalWebSocket({
           // Auto-reconnect with exponential backoff (max ~10s)
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempt), 10000);
           reconnectAttempt++;
-          console.log(`[Terminal] Connection lost, reconnecting in ${delay}ms (attempt ${reconnectAttempt})`);
+          console.warn(`[Terminal] Connection lost, reconnecting in ${delay}ms (attempt ${reconnectAttempt})`);
           setMessages(prev => [...prev, { id: generateId(), type: 'system' as const, content: 'Connection lost. Reconnecting...' }]);
           reconnectTimeout = setTimeout(connect, delay);
         }

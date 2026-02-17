@@ -98,10 +98,10 @@ function runGit(args: string[], cwd: string): Promise<string> {
     let stdout = '';
     let stderr = '';
     child.stdout?.on('data', (d: Buffer) => {
-      stdout += d;
+      stdout += d.toString();
     });
     child.stderr?.on('data', (d: Buffer) => {
-      stderr += d;
+      stderr += d.toString();
     });
 
     child.on('close', (code: number | null) => {
@@ -144,10 +144,10 @@ function runGh(args: string[], cwd: string): Promise<string> {
     let stdout = '';
     let stderr = '';
     child.stdout?.on('data', (d: Buffer) => {
-      stdout += d;
+      stdout += d.toString();
     });
     child.stderr?.on('data', (d: Buffer) => {
-      stderr += d;
+      stderr += d.toString();
     });
 
     child.on('close', (code: number | null) => {

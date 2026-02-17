@@ -50,7 +50,7 @@ db.exec(`
 // Migration: Add linked_issue_url column if it doesn't exist
 try {
   db.exec(`ALTER TABLE thread_metadata ADD COLUMN linked_issue_url TEXT`);
-  console.log('📦 Added linked_issue_url column');
+  console.warn('📦 Added linked_issue_url column');
 } catch {
   // Column already exists
 }
@@ -456,6 +456,6 @@ export function deleteThreadData(threadId: string): DeleteThreadDataResult {
   return { artifacts };
 }
 
-console.log(`📦 Database initialized at ${DB_PATH}`);
+console.warn(`📦 Database initialized at ${DB_PATH}`);
 
 export default db;
