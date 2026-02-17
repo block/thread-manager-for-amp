@@ -103,6 +103,7 @@ function App() {
             <ThreadList
               threads={filters.filteredThreads}
               metadata={threadCtx.metadata}
+              threadLabels={filters.threadLabels}
               sortField={filters.sortField}
               sortDirection={filters.sortDirection}
               onSort={filters.handleSort}

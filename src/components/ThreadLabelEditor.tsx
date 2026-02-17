@@ -28,11 +28,12 @@ function getLabelColor(labelName: string): { bg: string; text: string; border: s
 
 interface ThreadLabelEditorProps {
   threadId: string;
+  initialLabels?: { name: string }[];
   onLabelsChange?: () => void;
   compact?: boolean;
 }
 
-export function ThreadLabelEditor({ threadId, onLabelsChange, compact = false }: ThreadLabelEditorProps) {
+export function ThreadLabelEditor({ threadId, initialLabels, onLabelsChange, compact = false }: ThreadLabelEditorProps) {
   const [labels, setLabels] = useState<ThreadLabel[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [newLabel, setNewLabel] = useState('');
@@ -51,10 +52,16 @@ export function ThreadLabelEditor({ threadId, onLabelsChange, compact = false }:
     }
   }, [threadId]);
 
-  // Load labels on mount and when threadId changes
+  // Skip mount fetch when parent provides labels (avoids per-row N+1 API calls).
+  // After user actions (add/remove), loadLabels() is called explicitly to get fresh data.
   useEffect(() => {
-    void loadLabels();
-  }, [loadLabels]);
+    if (initialLabels) {
+      setLabels(initialLabels.map((l, i) => ({ id: `init-${i}`, name: l.name, createdAt: '' })));
+    } else {
+      void loadLabels();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when threadId changes, not on every initialLabels ref change
+  }, [threadId]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {

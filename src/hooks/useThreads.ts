@@ -28,7 +28,20 @@ export function useThreads() {
         `/api/threads?limit=50${cursor ? `&cursor=${cursor}` : ''}`
       );
 
-      setThreads(prev => append ? [...prev, ...data.threads] : data.threads);
+      if (append) {
+        setThreads(prev => [...prev, ...data.threads]);
+      } else {
+        // Stabilize reference: skip setState if thread list hasn't meaningfully changed,
+        // preventing downstream re-renders (e.g., useFilters label re-fetch) on every poll
+        setThreads(prev => {
+          if (prev.length !== data.threads.length) return data.threads;
+          const changed = prev.some((t, i) => {
+            const next = data.threads[i];
+            return !next || t.id !== next.id || t.title !== next.title || t.lastUpdated !== next.lastUpdated;
+          });
+          return changed ? data.threads : prev;
+        });
+      }
       cursorRef.current = data.nextCursor;
       setHasMore(data.hasMore);
     } catch (err) {

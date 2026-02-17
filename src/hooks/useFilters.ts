@@ -47,27 +47,37 @@ export function useFilters({ threads, metadata }: UseFiltersOptions): UseFilters
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // Stable key derived from thread IDs — won't change on every poll if threads are the same
+  const threadIdKey = useMemo(
+    () => threads.slice(0, 50).map(t => t.id).join(','),
+    [threads]
+  );
+
   const fetchThreadLabels = useCallback(async () => {
-    const labelsMap: Record<string, string[]> = {};
-    await Promise.all(
-      threads.slice(0, 50).map(async (thread) => {
-        try {
-          const labels = await apiGet<{ name: string }[]>(`/api/thread-labels?threadId=${encodeURIComponent(thread.id)}`);
-          labelsMap[thread.id] = labels.map(l => l.name);
-        } catch {
-          labelsMap[thread.id] = [];
-        }
-      })
-    );
-    setThreadLabels(labelsMap);
+    const ids = threads.slice(0, 50).map(t => t.id);
+    if (ids.length === 0) return;
+
+    try {
+      const labelsMap = await apiGet<Record<string, { name: string }[]>>(
+        `/api/thread-labels-batch?threadIds=${ids.map(encodeURIComponent).join(',')}`
+      );
+      setThreadLabels(
+        Object.fromEntries(
+          Object.entries(labelsMap).map(([id, labels]) => [id, labels.map(l => l.name)])
+        )
+      );
+    } catch {
+      // Fallback: set empty labels rather than leaving stale state
+      setThreadLabels({});
+    }
   }, [threads]);
 
   useEffect(() => {
-    if (threads.length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate async effect with setState
+    if (threadIdKey) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate async effect fetching labels then calling setState
       void fetchThreadLabels();
     }
-  }, [threads, fetchThreadLabels]);
+  }, [threadIdKey]); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally keyed on stable threadIdKey
 
   const handleSort = useCallback((field: SortField) => {
     if (field === sortField) {
