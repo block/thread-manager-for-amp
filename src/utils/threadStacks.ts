@@ -13,30 +13,34 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
   }
 
   // Build bidirectional links (only for threads in our current list)
-  const parentToChild = new Map<string, string>();
+  // A parent can have multiple children (fan-out handoffs)
+  const parentToChildren = new Map<string, string[]>();
   const childToParent = new Map<string, string>();
   
   for (const t of threads) {
     if (t.handoffParentId && threadMap.has(t.handoffParentId)) {
       childToParent.set(t.id, t.handoffParentId);
-      if (!parentToChild.has(t.handoffParentId)) {
-        parentToChild.set(t.handoffParentId, t.id);
+      const existing = parentToChildren.get(t.handoffParentId);
+      if (existing) {
+        existing.push(t.id);
+      } else {
+        parentToChildren.set(t.handoffParentId, [t.id]);
       }
     }
   }
 
-  // Collect all members of each chain, picking the most recently updated as head
+  // Collect all members of each tree, picking the most recently updated as head
   const inStack = new Set<string>();
   const entries: ThreadListEntry[] = [];
 
   for (const t of threads) {
     if (inStack.has(t.id)) continue;
 
-    // Gather all threads in this chain (walk both directions)
+    // Gather all threads in this tree (walk up to root, then BFS down all children)
     const chainMembers: Thread[] = [t];
     const visited = new Set<string>([t.id]);
 
-    // Walk up to parents
+    // Walk up to the root ancestor
     let currentId = t.id;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
     while (true) {
@@ -49,17 +53,19 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
       currentId = parentId;
     }
 
-    // Walk down to children
-    currentId = t.id;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-    while (true) {
-      const childId = parentToChild.get(currentId);
-      if (!childId || visited.has(childId)) break;
-      const child = threadMap.get(childId);
-      if (!child) break;
-      visited.add(childId);
-      chainMembers.push(child);
-      currentId = childId;
+    // BFS down from all visited nodes to collect all children
+    const queue = [...visited];
+    for (const nodeId of queue) {
+      const childIds = parentToChildren.get(nodeId);
+      if (!childIds) continue;
+      for (const childId of childIds) {
+        if (visited.has(childId)) continue;
+        const child = threadMap.get(childId);
+        if (!child) continue;
+        visited.add(childId);
+        chainMembers.push(child);
+        queue.push(childId);
+      }
     }
 
     // Pick the most recently updated thread as head

@@ -96,6 +96,41 @@ describe('buildThreadStacks', () => {
     expect(entries).toHaveLength(1);
     expect(at(entries, 0).kind).toBe('thread');
   });
+
+  it('groups multiple children of the same parent into one stack', () => {
+    const threads = [
+      makeThread({ id: 'parent', lastUpdatedDate: '2025-01-01T00:00:00Z' }),
+      makeThread({ id: 'child1', handoffParentId: 'parent', lastUpdatedDate: '2025-01-02T00:00:00Z' }),
+      makeThread({ id: 'child2', handoffParentId: 'parent', lastUpdatedDate: '2025-01-03T00:00:00Z' }),
+      makeThread({ id: 'child3', handoffParentId: 'parent', lastUpdatedDate: '2025-01-04T00:00:00Z' }),
+    ];
+    const entries = buildThreadStacks(threads);
+    expect(entries).toHaveLength(1);
+    expect(at(entries, 0).kind).toBe('stack');
+    // Most recently updated child becomes head
+    expect(at(entries, 0).thread.id).toBe('child3');
+    // All others are ancestors (sorted by recency)
+    expect(at(entries, 0).stack?.ancestors).toHaveLength(3);
+    const ancestorIds = at(entries, 0).stack?.ancestors.map(a => a.id) ?? [];
+    expect(ancestorIds).toContain('parent');
+    expect(ancestorIds).toContain('child1');
+    expect(ancestorIds).toContain('child2');
+  });
+
+  it('handles fan-out: parent with children that also have children', () => {
+    const threads = [
+      makeThread({ id: 'root', lastUpdatedDate: '2025-01-01T00:00:00Z' }),
+      makeThread({ id: 'branch-a', handoffParentId: 'root', lastUpdatedDate: '2025-01-02T00:00:00Z' }),
+      makeThread({ id: 'branch-b', handoffParentId: 'root', lastUpdatedDate: '2025-01-03T00:00:00Z' }),
+      makeThread({ id: 'leaf', handoffParentId: 'branch-a', lastUpdatedDate: '2025-01-05T00:00:00Z' }),
+    ];
+    const entries = buildThreadStacks(threads);
+    expect(entries).toHaveLength(1);
+    expect(at(entries, 0).kind).toBe('stack');
+    // leaf is most recent
+    expect(at(entries, 0).thread.id).toBe('leaf');
+    expect(getStackSize(at(entries, 0))).toBe(4);
+  });
 });
 
 describe('flattenEntries', () => {
