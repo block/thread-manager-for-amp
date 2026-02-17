@@ -70,7 +70,7 @@ export function WorkspaceSourceControlModal({
         setLoading(false);
       }
     }
-    fetchStatus();
+    void fetchStatus();
   }, [isOpen, workspacePath]);
 
   // Auto-load diff when selectedFile changes
@@ -80,11 +80,11 @@ export function WorkspaceSourceControlModal({
       setFileDiff(null);
       
       const fullPath = `${workspacePath}/${selectedFile}`;
-      apiGet<FileDiff>(
+      void apiGet<FileDiff>(
         `/api/file-diff?path=${encodeURIComponent(fullPath)}&workspace=${encodeURIComponent(workspacePath)}`
       ).then(diff => {
         setFileDiff(diff);
-      }).catch(err => {
+      }).catch((err: unknown) => {
         console.error('Failed to load diff:', err);
         setFileDiff({ error: 'Failed to load diff' });
       }).finally(() => {

@@ -57,7 +57,7 @@ export async function handleMetadataRoutes(
     } catch (err) {
       const error = err as Error;
       // Silently return empty for permission errors - API may not be available
-      if (error.message?.includes('Permission denied')) {
+      if (error.message?.includes('Permission denied')) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- error.message may be undefined at runtime
         return jsonResponse(res, []);
       }
       console.error('Failed to get thread labels:', error);
@@ -82,7 +82,7 @@ export async function handleMetadataRoutes(
       return jsonResponse(res, result);
     } catch (err) {
       const error = err as Error;
-      if (error.message?.includes('Permission denied')) {
+      if (error.message?.includes('Permission denied')) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- error.message may be undefined at runtime
         return jsonResponse(res, { error: 'Labels API not available' }, 403);
       }
       console.error('Failed to set thread labels:', error);
@@ -99,7 +99,7 @@ export async function handleMetadataRoutes(
       return jsonResponse(res, result);
     } catch (err) {
       const error = err as Error;
-      if (error.message?.includes('Permission denied')) {
+      if (error.message?.includes('Permission denied')) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- error.message may be undefined at runtime
         return jsonResponse(res, []);
       }
       console.error('Failed to get user labels:', error);

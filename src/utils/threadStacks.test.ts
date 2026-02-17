@@ -36,8 +36,8 @@ describe('buildThreadStacks', () => {
     expect(entries[0].kind).toBe('stack');
     // Child is more recent, so it becomes head
     expect(entries[0].thread.id).toBe('child');
-    expect(entries[0].stack!.ancestors).toHaveLength(1);
-    expect(entries[0].stack!.ancestors[0].id).toBe('parent');
+    expect(entries[0].stack?.ancestors).toHaveLength(1);
+    expect(entries[0].stack?.ancestors[0].id).toBe('parent');
   });
 
   it('picks most recently updated thread as head', () => {
@@ -59,7 +59,7 @@ describe('buildThreadStacks', () => {
     expect(entries).toHaveLength(1);
     expect(entries[0].kind).toBe('stack');
     expect(entries[0].thread.id).toBe('c');
-    expect(entries[0].stack!.ancestors).toHaveLength(2);
+    expect(entries[0].stack?.ancestors).toHaveLength(2);
   });
 
   it('handles unrelated threads as separate entries', () => {

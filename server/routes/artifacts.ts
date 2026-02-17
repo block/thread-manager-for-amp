@@ -82,6 +82,7 @@ export async function handleArtifactRoutes(
     const body = await parseBody<CreateArtifactBody>(req);
     const { threadId, type, title, content, mediaType } = body;
     
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed request body
     if (!threadId || !type || !title) {
       return jsonResponse(res, { error: 'threadId, type, and title required' }, 400);
     }

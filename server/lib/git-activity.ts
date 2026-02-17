@@ -400,7 +400,7 @@ async function getPRsForBranches(workspacePath: string, repo: string | null, bra
         workspacePath
       );
 
-      const prList: GhPrListResult[] = JSON.parse(output || '[]');
+      const prList = JSON.parse(output || '[]') as GhPrListResult[];
       for (const pr of prList) {
         if (!prs.has(pr.number)) {
           prs.set(pr.number, {
@@ -431,7 +431,7 @@ async function getPRsForCommits(workspacePath: string, repo: string | null, comm
         workspacePath
       );
 
-      const prList: GhPrApiResult[] = JSON.parse(output || '[]');
+      const prList = JSON.parse(output || '[]') as GhPrApiResult[];
       for (const pr of prList) {
         if (!prs.has(pr.number)) {
           prs.set(pr.number, {
@@ -525,6 +525,7 @@ async function updatePrIndex(threadId: string, prs: LinkedPR[]): Promise<void> {
 
   for (const pr of prs) {
     const key = `${pr.repo}#${pr.number}`;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for dynamic object keys
     if (!index[key]) index[key] = [];
     if (!index[key].includes(threadId)) {
       index[key].push(threadId);
@@ -539,7 +540,7 @@ export async function getThreadGitActivity(threadId: string, forceRefresh = fals
 
   try {
     const content = await readFile(threadPath, 'utf-8');
-    const data: ThreadData = JSON.parse(content);
+    const data = JSON.parse(content) as ThreadData;
     const threadStat: Stats = await stat(threadPath);
 
     const trees = data.env?.initial?.trees || [];
@@ -584,7 +585,7 @@ export async function getThreadGitActivity(threadId: string, forceRefresh = fals
       }
 
       const cache = await loadCache(threadId);
-      const cachedWorkspace = cache?.workspaces?.find(w => w.workspacePath === workspacePath);
+      const cachedWorkspace = cache?.workspaces.find(w => w.workspacePath === workspacePath);
 
       const cacheValid =
         cachedWorkspace && cache?.threadMtimeMs === threadStat.mtimeMs && cachedWorkspace.gitHeadSha === headSha && !forceRefresh;
@@ -603,7 +604,7 @@ export async function getThreadGitActivity(threadId: string, forceRefresh = fals
 
       const remotes = tree.remotes || tree.repository?.remotes || [];
       const originRemote = remotes.find(r => r.name === 'origin') || remotes[0];
-      const repoUrl = originRemote?.url || tree.repository?.url;
+      const repoUrl = originRemote?.url || tree.repository?.url; // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- originRemote may be undefined from find()
       const repo = parseGitHubRepo(repoUrl);
 
       const rawCommits = await getCommitsInWindow(workspacePath, timeWindow.startISO, timeWindow.endISO);
@@ -655,7 +656,7 @@ export async function getThreadGitActivity(threadId: string, forceRefresh = fals
 
     await saveCache(threadId, result);
 
-    const allPrs = workspaces.flatMap(w => w.prs || []);
+    const allPrs = workspaces.flatMap(w => w.prs);
     await updatePrIndex(threadId, allPrs);
 
     return result;

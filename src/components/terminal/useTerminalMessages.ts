@@ -40,7 +40,7 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
       try {
         const [markdown, threadImages] = await Promise.all([
           apiGetText(`/api/thread-history?threadId=${encodeURIComponent(threadId)}`),
-          apiGet<ThreadImage[]>(`/api/thread-images?threadId=${encodeURIComponent(threadId)}`).catch((e) => { console.debug('thread-images:', e.message); return []; }),
+          apiGet<ThreadImage[]>(`/api/thread-images?threadId=${encodeURIComponent(threadId)}`).catch((e: unknown) => { console.debug('thread-images:', e instanceof Error ? e.message : String(e)); return []; }),
         ]);
         
         const totalMatch = markdown.match(/totalMessages:\s*(\d+)/);
@@ -74,7 +74,7 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
       }
       setIsLoading(false);
     }
-    loadHistory();
+    void loadHistory();
   }, [threadId]);
 
   const loadMoreMessages = useCallback(async () => {
@@ -109,7 +109,7 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
     
     const handleScroll = () => {
       if (container.scrollTop < 100 && hasMoreMessages && !loadingMore) {
-        loadMoreMessages();
+        void loadMoreMessages();
       }
     };
     

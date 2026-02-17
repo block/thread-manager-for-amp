@@ -21,10 +21,12 @@ interface LoadingStepsProps {
 export function LoadingSteps({ state, compact = false }: LoadingStepsProps) {
   if (compact) {
     const currentStep = state.steps[state.currentStepIndex];
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- index may be out of bounds
+    const stepLabel = currentStep?.label || state.title;
     return (
       <div className="loading-steps-compact">
         <Loader2 size={14} className="loading-spinner" />
-        <span className="loading-step-label">{currentStep?.label || state.title}</span>
+        <span className="loading-step-label">{stepLabel}</span>
       </div>
     );
   }

@@ -260,6 +260,7 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
 
         if (typeof event.result === 'string') {
           resultStr = event.result.slice(0, 10000);
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for parsed JSON stream event
         } else if (typeof event.result === 'object' && event.result !== null) {
           const resultObj = event.result as { result?: unknown; status?: string };
           if (resultObj.result !== undefined) {
@@ -370,7 +371,7 @@ async function spawnAmpOnSession(
       session.activeMessage = null;
     });
 
-    child.stdout?.on('data', (data: Buffer) => {
+    child.stdout.on('data', (data: Buffer) => {
       session.buffer += data.toString();
       const lines = session.buffer.split('\n');
       session.buffer = lines.pop() || '';
@@ -378,7 +379,7 @@ async function spawnAmpOnSession(
       for (const line of lines) {
         if (!line.trim()) continue;
         try {
-          const json: AmpStreamEvent = JSON.parse(line);
+          const json = JSON.parse(line) as AmpStreamEvent;
           handleStreamEvent(session, json);
         } catch {
           // Skip non-JSON lines
@@ -386,7 +387,7 @@ async function spawnAmpOnSession(
       }
     });
 
-    child.stderr?.on('data', (data: Buffer) => {
+    child.stderr.on('data', (data: Buffer) => {
       session.stderrBuffer += data.toString();
       if (session.stderrBuffer.length > 40000) {
         session.stderrBuffer = session.stderrBuffer.slice(-20000);
@@ -397,7 +398,7 @@ async function spawnAmpOnSession(
       // Flush remaining buffered content
       if (session.buffer.trim()) {
         try {
-          const json: AmpStreamEvent = JSON.parse(session.buffer);
+          const json = JSON.parse(session.buffer) as AmpStreamEvent;
           handleStreamEvent(session, json);
         } catch {
           // Ignore
@@ -430,7 +431,7 @@ async function spawnAmpOnSession(
 
       if (pending) {
         session.pendingMessage = null;
-        void spawnAmpOnSession(session, pending.content, pending.image).catch((err) => {
+        void spawnAmpOnSession(session, pending.content, pending.image).catch((err: unknown) => {
           console.error(`[WS] spawnAmp error for queued message on thread ${session.threadId}:`, err);
           sendToSession(session, { type: 'error', content: 'Failed to process queued message' });
         });
@@ -447,7 +448,7 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
   try {
     const threadPath = join(THREADS_DIR, `${session.threadId}.json`);
     const content = await readFile(threadPath, 'utf-8');
-    const data: ThreadData = JSON.parse(content);
+    const data = JSON.parse(content) as ThreadData;
     const tags = data.env?.initial?.tags || [];
     const modelTag = tags.find((t: string) => t.startsWith('model:'));
     if (modelTag) {
@@ -623,12 +624,12 @@ export function setupWebSocket(server: Server): WebSocketServer {
 
       const msg = data.toString();
       try {
-        const parsed: WsClientMessage = JSON.parse(msg);
+        const parsed = JSON.parse(msg) as WsClientMessage;
         if (parsed.type === 'message' && parsed.content) {
           const image = parsed.image
             ? ({ data: parsed.image.data, mediaType: parsed.image.mediaType } as ThreadImage)
             : null;
-          void spawnAmpOnSession(session, parsed.content, image).catch((err) => {
+          void spawnAmpOnSession(session, parsed.content, image).catch((err: unknown) => {
             console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
             sendToSession(session, { type: 'error', content: 'Failed to process message' });
           });
@@ -640,7 +641,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
         }
       } catch {
         if (msg.trim()) {
-          void spawnAmpOnSession(session, msg.trim()).catch((err) => {
+          void spawnAmpOnSession(session, msg.trim()).catch((err: unknown) => {
             console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
             sendToSession(session, { type: 'error', content: 'Failed to process message' });
           });

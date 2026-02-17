@@ -38,7 +38,7 @@ import { spawn } from 'child_process';
 function waitForMessage(ws: WebSocket, type: string): Promise<Record<string, unknown>> {
   return new Promise((resolve) => {
     const handler = (data: Buffer) => {
-      const msg = JSON.parse(data.toString());
+      const msg = JSON.parse(data.toString()) as Record<string, unknown>;
       if (msg.type === type) {
         ws.off('message', handler);
         resolve(msg);
@@ -108,7 +108,7 @@ describe('concurrent spawn race condition', () => {
     });
 
     // Simulate child process completing by emitting 'close'
-    const firstChild = (spawn as ReturnType<typeof vi.fn>).mock.results[0].value;
+    const firstChild = (spawn as ReturnType<typeof vi.fn>).mock.results[0].value as EventEmitter;
     firstChild.emit('close', 0);
 
     // Wait for the 'done' message

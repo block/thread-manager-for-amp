@@ -56,7 +56,7 @@ export const WorkspaceSourceControl = memo(function WorkspaceSourceControl({
 
   useEffect(() => {
     if (workspacePath && !hasFetched) {
-      fetchStatus();
+      void fetchStatus();
     }
   }, [workspacePath, hasFetched, fetchStatus]);
 
@@ -67,7 +67,7 @@ export const WorkspaceSourceControl = memo(function WorkspaceSourceControl({
 
   useEffect(() => {
     if (refreshKey > 0 && workspacePath) {
-      fetchStatus();
+      void fetchStatus();
     }
   }, [refreshKey, workspacePath, fetchStatus]);
 
@@ -105,9 +105,9 @@ export const WorkspaceSourceControl = memo(function WorkspaceSourceControl({
           <div className="workspace-scm-content">
             <div className="workspace-scm-toolbar">
               <div className="workspace-scm-stats">
-                {status!.addedCount > 0 && <span className="stat-added"><Plus size={10} /> {status!.addedCount}</span>}
-                {status!.modifiedCount > 0 && <span className="stat-modified"><Pencil size={10} /> {status!.modifiedCount}</span>}
-                {status!.deletedCount > 0 && <span className="stat-deleted"><Trash2 size={10} /> {status!.deletedCount}</span>}
+                {(status?.addedCount ?? 0) > 0 && <span className="stat-added"><Plus size={10} /> {status?.addedCount}</span>}
+                {(status?.modifiedCount ?? 0) > 0 && <span className="stat-modified"><Pencil size={10} /> {status?.modifiedCount}</span>}
+                {(status?.deletedCount ?? 0) > 0 && <span className="stat-deleted"><Trash2 size={10} /> {status?.deletedCount}</span>}
               </div>
               <button className="workspace-scm-refresh" onClick={fetchStatus} title="Refresh">
                 <RefreshCw size={12} />
@@ -115,7 +115,7 @@ export const WorkspaceSourceControl = memo(function WorkspaceSourceControl({
             </div>
             
             <div className="workspace-scm-files">
-              {status!.files.map((file) => (
+              {status?.files.map((file) => (
                 <button
                   key={file.path}
                   className={`workspace-scm-file ${file.status}`}

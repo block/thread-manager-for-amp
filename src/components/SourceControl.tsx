@@ -30,7 +30,7 @@ export function SourceControl({ threadId, onClose }: SourceControlProps) {
         setLoading(false);
       }
     }
-    fetchStatus();
+    void fetchStatus();
   }, [threadId]);
 
   const loadFileDiff = useCallback(async (file: GitFileStatus) => {

@@ -47,7 +47,7 @@ export function useThreads() {
 
   const loadMore = useCallback(() => {
     if (hasMore && !loadingMore) {
-      fetchThreads(true);
+      void fetchThreads(true);
     }
   }, [hasMore, loadingMore, fetchThreads]);
 
@@ -56,11 +56,11 @@ export function useThreads() {
   }, []);
 
   useEffect(() => {
-    fetchThreads();
+    void fetchThreads();
     
     // Set up auto-refresh
     autoRefreshRef.current = window.setInterval(() => {
-      fetchThreads(false);
+      void fetchThreads(false);
     }, AUTO_REFRESH_INTERVAL_MS);
     
     return () => {

@@ -105,7 +105,7 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
   useEffect(() => {
     apiGet<ThreadMetadata>(`/api/thread-status?threadId=${encodeURIComponent(threadId)}`)
       .then(setMetadata)
-      .catch(err => console.error('Failed to fetch thread metadata:', err));
+      .catch((err: unknown) => console.error('Failed to fetch thread metadata:', err));
   }, [threadId, setMetadata]);
 
   useEffect(() => {
@@ -163,7 +163,7 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
       if (issueUrl) {
         apiPatch('/api/thread-linked-issue', { threadId, url: issueUrl })
           .then(() => setMetadata(prev => prev ? { ...prev, linked_issue_url: issueUrl } : prev))
-          .catch(err => console.debug('Auto-link issue failed:', err));
+          .catch((err: unknown) => console.debug('Auto-link issue failed:', err));
       }
     }
   }, [input, pendingImage, isConnected, setMessages, wsSendMessage, addSessionImage, clearInput, metadata, threadId, setMetadata]);

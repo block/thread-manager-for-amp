@@ -128,6 +128,7 @@ export function useThreadActions({
         )
       );
       const failures = results.filter(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- explicit for readability
         r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)
       );
       if (failures.length > 0) {
@@ -200,7 +201,7 @@ export function useThreadActions({
     if (newName) {
       apiPatch<{ success: boolean }>('/api/thread-rename', { threadId: id, name: newName })
         .then(() => refetch())
-        .catch(err => console.error('Failed to rename:', err));
+        .catch((err: unknown) => console.error('Failed to rename:', err));
     }
   }, [refetch]);
 

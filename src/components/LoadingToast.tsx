@@ -21,7 +21,7 @@ export function LoadingToast({ state, onComplete }: LoadingToastProps) {
   }, [state]);
 
   useEffect(() => {
-    if (stateJustCleared && prevState) {
+    if (stateJustCleared) {
       setSavedState(prevState);
       setAnimationPhase('completing');
     }

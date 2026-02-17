@@ -53,7 +53,7 @@ export function ThreadLabelEditor({ threadId, onLabelsChange, compact = false }:
 
   // Load labels on mount and when threadId changes
   useEffect(() => {
-    loadLabels();
+    void loadLabels();
   }, [loadLabels]);
 
   useEffect(() => {
@@ -114,7 +114,7 @@ export function ThreadLabelEditor({ threadId, onLabelsChange, compact = false }:
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleAddLabel();
+      void handleAddLabel();
     } else if (e.key === 'Escape') {
       setIsEditing(false);
       setNewLabel('');
@@ -133,7 +133,7 @@ export function ThreadLabelEditor({ threadId, onLabelsChange, compact = false }:
             title={`Click to remove "${label.name}"`}
             onClick={() => {
               if (window.confirm(`Remove label "${label.name}" from this thread?`)) {
-                handleRemoveLabel(label.name);
+                void handleRemoveLabel(label.name);
               }
             }}
             disabled={loading}

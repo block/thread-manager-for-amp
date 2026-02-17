@@ -60,7 +60,7 @@ export function GitActivityContent({ activity }: GitActivityContentProps) {
   const [expandedBranches, setExpandedBranches] = useState(false);
   const [expandedPRs, setExpandedPRs] = useState(true);
 
-  if (!activity || activity.error || activity.workspaces.length === 0) {
+  if (activity.error || activity.workspaces.length === 0) {
     return <div className="discovery-empty">No git activity found</div>;
   }
 

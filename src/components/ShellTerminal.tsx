@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { X, Square, TerminalSquare, Minus, Maximize } from 'lucide-react';
+import type { ShellServerMessage } from '../../shared/websocket.js';
 import '@xterm/xterm/css/xterm.css';
 
 interface ShellTerminalProps {
@@ -35,14 +36,14 @@ export function ShellTerminal({ cwd, onClose, onMinimize, minimized }: ShellTerm
 
     ws.onmessage = (event) => {
       try {
-        const msg = JSON.parse(event.data);
+        const msg = JSON.parse(event.data as string) as ShellServerMessage;
         switch (msg.type) {
           case 'connected':
             setIsConnected(true);
-            setSessionInfo({ shell: msg.shell, cwd: msg.cwd });
+            setSessionInfo({ shell: msg.shell ?? '', cwd: msg.cwd ?? '' });
             break;
           case 'output':
-            termRef.current?.write(msg.data);
+            if (msg.data) termRef.current?.write(msg.data);
             break;
           case 'exit':
             termRef.current?.write(`\r\n[Process exited with code ${msg.exitCode}]\r\n`);

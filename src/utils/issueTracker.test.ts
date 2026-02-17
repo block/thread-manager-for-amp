@@ -23,7 +23,7 @@ describe('parseIssueUrl', () => {
   it('parses Linear issue URL case-insensitively', () => {
     const result = parseIssueUrl('https://linear.app/myteam/issue/team-456/title');
     expect(result).not.toBeNull();
-    expect(result!.id).toBe('TEAM-456');
+    expect(result?.id).toBe('TEAM-456');
   });
 
   it('parses GitHub issue URL', () => {
@@ -69,7 +69,7 @@ describe('parseIssueUrl', () => {
   it('handles GitHub URL without issue/PR path', () => {
     const result = parseIssueUrl('https://github.com/org/repo');
     expect(result).not.toBeNull();
-    expect(result!.type).toBe('unknown');
+    expect(result?.type).toBe('unknown');
   });
 });
 

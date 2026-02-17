@@ -53,7 +53,7 @@ function parseSection(text: string, role: 'user' | 'assistant'): Message[] {
       try {
         // Unescape triple backticks that were escaped during formatting
         const jsonStr = match[2].replace(/\\`\\`\\`/g, '```');
-        input = JSON.parse(jsonStr);
+        input = JSON.parse(jsonStr) as ToolInput;
       } catch { /* ignore parse errors */ }
       
       messages.push({

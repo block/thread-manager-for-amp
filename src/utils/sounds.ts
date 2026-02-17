@@ -13,7 +13,7 @@ export function playNotificationSound(): void {
     
     // Resume context if suspended (browser autoplay policy)
     if (ctx.state === 'suspended') {
-      ctx.resume();
+      void ctx.resume();
     }
 
     const now = ctx.currentTime;

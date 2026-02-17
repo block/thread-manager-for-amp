@@ -5,28 +5,17 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
-// Shared rule overrides for strictTypeChecked compatibility with the existing codebase.
-// Rules are downgraded to 'warn' for pre-existing violations; new code should still aim
-// to satisfy these rules. Promote to 'error' as violations are fixed.
+// Shared rule overrides for strictTypeChecked.
 const sharedStrictOverrides = {
   // TODO: Re-enable when typescript-eslint supports ESLint 10 (https://github.com/typescript-eslint/typescript-eslint/issues/11952)
   '@typescript-eslint/no-deprecated': 'off',
-  // TODO: Fix pre-existing violations and promote to 'error'
   '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
   '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
-  '@typescript-eslint/no-non-null-assertion': 'warn',
-  '@typescript-eslint/no-unnecessary-condition': 'warn',
-  '@typescript-eslint/no-floating-promises': 'warn',
-  '@typescript-eslint/no-unsafe-assignment': 'warn',
-  '@typescript-eslint/no-unsafe-member-access': 'warn',
-  '@typescript-eslint/no-unsafe-argument': 'warn',
-  '@typescript-eslint/no-unsafe-call': 'warn',
   '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false, properties: false, arguments: false } }],
-  '@typescript-eslint/use-unknown-in-catch-callback-variable': 'warn',
 }
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'shared/dist']),
   {
     files: ['src/**/*.{ts,tsx}', 'shared/**/*.ts'],
     extends: [

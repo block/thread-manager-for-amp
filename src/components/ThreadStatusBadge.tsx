@@ -118,7 +118,7 @@ export const ThreadStatusBadge = memo(function ThreadStatusBadge({ threadId, sta
                 className={`status-option ${s === currentStatus ? 'selected' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleStatusChange(s);
+                  void handleStatusChange(s);
                 }}
               >
                 <StatusIcon size={12} style={{ color: cfg.color }} />
