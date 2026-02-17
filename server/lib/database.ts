@@ -1,7 +1,7 @@
 import Database, { Database as DatabaseType, Statement } from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import {
   Artifact,
   ArtifactType,
@@ -11,67 +11,73 @@ import {
 
 // Store database in user's home directory
 const DATA_DIR = join(homedir(), '.amp-thread-manager');
-const DB_PATH = join(DATA_DIR, 'threads.db');
+const DEFAULT_DB_PATH = join(DATA_DIR, 'threads.db');
 
-// Ensure data directory exists
-if (!existsSync(DATA_DIR)) {
-  mkdirSync(DATA_DIR, { recursive: true });
+function createDatabase(dbPath: string): DatabaseType {
+  if (dbPath !== ':memory:') {
+    const dir = dirname(dbPath);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+  }
+
+  const instance = new Database(dbPath);
+  instance.pragma('journal_mode = WAL');
+
+  instance.exec(`
+    CREATE TABLE IF NOT EXISTS thread_metadata (
+      thread_id TEXT PRIMARY KEY,
+      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'parked', 'done', 'blocked')),
+      goal TEXT,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_at INTEGER DEFAULT (unixepoch())
+    );
+
+    CREATE TABLE IF NOT EXISTS thread_blocks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      thread_id TEXT NOT NULL,
+      blocked_by_thread_id TEXT NOT NULL,
+      reason TEXT,
+      created_at INTEGER DEFAULT (unixepoch()),
+      FOREIGN KEY (thread_id) REFERENCES thread_metadata(thread_id),
+      UNIQUE(thread_id, blocked_by_thread_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_thread_status ON thread_metadata(status);
+    CREATE INDEX IF NOT EXISTS idx_thread_blocks_thread ON thread_blocks(thread_id);
+    CREATE INDEX IF NOT EXISTS idx_thread_blocks_blocker ON thread_blocks(blocked_by_thread_id);
+  `);
+
+  // Migration: Add linked_issue_url column if it doesn't exist
+  try {
+    instance.exec(`ALTER TABLE thread_metadata ADD COLUMN linked_issue_url TEXT`);
+    console.warn('📦 Added linked_issue_url column');
+  } catch {
+    // Column already exists
+  }
+
+  instance.exec(`
+    CREATE TABLE IF NOT EXISTS artifacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      thread_id TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('note', 'research', 'plan', 'image', 'file')),
+      title TEXT NOT NULL,
+      content TEXT,
+      file_path TEXT,
+      media_type TEXT,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_at INTEGER DEFAULT (unixepoch())
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_artifacts_thread ON artifacts(thread_id);
+    CREATE INDEX IF NOT EXISTS idx_artifacts_type ON artifacts(type);
+  `);
+
+  return instance;
 }
 
-// Initialize database
-const db: DatabaseType = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
-
-// Create tables
-db.exec(`
-  CREATE TABLE IF NOT EXISTS thread_metadata (
-    thread_id TEXT PRIMARY KEY,
-    status TEXT DEFAULT 'active' CHECK(status IN ('active', 'parked', 'done', 'blocked')),
-    goal TEXT,
-    created_at INTEGER DEFAULT (unixepoch()),
-    updated_at INTEGER DEFAULT (unixepoch())
-  );
-
-  CREATE TABLE IF NOT EXISTS thread_blocks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    thread_id TEXT NOT NULL,
-    blocked_by_thread_id TEXT NOT NULL,
-    reason TEXT,
-    created_at INTEGER DEFAULT (unixepoch()),
-    FOREIGN KEY (thread_id) REFERENCES thread_metadata(thread_id),
-    UNIQUE(thread_id, blocked_by_thread_id)
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_thread_status ON thread_metadata(status);
-  CREATE INDEX IF NOT EXISTS idx_thread_blocks_thread ON thread_blocks(thread_id);
-  CREATE INDEX IF NOT EXISTS idx_thread_blocks_blocker ON thread_blocks(blocked_by_thread_id);
-`);
-
-// Migration: Add linked_issue_url column if it doesn't exist
-try {
-  db.exec(`ALTER TABLE thread_metadata ADD COLUMN linked_issue_url TEXT`);
-  console.warn('📦 Added linked_issue_url column');
-} catch {
-  // Column already exists
-}
-
-// Create artifacts table
-db.exec(`
-  CREATE TABLE IF NOT EXISTS artifacts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    thread_id TEXT NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('note', 'research', 'plan', 'image', 'file')),
-    title TEXT NOT NULL,
-    content TEXT,
-    file_path TEXT,
-    media_type TEXT,
-    created_at INTEGER DEFAULT (unixepoch()),
-    updated_at INTEGER DEFAULT (unixepoch())
-  );
-  
-  CREATE INDEX IF NOT EXISTS idx_artifacts_thread ON artifacts(thread_id);
-  CREATE INDEX IF NOT EXISTS idx_artifacts_type ON artifacts(type);
-`);
+// Initialize with default path
+let db: DatabaseType = createDatabase(DEFAULT_DB_PATH);
 
 // Database row types
 interface ThreadMetadataRow {
@@ -138,102 +144,106 @@ interface Statements {
   deleteArtifact: Statement<[number]>;
 }
 
-const statements: Statements = {
-  getMetadata: db.prepare(`
-    SELECT * FROM thread_metadata WHERE thread_id = ?
-  `),
-  
-  upsertMetadata: db.prepare(`
-    INSERT INTO thread_metadata (thread_id, status, goal, updated_at)
-    VALUES (@thread_id, @status, @goal, unixepoch())
-    ON CONFLICT(thread_id) DO UPDATE SET
-      status = COALESCE(@status, status),
-      goal = COALESCE(@goal, goal),
-      updated_at = unixepoch()
-  `),
-  
-  updateStatus: db.prepare(`
-    INSERT INTO thread_metadata (thread_id, status, updated_at)
-    VALUES (@thread_id, @status, unixepoch())
-    ON CONFLICT(thread_id) DO UPDATE SET
-      status = @status,
-      updated_at = unixepoch()
-  `),
-  
-  updateGoal: db.prepare(`
-    INSERT INTO thread_metadata (thread_id, goal, updated_at)
-    VALUES (@thread_id, @goal, unixepoch())
-    ON CONFLICT(thread_id) DO UPDATE SET
-      goal = @goal,
-      updated_at = unixepoch()
-  `),
-  
-  updateLinkedIssue: db.prepare(`
-    INSERT INTO thread_metadata (thread_id, linked_issue_url, updated_at)
-    VALUES (@thread_id, @linked_issue_url, unixepoch())
-    ON CONFLICT(thread_id) DO UPDATE SET
-      linked_issue_url = @linked_issue_url,
-      updated_at = unixepoch()
-  `),
-  
-  getAllMetadata: db.prepare(`
-    SELECT * FROM thread_metadata
-  `),
-  
-  getBlockers: db.prepare(`
-    SELECT tb.*, tm.status as blocker_status, tm.goal as blocker_goal
-    FROM thread_blocks tb
-    LEFT JOIN thread_metadata tm ON tb.blocked_by_thread_id = tm.thread_id
-    WHERE tb.thread_id = ?
-  `),
-  
-  getBlocking: db.prepare(`
-    SELECT tb.*, tm.status as blocked_status, tm.goal as blocked_goal
-    FROM thread_blocks tb
-    LEFT JOIN thread_metadata tm ON tb.thread_id = tm.thread_id
-    WHERE tb.blocked_by_thread_id = ?
-  `),
-  
-  addBlock: db.prepare(`
-    INSERT OR IGNORE INTO thread_blocks (thread_id, blocked_by_thread_id, reason)
-    VALUES (@thread_id, @blocked_by_thread_id, @reason)
-  `),
-  
-  removeBlock: db.prepare(`
-    DELETE FROM thread_blocks 
-    WHERE thread_id = @thread_id AND blocked_by_thread_id = @blocked_by_thread_id
-  `),
-  
-  getBlockedThreads: db.prepare(`
-    SELECT DISTINCT thread_id FROM thread_blocks
-  `),
-  
-  // Artifact statements
-  getArtifacts: db.prepare(`
-    SELECT * FROM artifacts WHERE thread_id = ? ORDER BY created_at DESC
-  `),
-  
-  getArtifact: db.prepare(`
-    SELECT * FROM artifacts WHERE id = ?
-  `),
-  
-  createArtifact: db.prepare(`
-    INSERT INTO artifacts (thread_id, type, title, content, file_path, media_type)
-    VALUES (@thread_id, @type, @title, @content, @file_path, @media_type)
-  `),
-  
-  updateArtifact: db.prepare(`
-    UPDATE artifacts SET
-      title = COALESCE(@title, title),
-      content = COALESCE(@content, content),
-      updated_at = unixepoch()
-    WHERE id = @id
-  `),
-  
-  deleteArtifact: db.prepare(`
-    DELETE FROM artifacts WHERE id = ?
-  `),
-};
+function prepareStatements(instance: DatabaseType): Statements {
+  return {
+    getMetadata: instance.prepare(`
+      SELECT * FROM thread_metadata WHERE thread_id = ?
+    `),
+    
+    upsertMetadata: instance.prepare(`
+      INSERT INTO thread_metadata (thread_id, status, goal, updated_at)
+      VALUES (@thread_id, @status, @goal, unixepoch())
+      ON CONFLICT(thread_id) DO UPDATE SET
+        status = COALESCE(@status, status),
+        goal = COALESCE(@goal, goal),
+        updated_at = unixepoch()
+    `),
+    
+    updateStatus: instance.prepare(`
+      INSERT INTO thread_metadata (thread_id, status, updated_at)
+      VALUES (@thread_id, @status, unixepoch())
+      ON CONFLICT(thread_id) DO UPDATE SET
+        status = @status,
+        updated_at = unixepoch()
+    `),
+    
+    updateGoal: instance.prepare(`
+      INSERT INTO thread_metadata (thread_id, goal, updated_at)
+      VALUES (@thread_id, @goal, unixepoch())
+      ON CONFLICT(thread_id) DO UPDATE SET
+        goal = @goal,
+        updated_at = unixepoch()
+    `),
+    
+    updateLinkedIssue: instance.prepare(`
+      INSERT INTO thread_metadata (thread_id, linked_issue_url, updated_at)
+      VALUES (@thread_id, @linked_issue_url, unixepoch())
+      ON CONFLICT(thread_id) DO UPDATE SET
+        linked_issue_url = @linked_issue_url,
+        updated_at = unixepoch()
+    `),
+    
+    getAllMetadata: instance.prepare(`
+      SELECT * FROM thread_metadata
+    `),
+    
+    getBlockers: instance.prepare(`
+      SELECT tb.*, tm.status as blocker_status, tm.goal as blocker_goal
+      FROM thread_blocks tb
+      LEFT JOIN thread_metadata tm ON tb.blocked_by_thread_id = tm.thread_id
+      WHERE tb.thread_id = ?
+    `),
+    
+    getBlocking: instance.prepare(`
+      SELECT tb.*, tm.status as blocked_status, tm.goal as blocked_goal
+      FROM thread_blocks tb
+      LEFT JOIN thread_metadata tm ON tb.thread_id = tm.thread_id
+      WHERE tb.blocked_by_thread_id = ?
+    `),
+    
+    addBlock: instance.prepare(`
+      INSERT OR IGNORE INTO thread_blocks (thread_id, blocked_by_thread_id, reason)
+      VALUES (@thread_id, @blocked_by_thread_id, @reason)
+    `),
+    
+    removeBlock: instance.prepare(`
+      DELETE FROM thread_blocks 
+      WHERE thread_id = @thread_id AND blocked_by_thread_id = @blocked_by_thread_id
+    `),
+    
+    getBlockedThreads: instance.prepare(`
+      SELECT DISTINCT thread_id FROM thread_blocks
+    `),
+    
+    // Artifact statements
+    getArtifacts: instance.prepare(`
+      SELECT * FROM artifacts WHERE thread_id = ? ORDER BY created_at DESC
+    `),
+    
+    getArtifact: instance.prepare(`
+      SELECT * FROM artifacts WHERE id = ?
+    `),
+    
+    createArtifact: instance.prepare(`
+      INSERT INTO artifacts (thread_id, type, title, content, file_path, media_type)
+      VALUES (@thread_id, @type, @title, @content, @file_path, @media_type)
+    `),
+    
+    updateArtifact: instance.prepare(`
+      UPDATE artifacts SET
+        title = COALESCE(@title, title),
+        content = COALESCE(@content, content),
+        updated_at = unixepoch()
+      WHERE id = @id
+    `),
+    
+    deleteArtifact: instance.prepare(`
+      DELETE FROM artifacts WHERE id = ?
+    `),
+  };
+}
+
+let statements: Statements = prepareStatements(db);
 
 // Extended metadata type with blockers array
 interface ThreadMetadataWithBlockers extends ThreadMetadataRow {
@@ -430,15 +440,21 @@ export function deleteArtifact(id: number): Artifact | undefined {
 }
 
 // Delete all thread data from database (metadata, blocks, artifacts)
-const deleteThreadMetadataStmt = db.prepare<[string]>(
-  `DELETE FROM thread_metadata WHERE thread_id = ?`
-);
-const deleteThreadBlocksStmt = db.prepare<[string, string]>(
-  `DELETE FROM thread_blocks WHERE thread_id = ? OR blocked_by_thread_id = ?`
-);
-const deleteThreadArtifactsStmt = db.prepare<[string]>(
-  `DELETE FROM artifacts WHERE thread_id = ?`
-);
+interface DeleteStatements {
+  metadata: Statement<[string]>;
+  blocks: Statement<[string, string]>;
+  artifacts: Statement<[string]>;
+}
+
+function prepareDeleteStatements(instance: DatabaseType): DeleteStatements {
+  return {
+    metadata: instance.prepare(`DELETE FROM thread_metadata WHERE thread_id = ?`),
+    blocks: instance.prepare(`DELETE FROM thread_blocks WHERE thread_id = ? OR blocked_by_thread_id = ?`),
+    artifacts: instance.prepare(`DELETE FROM artifacts WHERE thread_id = ?`),
+  };
+}
+
+let deleteStmts: DeleteStatements = prepareDeleteStatements(db);
 
 interface DeleteThreadDataResult {
   artifacts: Artifact[];
@@ -449,13 +465,19 @@ export function deleteThreadData(threadId: string): DeleteThreadDataResult {
   const artifacts = getArtifacts(threadId);
   
   // Delete all related records
-  deleteThreadArtifactsStmt.run(threadId);
-  deleteThreadBlocksStmt.run(threadId, threadId);
-  deleteThreadMetadataStmt.run(threadId);
+  deleteStmts.artifacts.run(threadId);
+  deleteStmts.blocks.run(threadId, threadId);
+  deleteStmts.metadata.run(threadId);
   
   return { artifacts };
 }
 
-console.warn(`📦 Database initialized at ${DB_PATH}`);
+export function initDatabase(dbPath: string): void {
+  db = createDatabase(dbPath);
+  statements = prepareStatements(db);
+  deleteStmts = prepareDeleteStatements(db);
+}
+
+console.warn(`📦 Database initialized at ${DEFAULT_DB_PATH}`);
 
 export default db;
