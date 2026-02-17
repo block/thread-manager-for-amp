@@ -5,7 +5,8 @@ import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage } from 'http';
 import type { Server } from 'http';
 import type { Duplex } from 'stream';
-import type { ShellClientMessage, ShellServerMessage } from '../shared/websocket.js';
+import type { ShellServerMessage } from '../shared/websocket.js';
+import { isShellClientMessage } from '../shared/validation.js';
 
 interface SessionState {
   cwd: string;
@@ -117,28 +118,31 @@ export function setupShellWebSocket(server: Server): WebSocketServer {
     });
 
     ws.on('message', (message: Buffer) => {
+      let parsed: unknown;
       try {
-        const msg = JSON.parse(message.toString()) as ShellClientMessage;
-
-        switch (msg.type) {
-          case 'input':
-            if (msg.data) {
-              ptyProcess.write(msg.data);
-            }
-            break;
-          case 'resize':
-            if (msg.cols && msg.rows) {
-              ptyProcess.resize(msg.cols, msg.rows);
-            }
-            break;
-          case 'ping': {
-            const pongMsg: ShellServerMessage = { type: 'pong' };
-            ws.send(JSON.stringify(pongMsg));
-            break;
-          }
-        }
+        parsed = JSON.parse(message.toString()) as unknown;
       } catch {
-        // Ignore parse errors
+        return;
+      }
+
+      if (!isShellClientMessage(parsed)) return;
+
+      switch (parsed.type) {
+        case 'input':
+          if (parsed.data) {
+            ptyProcess.write(parsed.data);
+          }
+          break;
+        case 'resize':
+          if (parsed.cols && parsed.rows) {
+            ptyProcess.resize(parsed.cols, parsed.rows);
+          }
+          break;
+        case 'ping': {
+          const pongMsg: ShellServerMessage = { type: 'pong' };
+          ws.send(JSON.stringify(pongMsg));
+          break;
+        }
       }
     });
 

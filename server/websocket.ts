@@ -6,7 +6,8 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage, Server } from 'http';
 import { Duplex } from 'stream';
 import type { RunningThreadState, RunningThreadsMap, ThreadImage } from '../shared/types.js';
-import type { WsServerMessage, WsClientMessage } from '../shared/websocket.js';
+import type { WsServerMessage } from '../shared/websocket.js';
+import { isWsClientMessage } from '../shared/validation.js';
 import { calculateCost, isHiddenCostTool, TOOL_COST_ESTIMATES, estimateTaskCost } from '../shared/cost.js';
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
@@ -623,28 +624,31 @@ export function setupWebSocket(server: Server): WebSocketServer {
       if (session.currentWs !== ws) return;
 
       const msg = data.toString();
+      let parsed: unknown;
       try {
-        const parsed = JSON.parse(msg) as WsClientMessage;
-        if (parsed.type === 'message' && parsed.content) {
-          const image = parsed.image
-            ? ({ data: parsed.image.data, mediaType: parsed.image.mediaType } as ThreadImage)
-            : null;
-          void spawnAmpOnSession(session, parsed.content, image).catch((err: unknown) => {
-            console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
-            sendToSession(session, { type: 'error', content: 'Failed to process message' });
-          });
-        } else if (parsed.type === 'cancel') {
-          if (session.child) {
-            session.child.kill('SIGINT');
-            sendToSession(session, { type: 'cancelled' });
-          }
-        }
+        parsed = JSON.parse(msg) as unknown;
       } catch {
-        if (msg.trim()) {
-          void spawnAmpOnSession(session, msg.trim()).catch((err: unknown) => {
-            console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
-            sendToSession(session, { type: 'error', content: 'Failed to process message' });
-          });
+        sendToSession(session, { type: 'error', content: 'Invalid message format' });
+        return;
+      }
+
+      if (!isWsClientMessage(parsed)) {
+        sendToSession(session, { type: 'error', content: 'Invalid message format' });
+        return;
+      }
+
+      if (parsed.type === 'message' && parsed.content) {
+        const image = parsed.image
+          ? ({ data: parsed.image.data, mediaType: parsed.image.mediaType } as ThreadImage)
+          : null;
+        void spawnAmpOnSession(session, parsed.content, image).catch((err: unknown) => {
+          console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
+          sendToSession(session, { type: 'error', content: 'Failed to process message' });
+        });
+      } else if (parsed.type === 'cancel') {
+        if (session.child) {
+          session.child.kill('SIGINT');
+          sendToSession(session, { type: 'cancelled' });
         }
       }
     });

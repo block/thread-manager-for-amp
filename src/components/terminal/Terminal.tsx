@@ -41,7 +41,7 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
   } = useTerminalMessages({ threadId, wsConnected });
 
   const {
-    isConnected, isSending, isRunning, agentStatus, sendMessage: wsSendMessage, cancelOperation,
+    isConnected, isSending, isRunning, agentStatus, connectionError, sendMessage: wsSendMessage, cancelOperation, reconnect,
   } = useTerminalWebSocket({ threadId, setMessages, setUsage, setIsLoading });
 
   // Sync WS connection state to control message polling
@@ -178,6 +178,16 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
       </div>
       {usage && <TerminalStatusBar usage={usage} />}
       {showContextWarning && <ContextWarning threadId={threadId} onHandoff={onHandoff} onNewThread={onNewThread} onDismiss={dismissContextWarning} />}
+      {connectionError && (
+        <div className="context-limit-modal">
+          <div className="context-limit-content">
+            <p className="context-limit-message">Connection lost. Unable to reconnect to server.</p>
+            <div className="context-limit-actions">
+              <button className="context-limit-btn primary" onClick={reconnect}>Reconnect</button>
+            </div>
+          </div>
+        </div>
+      )}
       <TerminalInput input={input} isConnected={isConnected} isSending={isSending} isRunning={isRunning} agentStatus={agentStatus} pendingImage={pendingImage} inputRef={inputRef} onInputChange={setInput} onSend={handleSendMessage} onCancel={cancelOperation} onClose={onClose} onPendingImageRemove={clearPendingImage} onPendingImageSet={setPendingImage} searchOpen={searchOpen} />
       <MessageSearchModal isOpen={searchOpen} onClose={closeSearch} messages={messages} onJumpToMessage={handleScrollToMessage} />
       {viewingImage && <ImageViewer images={[{ data: viewingImage.data, mediaType: viewingImage.mediaType, sourcePath: null }]} currentIndex={0} onClose={closeViewingImage} onNavigate={() => {}} />}
