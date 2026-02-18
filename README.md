@@ -114,6 +114,17 @@ When working with multiple Amp threads simultaneously — across repos, features
          (Amp thread data)      └── artifacts/
 ```
 
+## Path Aliases
+
+Frontend code (`src/`) uses path aliases for imports:
+
+| Alias | Maps to | Example |
+|-------|---------|---------|
+| `@/*` | `src/*` | `import { api } from '@/api/client'` |
+| `@shared/*` | `shared/*` | `import type { Thread } from '@shared/types'` |
+
+Configured in `tsconfig.app.json` (`paths`) and `vite.config.ts` (`resolve.alias`). Server code (`server/`) uses relative imports and is unaffected.
+
 ## Data Storage
 
 | Location | Purpose |
