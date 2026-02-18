@@ -1,6 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { jsonResponse, sendError, getParam, parseBody } from '../lib/utils.js';
-import { CORS_HEADERS } from '../lib/constants.js';
 import {
   getThreads,
   searchThreads,
@@ -86,7 +85,8 @@ export async function handleThreadRoutes(
       const limit = parseInt(url.searchParams.get('limit') || '50', 10);
       const offset = parseInt(url.searchParams.get('offset') || '0', 10);
       const history = await getThreadMarkdown(threadId, limit, offset);
-      res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'text/plain' });
+      // CORS headers are already set by the top-level handler in index.ts
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
       res.end(history);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;

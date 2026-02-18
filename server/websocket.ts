@@ -8,7 +8,7 @@ import type { RunningThreadState, RunningThreadsMap, ThreadImage } from '../shar
 import type { WsServerMessage } from '../shared/websocket.js';
 import { isWsClientMessage } from '../shared/validation.js';
 import { calculateCost, isHiddenCostTool, TOOL_COST_ESTIMATES, estimateTaskCost } from '../shared/cost.js';
-import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS } from './lib/constants.js';
+import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS, isAllowedOrigin } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
 import { THREADS_DIR, ARTIFACTS_DIR, type ThreadFile, type ToolUseContent } from './lib/threadTypes.js';
 
@@ -515,6 +515,14 @@ export function setupWebSocket(server: Server): WebSocketServer {
 
     if (url.pathname !== '/ws') {
       return; // Let other handlers (e.g. shell-websocket) handle non-/ws paths
+    }
+
+    // Reject cross-origin WebSocket upgrades from disallowed origins
+    const origin = request.headers.origin;
+    if (origin && !isAllowedOrigin(origin)) {
+      socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+      socket.destroy();
+      return;
     }
 
     wss.handleUpgrade(request, socket, head, (ws) => {

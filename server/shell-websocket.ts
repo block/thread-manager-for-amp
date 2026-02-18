@@ -7,6 +7,7 @@ import type { Server } from 'http';
 import type { Duplex } from 'stream';
 import type { ShellServerMessage } from '../shared/websocket.js';
 import { isShellClientMessage } from '../shared/validation.js';
+import { isAllowedOrigin } from './lib/constants.js';
 
 interface SessionState {
   cwd: string;
@@ -36,6 +37,14 @@ export function setupShellWebSocket(server: Server): WebSocketServer {
     const url = new URL(request.url || '', `http://${request.headers.host}`);
 
     if (url.pathname === '/shell') {
+      // Reject cross-origin WebSocket upgrades from disallowed origins
+      const origin = request.headers.origin;
+      if (origin && !isAllowedOrigin(origin)) {
+        socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
       wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
         wss.emit('connection', ws, request);
       });

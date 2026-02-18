@@ -49,6 +49,69 @@ function waitForMessage(ws: WebSocket, type: string): Promise<Record<string, unk
 }
 
 
+describe('WebSocket origin validation', () => {
+  let server: Server;
+  let port: number;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    server = createServer();
+    setupWebSocket(server);
+
+    await new Promise<void>((resolve) => {
+      server.listen(0, () => resolve());
+    });
+
+    const addr = server.address();
+    port = typeof addr === 'object' && addr ? addr.port : 0;
+  });
+
+  afterEach(async () => {
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
+    });
+  });
+
+  it('rejects WebSocket upgrade from disallowed origin', async () => {
+    const threadId = `T-test-origin-bad-${Date.now()}`;
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws?threadId=${threadId}`, {
+      headers: { Origin: 'https://evil.com' },
+    });
+
+    const closed = new Promise<{ code: number }>((resolve) => {
+      ws.on('close', (code: number) => resolve({ code }));
+      ws.on('error', () => resolve({ code: -1 }));
+    });
+
+    const result = await closed;
+    // Connection should be rejected — either closed or errored
+    expect(result.code).not.toBe(1000); // 1000 = normal close
+  });
+
+  it('allows WebSocket upgrade from localhost origin', async () => {
+    const threadId = `T-test-origin-ok-${Date.now()}`;
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws?threadId=${threadId}`, {
+      headers: { Origin: `http://localhost:${port}` },
+    });
+
+    const ready = await waitForMessage(ws, 'ready');
+    expect(ready.type).toBe('ready');
+    expect(ready.threadId).toBe(threadId);
+
+    ws.close();
+  });
+
+  it('allows WebSocket upgrade with no origin header', async () => {
+    const threadId = `T-test-origin-none-${Date.now()}`;
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws?threadId=${threadId}`);
+
+    const ready = await waitForMessage(ws, 'ready');
+    expect(ready.type).toBe('ready');
+
+    ws.close();
+  });
+});
+
 describe('concurrent spawn race condition', () => {
   let server: Server;
   let port: number;
