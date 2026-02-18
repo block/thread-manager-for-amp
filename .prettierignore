@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+shared/dist/
+
+# Package manager
+pnpm-lock.yaml
+
+# Tooling
+.hermit/
+coverage/
+
+# OS / Editor
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
