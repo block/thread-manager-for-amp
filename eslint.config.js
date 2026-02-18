@@ -60,4 +60,24 @@ export default defineConfig([
       'react-refresh/only-export-components': 'off',
     },
   },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['**/server/*', '**/server/**'], message: 'Frontend code must not import from server/' },
+        ],
+      }],
+    },
+  },
+  {
+    files: ['server/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['**/src/*', '**/src/**', '@/*', '@/**'], message: 'Server code must not import from src/' },
+        ],
+      }],
+    },
+  },
 ])

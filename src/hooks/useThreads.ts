@@ -70,17 +70,36 @@ export function useThreads() {
 
   useEffect(() => {
     void fetchThreads();
-    
-    // Set up auto-refresh
-    autoRefreshRef.current = window.setInterval(() => {
-      void fetchThreads(false);
-    }, AUTO_REFRESH_INTERVAL_MS);
-    
-    return () => {
+
+    const startPolling = () => {
+      if (autoRefreshRef.current !== null) return;
+      autoRefreshRef.current = window.setInterval(() => {
+        void fetchThreads(false);
+      }, AUTO_REFRESH_INTERVAL_MS);
+    };
+
+    const stopPolling = () => {
       if (autoRefreshRef.current !== null) {
         clearInterval(autoRefreshRef.current);
         autoRefreshRef.current = null;
       }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        void fetchThreads(false);
+        startPolling();
+      }
+    };
+
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [fetchThreads]);
 

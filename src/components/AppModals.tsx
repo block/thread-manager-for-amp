@@ -4,7 +4,12 @@ import { useThreadContext } from '../contexts/ThreadContext';
 import { useSettingsContext } from '../contexts/SettingsContext';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useCommands } from '../hooks/useCommands';
+import { useModalActions } from '../hooks/useModalActions';
+import { useErrorToast } from '../hooks/useErrorToast';
 import { ShellTerminal } from './ShellTerminal';
+import { InputModal } from './InputModal';
+import { ConfirmModal } from './ConfirmModal';
+import { ErrorToast } from './ErrorToast';
 import { apiGet, apiPut } from '../api/client';
 import type { Thread } from '../types';
 
@@ -24,6 +29,8 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
   const modals = useModalContext();
   const threadActions = useThreadContext();
   const settings = useSettingsContext();
+  const { errors, showError, dismissError } = useErrorToast();
+  const modalActions = useModalActions(modals, showError);
 
   const { threads, metadata, activeThreadId, addBlocker, removeBlocker } = threadActions;
 
@@ -70,8 +77,9 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
       window.open(`vscode://file/${result.path}`, '_blank');
     } catch (err) {
       console.error('Failed to open settings:', err);
+      showError('Failed to open settings');
     }
-  }, []);
+  }, [showError]);
 
   const handleOpenPermissionsUser = useCallback(async () => {
     try {
@@ -79,8 +87,9 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
       window.open(`vscode://file/${result.path}`, '_blank');
     } catch (err) {
       console.error('Failed to open permissions:', err);
+      showError('Failed to open permissions');
     }
-  }, []);
+  }, [showError]);
 
   const handleOpenPermissionsWorkspace = useCallback(() => {
     window.open('vscode://file/.amp/permissions.json', '_blank');
@@ -90,43 +99,64 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
     window.open(`https://ampcode.com/threads/${id}`, '_blank');
   }, []);
 
-  const handleAddLabel = useCallback(async (id: string) => {
-    const label = window.prompt('Enter label (lowercase, alphanumeric, hyphens):');
-    if (!label) return;
-
-    const labelName = label.trim().toLowerCase();
-    if (!/^[a-z0-9][a-z0-9-]*$/.test(labelName)) {
-      alert('Label must be lowercase alphanumeric with hyphens');
-      return;
-    }
-
-    try {
-      const existing = await apiGet<{ name: string }[]>(`/api/thread-labels?threadId=${encodeURIComponent(id)}`);
-      const newLabels = [...existing.map(l => l.name), labelName];
-      await apiPut('/api/thread-labels', { threadId: id, labels: newLabels });
-      setThreadLabels(prev => ({ ...prev, [id]: newLabels }));
-    } catch (err) {
-      console.error('Failed to add label:', err);
-    }
-  }, [setThreadLabels]);
+  const handleAddLabel = useCallback((id: string) => {
+    modals.setInputModal({
+      title: 'Add Label',
+      label: 'Label name',
+      placeholder: 'lowercase, alphanumeric, hyphens',
+      confirmText: 'Add',
+      validate: (value: string) => {
+        const labelName = value.trim().toLowerCase();
+        if (!/^[a-z0-9][a-z0-9-]*$/.test(labelName)) {
+          return 'Label must be lowercase alphanumeric with hyphens';
+        }
+        return null;
+      },
+      onConfirm: async (value: string) => {
+        const labelName = value.trim().toLowerCase();
+        modals.setInputModal(null);
+        try {
+          const existing = await apiGet<{ name: string }[]>(`/api/thread-labels?threadId=${encodeURIComponent(id)}`);
+          const newLabels = [...existing.map(l => l.name), labelName];
+          await apiPut('/api/thread-labels', { threadId: id, labels: newLabels });
+          setThreadLabels(prev => ({ ...prev, [id]: newLabels }));
+        } catch (err) {
+          console.error('Failed to add label:', err);
+          showError('Failed to add label');
+        }
+      },
+    });
+  }, [modals, setThreadLabels, showError]);
 
   const handleRemoveLabel = useCallback(async (id: string) => {
     try {
       const existing = await apiGet<{ name: string }[]>(`/api/thread-labels?threadId=${encodeURIComponent(id)}`);
       if (existing.length === 0) {
-        alert('This thread has no labels');
+        showError('This thread has no labels');
         return;
       }
-      const labelToRemove = window.prompt(`Enter label to remove:\nCurrent labels: ${existing.map(l => l.name).join(', ')}`);
-      if (!labelToRemove) return;
-
-      const newLabels = existing.filter(l => l.name !== labelToRemove.toLowerCase()).map(l => l.name);
-      await apiPut('/api/thread-labels', { threadId: id, labels: newLabels });
-      setThreadLabels(prev => ({ ...prev, [id]: newLabels }));
+      modals.setInputModal({
+        title: 'Remove Label',
+        label: `Current labels: ${existing.map(l => l.name).join(', ')}`,
+        placeholder: 'Enter label to remove',
+        confirmText: 'Remove',
+        onConfirm: async (labelToRemove: string) => {
+          modals.setInputModal(null);
+          try {
+            const newLabels = existing.filter(l => l.name !== labelToRemove.toLowerCase()).map(l => l.name);
+            await apiPut('/api/thread-labels', { threadId: id, labels: newLabels });
+            setThreadLabels(prev => ({ ...prev, [id]: newLabels }));
+          } catch (err) {
+            console.error('Failed to remove label:', err);
+            showError('Failed to remove label');
+          }
+        },
+      });
     } catch (err) {
-      console.error('Failed to remove label:', err);
+      console.error('Failed to load labels:', err);
+      showError('Failed to load labels');
     }
-  }, [setThreadLabels]);
+  }, [modals, setThreadLabels, showError]);
 
   const handleManageBlockers = useCallback((threadId: string) => {
     modals.setBlockerThreadId(threadId);
@@ -138,8 +168,9 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
       await addBlocker(modals.blockerThreadId, blockedByThreadId, reason);
     } catch (err) {
       console.error('Failed to add blocker:', err);
+      showError('Failed to add blocker');
     }
-  }, [modals.blockerThreadId, addBlocker]);
+  }, [modals.blockerThreadId, addBlocker, showError]);
 
   const handleRemoveBlocker = useCallback(async (blockedByThreadId: string) => {
     if (!modals.blockerThreadId) return;
@@ -147,8 +178,9 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
       await removeBlocker(modals.blockerThreadId, blockedByThreadId);
     } catch (err) {
       console.error('Failed to remove blocker:', err);
+      showError('Failed to remove blocker');
     }
-  }, [modals.blockerThreadId, removeBlocker]);
+  }, [modals.blockerThreadId, removeBlocker, showError]);
 
   useKeyboardShortcuts({
     handlers: {
@@ -179,29 +211,29 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
     onToggleLayout: settings.handleToggleLayout,
     onHandoff: handleHandoff,
     onRenameThread: threadActions.handleRenameThread,
-    onShareThread: modals.handleShareThread,
-    onShowSkills: modals.handleShowSkills,
-    onShowTools: modals.handleShowTools,
-    onShowMcpStatus: modals.handleShowMcpStatus,
-    onShowMcpList: modals.handleShowMcpList,
-    onShowPermissions: modals.handleShowPermissions,
+    onShareThread: modalActions.handleShareThread,
+    onShowSkills: modalActions.handleShowSkills,
+    onShowTools: modalActions.handleShowTools,
+    onShowMcpStatus: modalActions.handleShowMcpStatus,
+    onShowMcpList: modalActions.handleShowMcpList,
+    onShowPermissions: modalActions.handleShowPermissions,
     onOpenSettings: handleOpenSettings,
-    onShowHelp: modals.handleShowHelp,
+    onShowHelp: modalActions.handleShowHelp,
     onThreadMap: handleThreadMap,
     onArchiveAndClose: threadActions.handleArchiveAndClose,
     onArchiveOldThreads: threadActions.handleArchiveOldThreads,
     onSwitchToPrevious: handleSwitchToPrevious,
     onSwitchToNext: handleSwitchToNext,
-    onContextAnalyze: () => modals.handleContextAnalyze(activeThreadId),
+    onContextAnalyze: () => modalActions.handleContextAnalyze(activeThreadId),
     onOpenPermissionsUser: handleOpenPermissionsUser,
     onOpenPermissionsWorkspace: handleOpenPermissionsWorkspace,
-    onIdeConnect: modals.handleIdeConnect,
-    onShowToolbox: modals.handleShowToolbox,
+    onIdeConnect: modalActions.handleIdeConnect,
+    onShowToolbox: modalActions.handleShowToolbox,
     onAddLabel: handleAddLabel,
     onRemoveLabel: handleRemoveLabel,
-    onSkillAdd: modals.handleSkillAdd,
-    onSkillRemove: modals.handleSkillRemove,
-    onSkillInvoke: modals.handleSkillInvoke,
+    onSkillAdd: modalActions.handleSkillAdd,
+    onSkillRemove: modalActions.handleSkillRemove,
+    onSkillInvoke: modalActions.handleSkillInvoke,
     onManageBlockers: handleManageBlockers,
     onToggleSidebar: settings.handleToggleSidebar,
     onOpenShellTerminal: modals.openShellTerminal,
@@ -250,6 +282,28 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
         />
       </Suspense>
 
+      <InputModal
+        isOpen={!!modals.inputModal}
+        title={modals.inputModal?.title ?? ''}
+        label={modals.inputModal?.label ?? ''}
+        placeholder={modals.inputModal?.placeholder}
+        confirmText={modals.inputModal?.confirmText}
+        validate={modals.inputModal?.validate}
+        onConfirm={(value) => modals.inputModal?.onConfirm(value)}
+        onCancel={() => modals.setInputModal(null)}
+      />
+
+      {modals.confirmModal && (
+        <ConfirmModal
+          title={modals.confirmModal.title}
+          message={modals.confirmModal.message}
+          confirmText={modals.confirmModal.confirmText}
+          isDestructive={modals.confirmModal.isDestructive}
+          onConfirm={modals.confirmModal.onConfirm}
+          onCancel={() => modals.setConfirmModal(null)}
+        />
+      )}
+
       {modals.shellTerminal && (
         <ShellTerminal
           cwd={modals.shellTerminal.cwd}
@@ -258,6 +312,8 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
           minimized={modals.shellTerminal.minimized}
         />
       )}
+
+      <ErrorToast errors={errors} onDismiss={dismissError} />
     </>
   );
 }

@@ -32,6 +32,9 @@ export function ThreadProvider({
   updateStatus,
   addBlocker,
   removeBlocker,
+  showError,
+  showInputModal,
+  showConfirmModal,
   metadata,
   loading,
   error,
@@ -43,6 +46,9 @@ export function ThreadProvider({
     updateStatus,
     addBlocker,
     removeBlocker,
+    showError,
+    showInputModal,
+    showConfirmModal,
   });
 
   const value = useMemo<ThreadContextValue>(() => ({

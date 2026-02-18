@@ -4,10 +4,12 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { UnreadProvider } from './contexts/UnreadContext'
 import { ThreadStatusProvider } from './contexts/ThreadStatusContext'
 import { SettingsProvider } from './contexts/SettingsContext'
-import { ModalProvider } from './contexts/ModalContext'
+import { ModalProvider, useModalContext } from './contexts/ModalContext'
 import { ThreadProvider } from './contexts/ThreadContext'
 import { useThreads } from './hooks/useThreads'
 import { useThreadMetadata } from './hooks/useThreadMetadata'
+import { useErrorToast } from './hooks/useErrorToast'
+import { ErrorToast } from './components/ErrorToast'
 import './index.css'
 import App from './App.tsx'
 
@@ -15,6 +17,8 @@ import App from './App.tsx'
 function DataLayer({ children }: { children: ReactNode }) {
   const { threads, loading, error, refetch, removeThread } = useThreads();
   const { metadata, updateStatus, addBlocker, removeBlocker } = useThreadMetadata();
+  const modals = useModalContext();
+  const { errors, showError, dismissError } = useErrorToast();
 
   return (
     <ThreadProvider
@@ -27,8 +31,12 @@ function DataLayer({ children }: { children: ReactNode }) {
       metadata={metadata}
       loading={loading}
       error={error}
+      showError={showError}
+      showInputModal={modals.setInputModal}
+      showConfirmModal={modals.setConfirmModal}
     >
       {children}
+      <ErrorToast errors={errors} onDismiss={dismissError} />
     </ThreadProvider>
   );
 }
@@ -38,15 +46,15 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <SettingsProvider>
-        <DataLayer>
-          <ModalProvider>
+        <ModalProvider>
+          <DataLayer>
             <ThreadStatusProvider>
               <UnreadProvider>
                 <App />
               </UnreadProvider>
             </ThreadStatusProvider>
-          </ModalProvider>
-        </DataLayer>
+          </DataLayer>
+        </ModalProvider>
       </SettingsProvider>
     </ErrorBoundary>
   </StrictMode>,

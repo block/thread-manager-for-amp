@@ -9,6 +9,22 @@ export interface UseThreadActionsOptions {
   updateStatus: (id: string, status: ThreadStatus) => Promise<unknown>;
   addBlocker: (threadId: string, blockedBy: string, reason?: string) => Promise<unknown>;
   removeBlocker: (threadId: string, blockedBy: string) => Promise<unknown>;
+  showError: (message: string) => void;
+  showInputModal: (modal: {
+    title: string;
+    label: string;
+    placeholder?: string;
+    confirmText?: string;
+    validate?: (value: string) => string | null;
+    onConfirm: (value: string) => void;
+  } | null) => void;
+  showConfirmModal: (modal: {
+    title: string;
+    message: string;
+    confirmText?: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+  } | null) => void;
 }
 
 export interface UseThreadActionsReturn {
@@ -29,7 +45,7 @@ export interface UseThreadActionsReturn {
   handleHandoffConfirm: (goal: string, newTitle?: string) => Promise<void>;
   handleRenameThread: (id: string) => void;
   handleArchiveAndClose: (id: string) => Promise<void>;
-  handleArchiveOldThreads: () => Promise<void>;
+  handleArchiveOldThreads: () => void;
   handoffThreadId: string | null;
   setHandoffThreadId: (id: string | null) => void;
 }
@@ -39,6 +55,9 @@ export function useThreadActions({
   refetch,
   removeThread,
   updateStatus,
+  showError,
+  showInputModal,
+  showConfirmModal,
 }: UseThreadActionsOptions): UseThreadActionsReturn {
   const [openThreads, setOpenThreads] = useState<Thread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | undefined>();
@@ -73,9 +92,10 @@ export function useThreadActions({
       refetch();
     } catch (err) {
       console.error('Failed to archive:', err);
+      showError('Failed to archive thread');
       refetch();
     }
-  }, [refetch, removeThread]);
+  }, [refetch, removeThread, showError]);
 
   const handleDelete = useCallback(async (threadId: string) => {
     removeThread(threadId);
@@ -87,13 +107,15 @@ export function useThreadActions({
       );
       if (!data.success) {
         console.error('Failed to delete:', data.error);
+        showError('Failed to delete thread');
         refetch();
       }
     } catch (err) {
       console.error('Failed to delete:', err);
+      showError('Failed to delete thread');
       refetch();
     }
-  }, [refetch, removeThread]);
+  }, [refetch, removeThread, showError]);
 
   const handleBulkArchive = useCallback(async (threadIds: string[]) => {
     threadIds.forEach(id => {
@@ -109,9 +131,10 @@ export function useThreadActions({
       );
     } catch (err) {
       console.error('Bulk archive error:', err);
+      showError('Some threads failed to archive');
     }
     refetch();
-  }, [refetch, removeThread]);
+  }, [refetch, removeThread, showError]);
 
   const handleBulkDelete = useCallback(async (threadIds: string[]) => {
     threadIds.forEach(id => {
@@ -133,20 +156,23 @@ export function useThreadActions({
       );
       if (failures.length > 0) {
         console.error(`${failures.length} delete(s) failed`);
+        showError(`${failures.length} thread(s) failed to delete`);
       }
     } catch (err) {
       console.error('Bulk delete error:', err);
+      showError('Some threads failed to delete');
     }
     refetch();
-  }, [refetch, removeThread]);
+  }, [refetch, removeThread, showError]);
 
   const handleBulkStatusChange = useCallback(async (threadIds: string[], status: ThreadStatus) => {
     try {
       await Promise.all(threadIds.map(id => updateStatus(id, status)));
     } catch (err) {
       console.error('Bulk status change error:', err);
+      showError('Failed to change thread status');
     }
-  }, [updateStatus]);
+  }, [updateStatus, showError]);
 
   const handleCreateThreadInWorkspace = useCallback(async (workspacePath: string | null) => {
     try {
@@ -167,8 +193,9 @@ export function useThreadActions({
       refetch();
     } catch (err) {
       console.error('Failed to create thread:', err);
+      showError('Failed to create thread');
     }
-  }, [refetch]);
+  }, [refetch, showError]);
 
   const handleHandoffConfirm = useCallback(async (goal: string, newTitle?: string): Promise<void> => {
     if (!handoffThreadId) return;
@@ -197,35 +224,51 @@ export function useThreadActions({
   }, [handoffThreadId, refetch]);
 
   const handleRenameThread = useCallback((id: string) => {
-    const newName = window.prompt('Enter new thread name:');
-    if (newName) {
-      apiPatch<{ success: boolean }>('/api/thread-rename', { threadId: id, name: newName })
-        .then(() => refetch())
-        .catch((err: unknown) => console.error('Failed to rename:', err));
-    }
-  }, [refetch]);
+    showInputModal({
+      title: 'Rename Thread',
+      label: 'New thread name',
+      placeholder: 'Enter new thread name',
+      confirmText: 'Rename',
+      onConfirm: async (newName: string) => {
+        showInputModal(null);
+        try {
+          await apiPatch<{ success: boolean }>('/api/thread-rename', { threadId: id, name: newName });
+          refetch();
+        } catch (err) {
+          console.error('Failed to rename:', err);
+          showError('Failed to rename thread');
+        }
+      },
+    });
+  }, [refetch, showInputModal, showError]);
 
   const handleArchiveAndClose = useCallback(async (id: string) => {
     await handleArchive(id);
     handleCloseThread(id);
   }, [handleArchive, handleCloseThread]);
 
-  const handleArchiveOldThreads = useCallback(async () => {
+  const handleArchiveOldThreads = useCallback(() => {
     const oldThreads = threads.filter(t => {
       const updated = new Date(t.lastUpdated);
       const daysOld = (Date.now() - updated.getTime()) / (1000 * 60 * 60 * 24);
       return daysOld > 7;
     });
     if (oldThreads.length === 0) {
-      alert('No threads older than 7 days found');
+      showError('No threads older than 7 days found');
       return;
     }
-    if (window.confirm(`Archive ${oldThreads.length} threads older than 7 days?`)) {
-      for (const t of oldThreads) {
-        await handleArchive(t.id);
-      }
-    }
-  }, [threads, handleArchive]);
+    showConfirmModal({
+      title: 'Archive Old Threads',
+      message: `Archive ${oldThreads.length} threads older than 7 days?`,
+      confirmText: 'Archive',
+      onConfirm: async () => {
+        showConfirmModal(null);
+        for (const t of oldThreads) {
+          await handleArchive(t.id);
+        }
+      },
+    });
+  }, [threads, handleArchive, showError, showConfirmModal]);
 
   return useMemo<UseThreadActionsReturn>(() => ({
     openThreads,

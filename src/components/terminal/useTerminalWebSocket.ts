@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Message } from '../../utils/parseMarkdown';
-import type { WsEvent } from '../../types/websocket';
+import type { WsEvent } from '../../types';
 import type { UsageInfo } from './types';
 import { formatToolUse } from '../../utils/format';
 import { playNotificationSound, isSoundEnabled } from '../../utils/sounds';

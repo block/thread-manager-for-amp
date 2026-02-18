@@ -36,13 +36,33 @@ export function useRunningThreads(): UseRunningThreadsResult {
   useEffect(() => {
     void fetchRunningThreads();
 
-    intervalRef.current = window.setInterval(() => { void fetchRunningThreads(); }, POLL_INTERVAL_MS);
+    const startPolling = () => {
+      if (intervalRef.current !== null) return;
+      intervalRef.current = window.setInterval(() => { void fetchRunningThreads(); }, POLL_INTERVAL_MS);
+    };
 
-    return () => {
+    const stopPolling = () => {
       if (intervalRef.current !== null) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        void fetchRunningThreads();
+        startPolling();
+      }
+    };
+
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [fetchRunningThreads]);
 
