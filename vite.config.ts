@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync, existsSync } from 'fs';
+import path from 'path';
 
 function getServerPort(): number {
   const portFile = '.server-port';
@@ -16,6 +17,12 @@ export default defineConfig(() => {
 
   return {
     plugins: [react()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+        '@shared': path.resolve(__dirname, 'shared'),
+      },
+    },
     server: {
       host: '0.0.0.0',
       strictPort: false,
