@@ -64,7 +64,7 @@ export function useModals(): UseModalsReturn {
   const [shellTerminal, setShellTerminal] = useState<ShellTerminalState | null>(null);
 
   const openShellTerminal = useCallback((cwd?: string) => {
-    setShellTerminal((prev) => prev ? { ...prev, minimized: false } : { cwd });
+    setShellTerminal((prev) => (prev ? { ...prev, minimized: false } : { cwd }));
   }, []);
 
   const closeShellTerminal = useCallback(() => {
@@ -72,11 +72,11 @@ export function useModals(): UseModalsReturn {
   }, []);
 
   const minimizeShellTerminal = useCallback(() => {
-    setShellTerminal((prev) => prev ? { ...prev, minimized: true } : null);
+    setShellTerminal((prev) => (prev ? { ...prev, minimized: true } : null));
   }, []);
 
   const restoreShellTerminal = useCallback(() => {
-    setShellTerminal((prev) => prev ? { ...prev, minimized: false } : null);
+    setShellTerminal((prev) => (prev ? { ...prev, minimized: false } : null));
   }, []);
 
   return {

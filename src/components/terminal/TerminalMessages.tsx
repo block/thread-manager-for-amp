@@ -159,12 +159,8 @@ const MessageItem = memo(function MessageItem({
           <span className="chat-sender">
             {msg.type === 'user' ? 'You' : msg.type === 'error' ? 'Error' : 'Amp'}
           </span>
-          {msg.interrupted && (
-            <span className="chat-interrupted-badge">interrupted</span>
-          )}
-          {msg.timestamp && (
-            <Timestamp date={msg.timestamp} className="chat-timestamp" />
-          )}
+          {msg.interrupted && <span className="chat-interrupted-badge">interrupted</span>}
+          {msg.timestamp && <Timestamp date={msg.timestamp} className="chat-timestamp" />}
         </div>
         {msg.image && (
           <div className="chat-image-attachment">
@@ -197,19 +193,18 @@ export const TerminalMessages = memo(function TerminalMessages({
 }: TerminalMessagesProps) {
   const precomputed = useMemo(() => buildPrecomputedData(messages), [messages]);
 
-  const registerRef = useCallback((id: string, el: HTMLDivElement | null) => {
-    if (el) messageRefs.current.set(id, el);
-    else messageRefs.current.delete(id);
-  }, [messageRefs]);
+  const registerRef = useCallback(
+    (id: string, el: HTMLDivElement | null) => {
+      if (el) messageRefs.current.set(id, el);
+      else messageRefs.current.delete(id);
+    },
+    [messageRefs],
+  );
 
   return (
     <div className="terminal-messages" ref={messagesContainerRef}>
       {hasMoreMessages && (
-        <button
-          className="load-more-btn"
-          onClick={onLoadMore}
-          disabled={loadingMore}
-        >
+        <button className="load-more-btn" onClick={onLoadMore} disabled={loadingMore}>
           {loadingMore ? (
             <>
               <Loader2 size={14} className="spinning" />
@@ -229,9 +224,7 @@ export const TerminalMessages = memo(function TerminalMessages({
       )}
 
       {!isLoading && messages.length === 0 && (
-        <div className="terminal-empty">
-          No messages yet. Start the conversation below.
-        </div>
+        <div className="terminal-empty">No messages yet. Start the conversation below.</div>
       )}
 
       {messages.map((msg) => (
@@ -242,7 +235,11 @@ export const TerminalMessages = memo(function TerminalMessages({
           toolStatus={precomputed.toolStatusMap.get(msg.id)}
           toolResultContent={precomputed.subagentResultMap.get(msg.id)}
           toolName={msg.toolId ? precomputed.toolIdToToolName.get(msg.toolId) : undefined}
-          toolInputPath={msg.toolId ? precomputed.toolIdToToolInput.get(msg.toolId)?.path as string | undefined : undefined}
+          toolInputPath={
+            msg.toolId
+              ? (precomputed.toolIdToToolInput.get(msg.toolId)?.path as string | undefined)
+              : undefined
+          }
           registerRef={registerRef}
           onViewImage={onViewImage}
         />

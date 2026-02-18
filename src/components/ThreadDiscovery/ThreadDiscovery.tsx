@@ -1,8 +1,8 @@
-import { 
-  FileCode, 
-  GitCommit, 
-  GitPullRequest, 
-  GitBranch, 
+import {
+  FileCode,
+  GitCommit,
+  GitPullRequest,
+  GitBranch,
   Link2,
   RefreshCw,
   Package,
@@ -39,13 +39,13 @@ interface ThreadDiscoveryProps {
   onSearchOpen?: () => void;
 }
 
-export function ThreadDiscovery({ 
-  threadId, 
-  onOpenThread, 
-  messages = [], 
-  onJumpToMessage, 
-  sessionImages = [], 
-  metadata, 
+export function ThreadDiscovery({
+  threadId,
+  onOpenThread,
+  messages = [],
+  onJumpToMessage,
+  sessionImages = [],
+  metadata,
   onMetadataChange,
   onSearchOpen,
 }: ThreadDiscoveryProps) {
@@ -87,9 +87,9 @@ export function ThreadDiscovery({
     <div className="thread-discovery-v2">
       <div className="discovery-summary">
         <ThreadLabelEditor threadId={threadId} compact />
-        
+
         {summary.fileCount > 0 && (
-          <button 
+          <button
             className={`summary-chip files ${activeTab === 'changes' ? 'active' : ''}`}
             onClick={() => handleTabClick('changes')}
           >
@@ -98,7 +98,7 @@ export function ThreadDiscovery({
           </button>
         )}
         {(summary.commitCount > 0 || summary.prCount > 0) && (
-          <button 
+          <button
             className={`summary-chip git ${activeTab === 'git' ? 'active' : ''}`}
             onClick={() => handleTabClick('git')}
           >
@@ -107,13 +107,15 @@ export function ThreadDiscovery({
             {summary.prCount > 0 && (
               <>
                 <GitPullRequest size={12} className="pr-icon" />
-                <span>{summary.prCount} PR{summary.prCount !== 1 ? 's' : ''}</span>
+                <span>
+                  {summary.prCount} PR{summary.prCount !== 1 ? 's' : ''}
+                </span>
               </>
             )}
           </button>
         )}
         {summary.chainCount > 0 && (
-          <button 
+          <button
             className={`summary-chip chain ${activeTab === 'chain' ? 'active' : ''}`}
             onClick={() => handleTabClick('chain')}
           >
@@ -122,7 +124,7 @@ export function ThreadDiscovery({
           </button>
         )}
         {summary.relatedCount > 0 && onOpenThread && (
-          <button 
+          <button
             className={`summary-chip related ${activeTab === 'related' ? 'active' : ''}`}
             onClick={() => handleTabClick('related')}
           >
@@ -131,27 +133,29 @@ export function ThreadDiscovery({
           </button>
         )}
         {artifactCount > 0 && (
-          <button 
+          <button
             className={`summary-chip artifacts ${activeTab === 'artifacts' ? 'active' : ''}`}
             onClick={() => handleTabClick('artifacts')}
           >
             <Package size={12} />
-            <span>{artifactCount} artifact{artifactCount !== 1 ? 's' : ''}</span>
+            <span>
+              {artifactCount} artifact{artifactCount !== 1 ? 's' : ''}
+            </span>
           </button>
         )}
         {availableSkillsCount > 0 && (
-          <button 
+          <button
             className={`summary-chip skills ${activeTab === 'skills' ? 'active' : ''}`}
             onClick={() => handleTabClick('skills')}
           >
             <Sparkles size={12} />
             <span>
-              {loadedSkills.length > 0 && <>{loadedSkills.length}/</> }
+              {loadedSkills.length > 0 && <>{loadedSkills.length}/</>}
               {availableSkillsCount} skills
             </span>
           </button>
         )}
-        
+
         {metadata && (
           <div className="summary-linked-issue">
             {metadata.linked_issue_url ? (
@@ -166,10 +170,8 @@ export function ThreadDiscovery({
           </div>
         )}
 
-        {loading && (
-          <Loader2 size={12} className="spinning" style={{ opacity: 0.5 }} />
-        )}
-        
+        {loading && <Loader2 size={12} className="spinning" style={{ opacity: 0.5 }} />}
+
         <div className="summary-actions">
           {uncommittedCount > 0 && (
             <button
@@ -204,12 +206,8 @@ export function ThreadDiscovery({
       {activeTab && (
         <div className="discovery-panel">
           <div className="discovery-content">
-            {activeTab === 'changes' && (
-              <WhatChangedContent changes={changes} />
-            )}
-            {activeTab === 'git' && gitActivity && (
-              <GitActivityContent activity={gitActivity} />
-            )}
+            {activeTab === 'changes' && <WhatChangedContent changes={changes} />}
+            {activeTab === 'git' && gitActivity && <GitActivityContent activity={gitActivity} />}
             {activeTab === 'chain' && chain && onOpenThread && (
               <ThreadChainContent chain={chain} onOpenThread={onOpenThread} />
             )}
@@ -223,20 +221,20 @@ export function ThreadDiscovery({
                   artifacts={savedArtifacts}
                   onArtifactsChange={setSavedArtifacts}
                 />
-                
+
                 {allImages.length > 0 && (
                   <div className="artifact-group images">
                     <div className="artifact-group-header">Images</div>
                     <div className="images-content-grid">
                       {allImages.map((img, idx) => (
-                        <button 
-                          key={idx} 
-                          className="image-thumbnail" 
+                        <button
+                          key={idx}
+                          className="image-thumbnail"
                           title={img.sourcePath || `Image ${idx + 1}`}
                           onClick={() => setViewingImageIndex(idx)}
                         >
-                          <img 
-                            src={`data:${img.mediaType};base64,${img.data}`} 
+                          <img
+                            src={`data:${img.mediaType};base64,${img.data}`}
                             alt={img.sourcePath || `Attached image ${idx + 1}`}
                           />
                         </button>
@@ -244,34 +242,38 @@ export function ThreadDiscovery({
                     </div>
                   </div>
                 )}
-                {docArtifacts.filter(a => a.type === 'research').length > 0 && (
+                {docArtifacts.filter((a) => a.type === 'research').length > 0 && (
                   <div className="artifact-group research">
                     <div className="artifact-group-header">Research (from messages)</div>
-                    {docArtifacts.filter(a => a.type === 'research').map(a => (
-                      <button 
-                        key={a.path} 
-                        className="artifact-item"
-                        onClick={() => onJumpToMessage?.(a.messageId)}
-                        title={a.path}
-                      >
-                        {a.shortPath}
-                      </button>
-                    ))}
+                    {docArtifacts
+                      .filter((a) => a.type === 'research')
+                      .map((a) => (
+                        <button
+                          key={a.path}
+                          className="artifact-item"
+                          onClick={() => onJumpToMessage?.(a.messageId)}
+                          title={a.path}
+                        >
+                          {a.shortPath}
+                        </button>
+                      ))}
                   </div>
                 )}
-                {docArtifacts.filter(a => a.type === 'plan').length > 0 && (
+                {docArtifacts.filter((a) => a.type === 'plan').length > 0 && (
                   <div className="artifact-group plan">
                     <div className="artifact-group-header">Plans (from messages)</div>
-                    {docArtifacts.filter(a => a.type === 'plan').map(a => (
-                      <button 
-                        key={a.path} 
-                        className="artifact-item"
-                        onClick={() => onJumpToMessage?.(a.messageId)}
-                        title={a.path}
-                      >
-                        {a.shortPath}
-                      </button>
-                    ))}
+                    {docArtifacts
+                      .filter((a) => a.type === 'plan')
+                      .map((a) => (
+                        <button
+                          key={a.path}
+                          className="artifact-item"
+                          onClick={() => onJumpToMessage?.(a.messageId)}
+                          title={a.path}
+                        >
+                          {a.shortPath}
+                        </button>
+                      ))}
                   </div>
                 )}
               </div>
@@ -282,7 +284,7 @@ export function ThreadDiscovery({
                   <div className="skills-section">
                     <div className="skills-section-header">Loaded in this session</div>
                     <div className="skills-list">
-                      {loadedSkills.map(skill => (
+                      {loadedSkills.map((skill) => (
                         <button
                           key={skill.name}
                           className="skill-item loaded"
@@ -301,8 +303,8 @@ export function ThreadDiscovery({
                     Available skills ({availableSkillsCount})
                   </div>
                   <div className="skills-list available">
-                    {availableSkills.map(skill => {
-                      const isLoaded = loadedSkills.some(s => s.name === skill.name);
+                    {availableSkills.map((skill) => {
+                      const isLoaded = loadedSkills.some((s) => s.name === skill.name);
                       return (
                         <div
                           key={skill.name}
@@ -322,14 +324,11 @@ export function ThreadDiscovery({
           </div>
         </div>
       )}
-      
+
       {showSourceControl && (
-        <SourceControl 
-          threadId={threadId} 
-          onClose={() => setShowSourceControl(false)} 
-        />
+        <SourceControl threadId={threadId} onClose={() => setShowSourceControl(false)} />
       )}
-      
+
       {viewingImageIndex !== null && (
         <ImageViewer
           images={allImages}

@@ -61,7 +61,7 @@ export function useTerminalWebSocket({
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data as string) as WsEvent;
-          
+
           switch (data.type) {
             case 'ready':
               wasConnected = true;
@@ -81,33 +81,42 @@ export function useTerminalWebSocket({
               setIsRunning(true);
               setAgentStatus('streaming');
               gotResponseRef.current = true;
-              setMessages(prev => [...prev, { id: generateId(), type: 'assistant', content: data.content }]);
+              setMessages((prev) => [
+                ...prev,
+                { id: generateId(), type: 'assistant', content: data.content },
+              ]);
               break;
             case 'tool_use':
               setIsRunning(true);
               setAgentStatus('running_tools');
               gotResponseRef.current = true;
-              setMessages(prev => [...prev, { 
-                id: generateId(), 
-                type: 'tool_use', 
-                content: formatToolUse(data.name, data.input),
-                toolName: data.name,
-                toolId: data.id,
-                toolInput: data.input
-              }]);
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: generateId(),
+                  type: 'tool_use',
+                  content: formatToolUse(data.name, data.input),
+                  toolName: data.name,
+                  toolId: data.id,
+                  toolInput: data.input,
+                },
+              ]);
               break;
             case 'tool_result':
               gotResponseRef.current = true;
-              setMessages(prev => {
-                const toolUse = prev.find(m => m.type === 'tool_use' && m.toolId === data.id);
-                return [...prev, { 
-                  id: generateId(), 
-                  type: 'tool_result', 
-                  content: data.result,
-                  toolId: data.id,
-                  toolName: toolUse?.toolName,
-                  success: data.success
-                }];
+              setMessages((prev) => {
+                const toolUse = prev.find((m) => m.type === 'tool_use' && m.toolId === data.id);
+                return [
+                  ...prev,
+                  {
+                    id: generateId(),
+                    type: 'tool_result',
+                    content: data.result,
+                    toolId: data.id,
+                    toolName: toolUse?.toolName,
+                    success: data.success,
+                  },
+                ];
               });
               break;
             case 'error': {
@@ -117,24 +126,26 @@ export function useTerminalWebSocket({
               const errorContent = stripAnsi(data.content || '').trim();
               if (!errorContent) break;
               const errorLower = errorContent.toLowerCase();
-              const isContextLimit = 
-                (errorLower.includes('context') && (
-                  errorLower.includes('limit') || 
-                  errorLower.includes('exceeded') ||
-                  errorLower.includes('too long') ||
-                  errorLower.includes('full')
-                )) ||
+              const isContextLimit =
+                (errorLower.includes('context') &&
+                  (errorLower.includes('limit') ||
+                    errorLower.includes('exceeded') ||
+                    errorLower.includes('too long') ||
+                    errorLower.includes('full'))) ||
                 errorLower.includes('token limit') ||
                 errorLower.includes('max_tokens') ||
                 errorLower.includes('maximum context') ||
                 errorLower.includes('conversation too long') ||
                 errorLower.includes('input too long');
-              setMessages(prev => [...prev, { 
-                id: generateId(), 
-                type: 'error', 
-                content: errorContent,
-                isContextLimit,
-              }]);
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: generateId(),
+                  type: 'error',
+                  content: errorContent,
+                  isContextLimit,
+                },
+              ]);
               break;
             }
             case 'done':
@@ -143,12 +154,15 @@ export function useTerminalWebSocket({
               setAgentStatus('idle');
               if (!gotResponseRef.current && !wasCancelledRef.current) {
                 setNoResponseDetected(true);
-                setMessages(prev => [...prev, { 
-                  id: generateId(), 
-                  type: 'error', 
-                  content: 'No response from agent. The context window may be full.',
-                  isContextLimit: true,
-                }]);
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: generateId(),
+                    type: 'error',
+                    content: 'No response from agent. The context window may be full.',
+                    isContextLimit: true,
+                  },
+                ]);
               } else if (isSoundEnabled() && !wasCancelledRef.current) {
                 playNotificationSound();
               }
@@ -157,8 +171,8 @@ export function useTerminalWebSocket({
             case 'system':
               if (data.subtype === 'interrupting') {
                 // Mark the last user message as interrupted
-                setMessages(prev => {
-                  const lastUserIdx = prev.findLastIndex(m => m.type === 'user');
+                setMessages((prev) => {
+                  const lastUserIdx = prev.findLastIndex((m) => m.type === 'user');
                   if (lastUserIdx === -1) return prev;
                   const updated = [...prev];
                   const existing = updated[lastUserIdx];
@@ -174,7 +188,10 @@ export function useTerminalWebSocket({
               setIsRunning(false);
               setAgentStatus('idle');
               wasCancelledRef.current = true;
-              setMessages(prev => [...prev, { id: generateId(), type: 'system' as const, content: 'Operation cancelled' }]);
+              setMessages((prev) => [
+                ...prev,
+                { id: generateId(), type: 'system' as const, content: 'Operation cancelled' },
+              ]);
               break;
           }
         } catch {
@@ -184,7 +201,7 @@ export function useTerminalWebSocket({
 
       ws.onerror = (err) => {
         if (isCleanedUp) return;
-        
+
         console.error('[Terminal] WebSocket error:', err, 'URL:', wsUrl);
         if (wasConnected) {
           setIsSending(false);
@@ -192,7 +209,10 @@ export function useTerminalWebSocket({
           errorTimeout = setTimeout(() => {
             if (!wasConnected && !isCleanedUp) {
               console.error('[Terminal] Failed to connect to:', wsUrl);
-              setMessages(prev => [...prev, { id: generateId(), type: 'error', content: `Failed to connect to server` }]);
+              setMessages((prev) => [
+                ...prev,
+                { id: generateId(), type: 'error', content: `Failed to connect to server` },
+              ]);
               setIsLoading(false);
               setIsSending(false);
             }
@@ -207,15 +227,33 @@ export function useTerminalWebSocket({
         if (wasConnected && event.code !== 1000) {
           reconnectAttempt++;
           if (reconnectAttempt > MAX_RECONNECT_ATTEMPTS) {
-            console.error(`[Terminal] Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached for thread ${threadId}`);
+            console.error(
+              `[Terminal] Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached for thread ${threadId}`,
+            );
             setConnectionError(true);
-            setMessages(prev => [...prev, { id: generateId(), type: 'error', content: `Connection lost. Failed to reconnect after ${MAX_RECONNECT_ATTEMPTS} attempts.` }]);
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: generateId(),
+                type: 'error',
+                content: `Connection lost. Failed to reconnect after ${MAX_RECONNECT_ATTEMPTS} attempts.`,
+              },
+            ]);
             return;
           }
           // Auto-reconnect with exponential backoff (max ~10s)
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempt - 1), 10000);
-          console.warn(`[Terminal] Connection lost, reconnecting in ${delay}ms (attempt ${reconnectAttempt}/${MAX_RECONNECT_ATTEMPTS})`);
-          setMessages(prev => [...prev, { id: generateId(), type: 'system' as const, content: 'Connection lost. Reconnecting...' }]);
+          console.warn(
+            `[Terminal] Connection lost, reconnecting in ${delay}ms (attempt ${reconnectAttempt}/${MAX_RECONNECT_ATTEMPTS})`,
+          );
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: generateId(),
+              type: 'system' as const,
+              content: 'Connection lost. Reconnecting...',
+            },
+          ]);
           reconnectTimeout = setTimeout(connect, delay);
         }
       };
@@ -231,27 +269,32 @@ export function useTerminalWebSocket({
     };
   }, [threadId, reconnectTrigger, setMessages, setUsage, setIsLoading]);
 
-  const sendMessage = useCallback((content: string, image?: { data: string; mediaType: string }) => {
-    if (!wsRef.current || !isConnected) return false;
-    
-    // Reset response tracking
-    gotResponseRef.current = false;
-    wasCancelledRef.current = false;
-    setNoResponseDetected(false);
-    
-    // Always send the message — if the agent is already running, the server
-    // will interrupt the current operation (SIGINT) and queue this message
-    // to be processed after the child exits. No client-side cancel needed.
-    wsRef.current.send(JSON.stringify({ 
-      type: 'message', 
-      content,
-      image: image || undefined,
-    }));
-    
-    setIsSending(true);
-    setAgentStatus('waiting');
-    return true;
-  }, [isConnected]);
+  const sendMessage = useCallback(
+    (content: string, image?: { data: string; mediaType: string }) => {
+      if (!wsRef.current || !isConnected) return false;
+
+      // Reset response tracking
+      gotResponseRef.current = false;
+      wasCancelledRef.current = false;
+      setNoResponseDetected(false);
+
+      // Always send the message — if the agent is already running, the server
+      // will interrupt the current operation (SIGINT) and queue this message
+      // to be processed after the child exits. No client-side cancel needed.
+      wsRef.current.send(
+        JSON.stringify({
+          type: 'message',
+          content,
+          image: image || undefined,
+        }),
+      );
+
+      setIsSending(true);
+      setAgentStatus('waiting');
+      return true;
+    },
+    [isConnected],
+  );
 
   const cancelOperation = useCallback(() => {
     if (wsRef.current && (isSending || isRunning)) {
@@ -261,7 +304,7 @@ export function useTerminalWebSocket({
 
   const reconnect = useCallback(() => {
     setConnectionError(false);
-    setReconnectTrigger(prev => prev + 1);
+    setReconnectTrigger((prev) => prev + 1);
   }, []);
 
   return {

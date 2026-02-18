@@ -20,13 +20,16 @@ export const PinnedSection = memo(function PinnedSection({
   // Stable callback maps keyed by thread ID to avoid inline arrows in .map()
   // that would defeat memo() on ThreadNode
   const threadCallbacks = useMemo(() => {
-    const map = new Map<string, {
-      onSelect: () => void;
-      onArchive: (() => void) | undefined;
-      onOpenInBrowser: (() => void) | undefined;
-      onTogglePin: () => void;
-      onContextMenu: (e: React.MouseEvent) => void;
-    }>();
+    const map = new Map<
+      string,
+      {
+        onSelect: () => void;
+        onArchive: (() => void) | undefined;
+        onOpenInBrowser: (() => void) | undefined;
+        onTogglePin: () => void;
+        onContextMenu: (e: React.MouseEvent) => void;
+      }
+    >();
     for (const thread of threads) {
       map.set(thread.id, {
         onSelect: () => onSelectThread(thread),
@@ -53,7 +56,7 @@ export const PinnedSection = memo(function PinnedSection({
       </button>
       {expanded && (
         <div className="sidebar-node-children">
-          {threads.map(thread => {
+          {threads.map((thread) => {
             const cbs = threadCallbacks.get(thread.id);
             return (
               <ThreadNode

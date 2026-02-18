@@ -1,7 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Palette, Check } from 'lucide-react';
-import { THEME_PRESETS, getThemeForPreset, applyTheme, saveTheme, type ThemePreset } from '../lib/theme';
+import {
+  THEME_PRESETS,
+  getThemeForPreset,
+  applyTheme,
+  saveTheme,
+  type ThemePreset,
+} from '../lib/theme';
 
 interface ThemePickerProps {
   currentTheme: string;
@@ -17,7 +23,7 @@ export function ThemePicker({ currentTheme, onThemeChange }: ThemePickerProps) {
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
-        dropdownRef.current && 
+        dropdownRef.current &&
         !dropdownRef.current.contains(e.target as Node) &&
         buttonRef.current &&
         !buttonRef.current.contains(e.target as Node)
@@ -47,61 +53,63 @@ export function ThemePicker({ currentTheme, onThemeChange }: ThemePickerProps) {
     setIsOpen(false);
   };
 
-  const darkThemes = THEME_PRESETS.filter(p => getLuminance(p.bg) < 0.5);
-  const lightThemes = THEME_PRESETS.filter(p => getLuminance(p.bg) >= 0.5);
+  const darkThemes = THEME_PRESETS.filter((p) => getLuminance(p.bg) < 0.5);
+  const lightThemes = THEME_PRESETS.filter((p) => getLuminance(p.bg) >= 0.5);
 
-  const dropdown = isOpen && createPortal(
-    <div 
-      className="theme-picker-dropdown"
-      ref={dropdownRef}
-      style={{ top: dropdownPos.top, right: dropdownPos.right }}
-    >
-      <div className="theme-picker-header">Choose Theme</div>
-      
-      <div className="theme-picker-section">
-        <div className="theme-picker-section-label">Dark</div>
-        <div className="theme-picker-grid">
-          {darkThemes.map((preset) => (
-            <button
-              key={preset.name}
-              className={`theme-picker-item ${currentTheme === preset.name ? 'active' : ''}`}
-              onClick={() => handleSelect(preset)}
-              title={preset.name}
-            >
-              <div className="theme-preview">
-                <div className="theme-preview-bg" style={{ background: preset.bg }} />
-                <div className="theme-preview-accent" style={{ background: preset.accent }} />
-              </div>
-              <span className="theme-name">{preset.name}</span>
-              {currentTheme === preset.name && <Check size={14} className="theme-check" />}
-            </button>
-          ))}
-        </div>
-      </div>
+  const dropdown =
+    isOpen &&
+    createPortal(
+      <div
+        className="theme-picker-dropdown"
+        ref={dropdownRef}
+        style={{ top: dropdownPos.top, right: dropdownPos.right }}
+      >
+        <div className="theme-picker-header">Choose Theme</div>
 
-      <div className="theme-picker-section">
-        <div className="theme-picker-section-label">Light</div>
-        <div className="theme-picker-grid">
-          {lightThemes.map((preset) => (
-            <button
-              key={preset.name}
-              className={`theme-picker-item ${currentTheme === preset.name ? 'active' : ''}`}
-              onClick={() => handleSelect(preset)}
-              title={preset.name}
-            >
-              <div className="theme-preview">
-                <div className="theme-preview-bg" style={{ background: preset.bg }} />
-                <div className="theme-preview-accent" style={{ background: preset.accent }} />
-              </div>
-              <span className="theme-name">{preset.name}</span>
-              {currentTheme === preset.name && <Check size={14} className="theme-check" />}
-            </button>
-          ))}
+        <div className="theme-picker-section">
+          <div className="theme-picker-section-label">Dark</div>
+          <div className="theme-picker-grid">
+            {darkThemes.map((preset) => (
+              <button
+                key={preset.name}
+                className={`theme-picker-item ${currentTheme === preset.name ? 'active' : ''}`}
+                onClick={() => handleSelect(preset)}
+                title={preset.name}
+              >
+                <div className="theme-preview">
+                  <div className="theme-preview-bg" style={{ background: preset.bg }} />
+                  <div className="theme-preview-accent" style={{ background: preset.accent }} />
+                </div>
+                <span className="theme-name">{preset.name}</span>
+                {currentTheme === preset.name && <Check size={14} className="theme-check" />}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-    </div>,
-    document.body
-  );
+
+        <div className="theme-picker-section">
+          <div className="theme-picker-section-label">Light</div>
+          <div className="theme-picker-grid">
+            {lightThemes.map((preset) => (
+              <button
+                key={preset.name}
+                className={`theme-picker-item ${currentTheme === preset.name ? 'active' : ''}`}
+                onClick={() => handleSelect(preset)}
+                title={preset.name}
+              >
+                <div className="theme-preview">
+                  <div className="theme-preview-bg" style={{ background: preset.bg }} />
+                  <div className="theme-preview-accent" style={{ background: preset.accent }} />
+                </div>
+                <span className="theme-name">{preset.name}</span>
+                {currentTheme === preset.name && <Check size={14} className="theme-check" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>,
+      document.body,
+    );
 
   return (
     <div className="theme-picker">
@@ -126,8 +134,10 @@ function getLuminance(hex: string): number {
   const r = parseInt(result[1] ?? '0', 16) / 255;
   const g = parseInt(result[2] ?? '0', 16) / 255;
   const b = parseInt(result[3] ?? '0', 16) / 255;
-  const linearized = [r, g, b].map((c) => 
-    c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  const linearized = [r, g, b].map((c) =>
+    c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4,
   );
-  return 0.2126 * (linearized[0] ?? 0) + 0.7152 * (linearized[1] ?? 0) + 0.0722 * (linearized[2] ?? 0);
+  return (
+    0.2126 * (linearized[0] ?? 0) + 0.7152 * (linearized[1] ?? 0) + 0.0722 * (linearized[2] ?? 0)
+  );
 }

@@ -6,10 +6,10 @@ export interface DiffLine {
 export function parseDiffToLines(diff: string): DiffLine {
   const oldLines: string[] = [];
   const newLines: string[] = [];
-  
+
   const lines = diff.split('\n');
   let inHunk = false;
-  
+
   for (const line of lines) {
     if (line.startsWith('@@')) {
       inHunk = true;
@@ -17,9 +17,9 @@ export function parseDiffToLines(diff: string): DiffLine {
       newLines.push('...');
       continue;
     }
-    
+
     if (!inHunk) continue;
-    
+
     if (line.startsWith('-') && !line.startsWith('---')) {
       oldLines.push(line.slice(1));
       newLines.push('');
@@ -31,6 +31,6 @@ export function parseDiffToLines(diff: string): DiffLine {
       newLines.push(line.slice(1) || '');
     }
   }
-  
+
   return { oldLines, newLines };
 }

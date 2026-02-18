@@ -47,7 +47,9 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
     }
 
     void render();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [code, uniqueId]);
 
   if (error) {
@@ -65,10 +67,6 @@ export function MermaidDiagram({ code }: MermaidDiagramProps) {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="mermaid-diagram"
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
+    <div ref={containerRef} className="mermaid-diagram" dangerouslySetInnerHTML={{ __html: svg }} />
   );
 }

@@ -61,8 +61,12 @@ export const TerminalTabs = memo(function TerminalTabs({
             onDragEnd={onDragEnd}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleTabClick(thread.id); }}
-            title={showVisibilityIndicator && !isVisible ? 'Double-click to show in view' : thread.title}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleTabClick(thread.id);
+            }}
+            title={
+              showVisibilityIndicator && !isVisible ? 'Double-click to show in view' : thread.title
+            }
           >
             {showVisibilityIndicator && (
               <span className={`tab-visibility ${isVisible ? 'visible' : 'hidden'}`}>
@@ -74,9 +78,12 @@ export const TerminalTabs = memo(function TerminalTabs({
             {unreadCount > 0 && !isActive && (
               <span className="terminal-tab-unread">{unreadCount}</span>
             )}
-            <button 
+            <button
               className="terminal-tab-close"
-              onClick={(e) => { e.stopPropagation(); onTabClose(thread.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTabClose(thread.id);
+              }}
             >
               <X size={12} />
             </button>

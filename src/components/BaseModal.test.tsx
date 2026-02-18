@@ -9,7 +9,7 @@ describe('BaseModal', () => {
     const { container } = render(
       <BaseModal isOpen={false} onClose={vi.fn()} title="Test">
         <p>Modal content</p>
-      </BaseModal>
+      </BaseModal>,
     );
     expect(container.innerHTML).toBe('');
   });
@@ -18,7 +18,7 @@ describe('BaseModal', () => {
     render(
       <BaseModal isOpen={true} onClose={vi.fn()} title="Test Modal">
         <p>Modal content</p>
-      </BaseModal>
+      </BaseModal>,
     );
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
@@ -32,7 +32,7 @@ describe('BaseModal', () => {
     render(
       <BaseModal isOpen={true} onClose={onClose} title="Test">
         <button>Focusable</button>
-      </BaseModal>
+      </BaseModal>,
     );
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledOnce();
@@ -43,7 +43,7 @@ describe('BaseModal', () => {
     render(
       <BaseModal isOpen={true} onClose={onClose} title="Test">
         <p>Content</p>
-      </BaseModal>
+      </BaseModal>,
     );
     const overlay = document.querySelector('.modal-overlay');
     expect(overlay).toBeInTheDocument();
@@ -57,7 +57,7 @@ describe('BaseModal', () => {
     render(
       <BaseModal isOpen={true} onClose={onClose} title="Test" closeOnOverlayClick={false}>
         <p>Content</p>
-      </BaseModal>
+      </BaseModal>,
     );
     const overlay = document.querySelector('.modal-overlay');
     expect(overlay).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('BaseModal', () => {
       <BaseModal isOpen={true} onClose={vi.fn()} title="Focus Test">
         <button>First</button>
         <button>Last</button>
-      </BaseModal>
+      </BaseModal>,
     );
 
     const last = screen.getByText('Last');
@@ -85,7 +85,7 @@ describe('BaseModal', () => {
       <BaseModal isOpen={true} onClose={vi.fn()} title="Focus Test">
         <button>First</button>
         <button>Last</button>
-      </BaseModal>
+      </BaseModal>,
     );
 
     const first = screen.getByText('First');
@@ -98,7 +98,7 @@ describe('BaseModal', () => {
     render(
       <BaseModal isOpen={true} onClose={vi.fn()} title="Test" className="custom-class">
         <p>Content</p>
-      </BaseModal>
+      </BaseModal>,
     );
     const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveClass('custom-class');

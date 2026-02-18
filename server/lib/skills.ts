@@ -30,49 +30,52 @@ export async function listSkills(): Promise<SkillOutput> {
 export async function getSkillsSummary(): Promise<SkillsSummary> {
   const stdout = await runAmp(['skill', 'list']);
   const output = stripAnsi(stdout);
-  
+
   // Parse the output to extract skill info
   // Format: "Available skills (42):" followed by bullet items
   const skills: SkillInfo[] = [];
-  
+
   // Extract count from header
   const countMatch = output.match(/Available skills \((\d+)\)/);
   const count = countMatch?.[1] ? parseInt(countMatch[1], 10) : 0;
-  
+
   // Parse each skill entry
   // Format: "  • skill-name\n    Description...\n    source-path"
   const lines = output.split('\n');
   let i = 0;
-  
+
   while (i < lines.length) {
     const line = lines[i];
-    if (!line) { i++; continue; }
+    if (!line) {
+      i++;
+      continue;
+    }
     const skillMatch = line.match(/^\s*[•]\s+(.+)$/);
-    
+
     if (skillMatch?.[1]) {
       const name = skillMatch[1].trim();
       let description = '';
       let source = '';
-      
+
       // Next line should be description
       const nextLine = lines[i + 1];
       if (nextLine && !nextLine.match(/^\s*[•]/)) {
         description = nextLine.trim();
         i++;
       }
-      
+
       // Next line should be source
       const sourceLine = lines[i + 1];
       if (sourceLine && !sourceLine.match(/^\s*[•]/)) {
         source = sourceLine.trim();
         i++;
       }
-      
+
       skills.push({ name, description, source });
     }
     i++;
   }
-  
+
   return { count: count || skills.length, skills };
 }
 

@@ -1,4 +1,10 @@
-import type { Thread, ThreadStatus, ThreadMetadata, RunningThreadsMap, RunningStatus } from '../../types';
+import type {
+  Thread,
+  ThreadStatus,
+  ThreadMetadata,
+  RunningThreadsMap,
+  RunningStatus,
+} from '../../types';
 
 export const PINNED_THREADS_KEY = 'amp-thread-manager-pinned-threads';
 
@@ -103,4 +109,10 @@ export interface PinnedSectionProps {
   onContextMenu: (e: React.MouseEvent, thread: Thread) => void;
 }
 
-export { type Thread, type ThreadStatus, type ThreadMetadata, type RunningThreadsMap, type RunningStatus };
+export {
+  type Thread,
+  type ThreadStatus,
+  type ThreadMetadata,
+  type RunningThreadsMap,
+  type RunningStatus,
+};

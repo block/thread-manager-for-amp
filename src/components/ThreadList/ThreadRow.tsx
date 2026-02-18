@@ -1,5 +1,15 @@
 import { memo } from 'react';
-import { ExternalLink, Archive, Trash2, CheckSquare, Square, Link2, ChevronRight, ChevronDown, Layers } from 'lucide-react';
+import {
+  ExternalLink,
+  Archive,
+  Trash2,
+  CheckSquare,
+  Square,
+  Link2,
+  ChevronRight,
+  ChevronDown,
+  Layers,
+} from 'lucide-react';
 import { ThreadStatusBadge } from '../ThreadStatusBadge';
 import { ThreadLabelEditor } from '../ThreadLabelEditor';
 import { LinkedIssueBadge } from '../LinkedIssue';
@@ -22,9 +32,9 @@ export const ThreadRow = memo(function ThreadRow({
   isStackChild,
 }: ThreadRowProps) {
   const hasStack = stackSize && stackSize > 1;
-  
+
   return (
-    <tr 
+    <tr
       className={`clickable-row ${selected ? 'selected' : ''} ${focused ? 'focused' : ''} ${isStackChild ? 'stack-child' : ''}`}
       onClick={() => onContinue(thread)}
     >
@@ -37,11 +47,7 @@ export const ThreadRow = memo(function ThreadRow({
           }}
           aria-label={selected ? 'Deselect thread' : 'Select thread'}
         >
-          {selected ? (
-            <CheckSquare size={16} />
-          ) : (
-            <Square size={16} />
-          )}
+          {selected ? <CheckSquare size={16} /> : <Square size={16} />}
         </button>
       </td>
       <td className="thread-status" onClick={(e) => e.stopPropagation()}>
@@ -53,7 +59,10 @@ export const ThreadRow = memo(function ThreadRow({
             compact
           />
           {metadata?.blockers && metadata.blockers.length > 0 && (
-            <span className="blocker-count" title={`Blocked by ${metadata.blockers.length} thread(s)`}>
+            <span
+              className="blocker-count"
+              title={`Blocked by ${metadata.blockers.length} thread(s)`}
+            >
               <Link2 size={10} />
               {metadata.blockers.length}
             </span>
@@ -84,11 +93,7 @@ export const ThreadRow = memo(function ThreadRow({
         </div>
       </td>
       <td className="thread-labels" onClick={(e) => e.stopPropagation()}>
-        <ThreadLabelEditor
-          threadId={thread.id}
-          initialLabels={initialLabels}
-          compact
-        />
+        <ThreadLabelEditor threadId={thread.id} initialLabels={initialLabels} compact />
       </td>
       <td className="thread-time">{thread.lastUpdated}</td>
       <td className="thread-context">
@@ -96,10 +101,17 @@ export const ThreadRow = memo(function ThreadRow({
           <span className={thread.contextPercent > 80 ? 'context-warning' : ''}>
             {thread.contextPercent}%
           </span>
-        ) : '—'}
+        ) : (
+          '—'
+        )}
       </td>
-      <td className={`thread-cost${thread.cost && thread.cost >= 50 ? ' cost-warning' : ''}`}
-        title={thread.cost ? 'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data' : undefined}
+      <td
+        className={`thread-cost${thread.cost && thread.cost >= 50 ? ' cost-warning' : ''}`}
+        title={
+          thread.cost
+            ? 'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data'
+            : undefined
+        }
       >
         {thread.cost ? `~$${thread.cost.toFixed(2)}` : '—'}
       </td>

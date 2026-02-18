@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useCallback, useRef, useMemo, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  type ReactNode,
+} from 'react';
 
 interface UnreadState {
   [threadId: string]: {
@@ -32,7 +40,7 @@ export function UnreadProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateCurrentCount = useCallback((threadId: string, count: number) => {
-    setState(prev => {
+    setState((prev) => {
       const existing = prev[threadId];
       if (existing && existing.currentCount === count) return prev;
       return {
@@ -46,7 +54,7 @@ export function UnreadProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const markAsSeen = useCallback((threadId: string) => {
-    setState(prev => {
+    setState((prev) => {
       const existing = prev[threadId];
       if (!existing || existing.lastSeenCount === existing.currentCount) return prev;
       return {
@@ -60,7 +68,7 @@ export function UnreadProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearThread = useCallback((threadId: string) => {
-    setState(prev => {
+    setState((prev) => {
       if (!prev[threadId]) return prev;
       const { [threadId]: _removed, ...rest } = prev;
       void _removed;
@@ -73,11 +81,7 @@ export function UnreadProvider({ children }: { children: ReactNode }) {
     [getUnreadCount, updateCurrentCount, markAsSeen, clearThread],
   );
 
-  return (
-    <UnreadContext.Provider value={value}>
-      {children}
-    </UnreadContext.Provider>
-  );
+  return <UnreadContext.Provider value={value}>{children}</UnreadContext.Provider>;
 }
 
 export function useUnread() {

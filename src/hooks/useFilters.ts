@@ -49,22 +49,26 @@ export function useFilters({ threads, metadata }: UseFiltersOptions): UseFilters
 
   // Stable key derived from thread IDs — won't change on every poll if threads are the same
   const threadIdKey = useMemo(
-    () => threads.slice(0, 50).map(t => t.id).join(','),
-    [threads]
+    () =>
+      threads
+        .slice(0, 50)
+        .map((t) => t.id)
+        .join(','),
+    [threads],
   );
 
   const fetchThreadLabels = useCallback(async () => {
-    const ids = threads.slice(0, 50).map(t => t.id);
+    const ids = threads.slice(0, 50).map((t) => t.id);
     if (ids.length === 0) return;
 
     try {
       const labelsMap = await apiGet<Record<string, { name: string }[]>>(
-        `/api/thread-labels-batch?threadIds=${ids.map(encodeURIComponent).join(',')}`
+        `/api/thread-labels-batch?threadIds=${ids.map(encodeURIComponent).join(',')}`,
       );
       setThreadLabels(
         Object.fromEntries(
-          Object.entries(labelsMap).map(([id, labels]) => [id, labels.map(l => l.name)])
-        )
+          Object.entries(labelsMap).map(([id, labels]) => [id, labels.map((l) => l.name)]),
+        ),
       );
     } catch {
       // Fallback: set empty labels rather than leaving stale state
@@ -79,19 +83,23 @@ export function useFilters({ threads, metadata }: UseFiltersOptions): UseFilters
     }
   }, [threadIdKey]); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally keyed on stable threadIdKey
 
-  const handleSort = useCallback((field: SortField) => {
-    if (field === sortField) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  }, [sortField]);
+  const handleSort = useCallback(
+    (field: SortField) => {
+      if (field === sortField) {
+        setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortField(field);
+        setSortDirection('desc');
+      }
+    },
+    [sortField],
+  );
 
   const filteredThreads = useMemo(() => {
-    let result = threads.filter((t) =>
-      t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      t.id.toLowerCase().includes(debouncedSearch.toLowerCase())
+    let result = threads.filter(
+      (t) =>
+        t.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        t.id.toLowerCase().includes(debouncedSearch.toLowerCase()),
     );
 
     if (filterRepo) {
@@ -136,12 +144,23 @@ export function useFilters({ threads, metadata }: UseFiltersOptions): UseFilters
     });
 
     return result;
-  }, [threads, debouncedSearch, sortField, sortDirection, filterRepo, filterWorkspace, filterLabel, filterStatus, threadLabels, metadata]);
+  }, [
+    threads,
+    debouncedSearch,
+    sortField,
+    sortDirection,
+    filterRepo,
+    filterWorkspace,
+    filterLabel,
+    filterStatus,
+    threadLabels,
+    metadata,
+  ]);
 
   const availableLabels = useMemo(() => {
     const labelSet = new Set<string>();
-    Object.values(threadLabels).forEach(labels => {
-      labels.forEach(label => labelSet.add(label));
+    Object.values(threadLabels).forEach((labels) => {
+      labels.forEach((label) => labelSet.add(label));
     });
     return [...labelSet].sort();
   }, [threadLabels]);

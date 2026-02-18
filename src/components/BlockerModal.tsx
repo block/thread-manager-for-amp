@@ -38,7 +38,7 @@ export function BlockerModal({
   }, [showAddForm]);
 
   const availableThreads = threads.filter(
-    t => t.id !== threadId && !blockers.some(b => b.blocked_by_thread_id === t.id)
+    (t) => t.id !== threadId && !blockers.some((b) => b.blocked_by_thread_id === t.id),
   );
 
   const handleAdd = () => {
@@ -51,17 +51,12 @@ export function BlockerModal({
   };
 
   const getThreadTitle = (id: string) => {
-    const thread = threads.find(t => t.id === id);
+    const thread = threads.find((t) => t.id === id);
     return thread?.title || id.slice(0, 12) + '...';
   };
 
   return (
-    <BaseModal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Thread Blockers"
-      className="blocker-modal"
-    >
+    <BaseModal isOpen={isOpen} onClose={onClose} title="Thread Blockers" className="blocker-modal">
       <div className="blocker-modal-header">
         <Link2 size={18} />
         <h3>Thread Blockers</h3>
@@ -75,19 +70,21 @@ export function BlockerModal({
         <p className="blocker-thread-id">{threadId}</p>
 
         {blockers.length === 0 && !showAddForm && (
-          <p className="blocker-empty">No blockers. This thread is not waiting on any other threads.</p>
+          <p className="blocker-empty">
+            No blockers. This thread is not waiting on any other threads.
+          </p>
         )}
 
         {blockers.length > 0 && (
           <div className="blocker-list">
             <h4>Blocked by:</h4>
-            {blockers.map(blocker => (
+            {blockers.map((blocker) => (
               <div key={blocker.blocked_by_thread_id} className="blocker-item">
                 <div className="blocker-item-info">
                   <button
                     className="blocker-thread-link"
                     onClick={() => {
-                      const thread = threads.find(t => t.id === blocker.blocked_by_thread_id);
+                      const thread = threads.find((t) => t.id === blocker.blocked_by_thread_id);
                       if (thread && onOpenThread) {
                         onOpenThread(thread);
                         onClose();
@@ -96,9 +93,7 @@ export function BlockerModal({
                   >
                     {getThreadTitle(blocker.blocked_by_thread_id)}
                   </button>
-                  {blocker.reason && (
-                    <span className="blocker-reason">{blocker.reason}</span>
-                  )}
+                  {blocker.reason && <span className="blocker-reason">{blocker.reason}</span>}
                   {blocker.blocker_status && (
                     <span className={`blocker-status status-${blocker.blocker_status}`}>
                       {blocker.blocker_status}
@@ -122,12 +117,12 @@ export function BlockerModal({
             <select
               ref={selectRef}
               value={selectedThreadId}
-              onChange={e => setSelectedThreadId(e.target.value)}
+              onChange={(e) => setSelectedThreadId(e.target.value)}
               className="blocker-select"
               aria-label="Select blocking thread"
             >
               <option value="">Select a thread...</option>
-              {availableThreads.map(t => (
+              {availableThreads.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.title.slice(0, 50)}
                 </option>
@@ -136,7 +131,7 @@ export function BlockerModal({
             <input
               type="text"
               value={reason}
-              onChange={e => setReason(e.target.value)}
+              onChange={(e) => setReason(e.target.value)}
               placeholder="Reason (optional)"
               className="blocker-reason-input"
               aria-label="Blocker reason"

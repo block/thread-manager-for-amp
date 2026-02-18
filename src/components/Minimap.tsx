@@ -1,5 +1,14 @@
 import { useRef, useEffect, memo } from 'react';
-import { FileText, Search, Terminal, User, Bot, AlertCircle, ChevronUp, Loader2 } from 'lucide-react';
+import {
+  FileText,
+  Search,
+  Terminal,
+  User,
+  Bot,
+  AlertCircle,
+  ChevronUp,
+  Loader2,
+} from 'lucide-react';
 
 export interface MinimapItem {
   id: string;
@@ -48,14 +57,22 @@ function getItemColor(item: MinimapItem): string {
     const name = item.toolName?.toLowerCase() || '';
     if (name === 'task') return 'minimap-subagent';
     if (name.includes('read') || name.includes('file')) return 'minimap-read';
-    if (name.includes('grep') || name.includes('find') || name.includes('glob')) return 'minimap-search';
+    if (name.includes('grep') || name.includes('find') || name.includes('glob'))
+      return 'minimap-search';
     if (name.includes('bash') || name.includes('terminal')) return 'minimap-bash';
     return 'minimap-tool';
   }
   return 'minimap-assistant';
 }
 
-export const Minimap = memo(function Minimap({ items, activeId, onItemClick, hasMoreMessages, loadingMore, onLoadMore }: MinimapProps) {
+export const Minimap = memo(function Minimap({
+  items,
+  activeId,
+  onItemClick,
+  hasMoreMessages,
+  loadingMore,
+  onLoadMore,
+}: MinimapProps) {
   const activeRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const prevItemCount = useRef(0);
@@ -64,17 +81,18 @@ export const Minimap = memo(function Minimap({ items, activeId, onItemClick, has
   useEffect(() => {
     const container = containerRef.current;
     if (!container || items.length === 0) return;
-    
+
     const firstItemId = items[0]?.id;
-    const isLoadingOlder = firstItemId !== prevFirstItemId.current && prevFirstItemId.current !== undefined;
-    
+    const isLoadingOlder =
+      firstItemId !== prevFirstItemId.current && prevFirstItemId.current !== undefined;
+
     // Only scroll to bottom if new messages added at end (not when loading older at top)
     if (items.length > prevItemCount.current && !isLoadingOlder) {
       requestAnimationFrame(() => {
         container.scrollTop = container.scrollHeight;
       });
     }
-    
+
     prevItemCount.current = items.length;
     prevFirstItemId.current = firstItemId;
   }, [items]);
@@ -93,16 +111,8 @@ export const Minimap = memo(function Minimap({ items, activeId, onItemClick, has
       </div>
       <div className="minimap-items" ref={containerRef}>
         {hasMoreMessages && onLoadMore && (
-          <button
-            className="minimap-load-more"
-            onClick={onLoadMore}
-            disabled={loadingMore}
-          >
-            {loadingMore ? (
-              <Loader2 size={12} className="spinning" />
-            ) : (
-              <ChevronUp size={12} />
-            )}
+          <button className="minimap-load-more" onClick={onLoadMore} disabled={loadingMore}>
+            {loadingMore ? <Loader2 size={12} className="spinning" /> : <ChevronUp size={12} />}
             <span>{loadingMore ? 'Loading...' : 'Load older'}</span>
           </button>
         )}
@@ -118,9 +128,7 @@ export const Minimap = memo(function Minimap({ items, activeId, onItemClick, has
             <span className="minimap-preview">{item.preview}</span>
           </button>
         ))}
-        {items.length === 0 && (
-          <div className="minimap-empty">No items yet</div>
-        )}
+        {items.length === 0 && <div className="minimap-empty">No items yet</div>}
       </div>
     </div>
   );

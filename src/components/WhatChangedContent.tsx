@@ -9,11 +9,11 @@ interface WhatChangedContentProps {
 export function WhatChangedContent({ changes }: WhatChangedContentProps) {
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
 
-  const createdCount = changes.filter(c => c.created).length;
-  const editedCount = changes.filter(c => !c.created).length;
+  const createdCount = changes.filter((c) => c.created).length;
+  const editedCount = changes.filter((c) => !c.created).length;
 
   const toggleFile = (path: string) => {
-    setExpandedFiles(prev => {
+    setExpandedFiles((prev) => {
       const next = new Set(prev);
       if (next.has(path)) {
         next.delete(path);
@@ -38,14 +38,11 @@ export function WhatChangedContent({ changes }: WhatChangedContentProps) {
           </span>
         )}
       </div>
-      
+
       <div className="change-file-list">
         {changes.map((file) => (
           <div key={file.path} className="change-file">
-            <button
-              className="change-file-header"
-              onClick={() => toggleFile(file.path)}
-            >
+            <button className="change-file-header" onClick={() => toggleFile(file.path)}>
               <span className={`change-icon ${file.created ? 'created' : 'edited'}`}>
                 {file.created ? <Plus size={12} /> : <Pencil size={12} />}
               </span>
@@ -53,11 +50,15 @@ export function WhatChangedContent({ changes }: WhatChangedContentProps) {
               <span className="change-dir">{file.dir}</span>
               {file.edits.length > 0 && (
                 <span className="change-expand">
-                  {expandedFiles.has(file.path) ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  {expandedFiles.has(file.path) ? (
+                    <ChevronDown size={12} />
+                  ) : (
+                    <ChevronRight size={12} />
+                  )}
                 </span>
               )}
             </button>
-            
+
             {expandedFiles.has(file.path) && file.edits.length > 0 && (
               <div className="change-diffs">
                 {file.edits.map((edit, i) => (
@@ -65,22 +66,26 @@ export function WhatChangedContent({ changes }: WhatChangedContentProps) {
                     {edit.type === 'create' ? (
                       <div className="diff-create">
                         <span className="diff-label">Created ({edit.lines} lines)</span>
-                        {edit.preview && (
-                          <pre className="diff-preview">{edit.preview}</pre>
-                        )}
+                        {edit.preview && <pre className="diff-preview">{edit.preview}</pre>}
                       </div>
                     ) : (
                       <div className="diff-edit">
                         {edit.oldStr && (
                           <div className="diff-old">
                             <span className="diff-marker">-</span>
-                            <pre>{edit.oldStr.slice(0, 500)}{edit.oldStr.length > 500 ? '...' : ''}</pre>
+                            <pre>
+                              {edit.oldStr.slice(0, 500)}
+                              {edit.oldStr.length > 500 ? '...' : ''}
+                            </pre>
                           </div>
                         )}
                         {edit.newStr && (
                           <div className="diff-new">
                             <span className="diff-marker">+</span>
-                            <pre>{edit.newStr.slice(0, 500)}{edit.newStr.length > 500 ? '...' : ''}</pre>
+                            <pre>
+                              {edit.newStr.slice(0, 500)}
+                              {edit.newStr.length > 500 ? '...' : ''}
+                            </pre>
                           </div>
                         )}
                       </div>

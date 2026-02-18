@@ -62,11 +62,5 @@ export function useCommands(options: UseCommandsOptions): Command[] {
       ...createToolsCommands(handlers, context),
       ...createSettingsCommands(handlers, context),
     ];
-  }, [
-    openThreads.length,
-    activeThreadId,
-    hasActiveThread,
-    soundEnabled,
-    toggleSound,
-  ]);
+  }, [openThreads.length, activeThreadId, hasActiveThread, soundEnabled, toggleSound]);
 }

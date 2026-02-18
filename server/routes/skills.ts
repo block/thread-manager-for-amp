@@ -22,7 +22,11 @@ interface SkillRemoveBody {
   name?: string;
 }
 
-export async function handleSkillRoutes(url: URL, req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+export async function handleSkillRoutes(
+  url: URL,
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<boolean> {
   const pathname = url.pathname;
 
   if (pathname === '/api/skills-list') {

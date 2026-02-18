@@ -38,7 +38,7 @@ export function TerminalInput({
         e.preventDefault();
         const file = item.getAsFile();
         if (!file) return;
-        
+
         const reader = new FileReader();
         reader.onload = () => {
           const dataUrl = reader.result as string;
@@ -80,7 +80,7 @@ export function TerminalInput({
       try {
         const clipboardItems = await navigator.clipboard.read();
         for (const item of clipboardItems) {
-          const imageType = item.types.find(t => t.startsWith('image/'));
+          const imageType = item.types.find((t) => t.startsWith('image/'));
           if (imageType) {
             e.preventDefault();
             const blob = await item.getType(imageType);
@@ -114,12 +114,12 @@ export function TerminalInput({
       )}
       {pendingImage && (
         <div className="pending-image-preview">
-          <img 
-            src={`data:${pendingImage.mediaType};base64,${pendingImage.data}`} 
-            alt="Pending attachment" 
+          <img
+            src={`data:${pendingImage.mediaType};base64,${pendingImage.data}`}
+            alt="Pending attachment"
           />
-          <button 
-            className="pending-image-remove" 
+          <button
+            className="pending-image-remove"
             onClick={onPendingImageRemove}
             title="Remove image"
           >
@@ -130,23 +130,23 @@ export function TerminalInput({
       <textarea
         ref={inputRef}
         value={input}
-        onChange={e => onInputChange(e.target.value)}
+        onChange={(e) => onInputChange(e.target.value)}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         placeholder={
-          !isConnected 
-            ? "Connecting..." 
-            : pendingImage 
-              ? "Add a message or press Enter to send..." 
-              : "Continue the conversation..."
+          !isConnected
+            ? 'Connecting...'
+            : pendingImage
+              ? 'Add a message or press Enter to send...'
+              : 'Continue the conversation...'
         }
         disabled={!isConnected}
         className="terminal-input"
         rows={1}
         aria-label="Message input"
       />
-      <button 
-        onClick={onSend} 
+      <button
+        onClick={onSend}
         disabled={!isConnected || (!input.trim() && !pendingImage)}
         className={`terminal-send ${isActive && input.trim() ? 'will-cancel' : ''}`}
         title={isActive && input.trim() ? 'Send (will cancel current operation)' : 'Send message'}

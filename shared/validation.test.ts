@@ -7,11 +7,13 @@ describe('isWsClientMessage', () => {
   });
 
   it('accepts a message with optional image field', () => {
-    expect(isWsClientMessage({
-      type: 'message',
-      content: 'analyze this',
-      image: { data: 'base64...', mediaType: 'image/png' },
-    })).toBe(true);
+    expect(
+      isWsClientMessage({
+        type: 'message',
+        content: 'analyze this',
+        image: { data: 'base64...', mediaType: 'image/png' },
+      }),
+    ).toBe(true);
   });
 
   it('accepts a valid cancel message', () => {

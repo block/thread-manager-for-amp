@@ -1,9 +1,9 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
-import { defineConfig, globalIgnores } from 'eslint/config'
+import js from '@eslint/js';
+import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import tseslint from 'typescript-eslint';
+import { defineConfig, globalIgnores } from 'eslint/config';
 
 // Shared rule overrides for strictTypeChecked.
 const sharedStrictOverrides = {
@@ -11,8 +11,11 @@ const sharedStrictOverrides = {
   '@typescript-eslint/no-deprecated': 'off',
   '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
   '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
-  '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false, properties: false, arguments: false } }],
-}
+  '@typescript-eslint/no-misused-promises': [
+    'error',
+    { checksVoidReturn: { attributes: false, properties: false, arguments: false } },
+  ],
+};
 
 export default defineConfig([
   globalIgnores(['dist', 'shared/dist']),
@@ -38,10 +41,7 @@ export default defineConfig([
   },
   {
     files: ['server/**/*.ts'],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.strictTypeChecked,
-    ],
+    extends: [js.configs.recommended, tseslint.configs.strictTypeChecked],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.node,
@@ -63,21 +63,33 @@ export default defineConfig([
   {
     files: ['src/**/*.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [
-          { group: ['**/server/*', '**/server/**'], message: 'Frontend code must not import from server/' },
-        ],
-      }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/server/*', '**/server/**'],
+              message: 'Frontend code must not import from server/',
+            },
+          ],
+        },
+      ],
     },
   },
   {
     files: ['server/**/*.ts'],
     rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [
-          { group: ['**/src/*', '**/src/**', '@/*', '@/**'], message: 'Server code must not import from src/' },
-        ],
-      }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/src/*', '**/src/**', '@/*', '@/**'],
+              message: 'Server code must not import from src/',
+            },
+          ],
+        },
+      ],
     },
   },
-])
+]);

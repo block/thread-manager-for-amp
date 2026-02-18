@@ -20,7 +20,7 @@ import {
 export async function handleThreadRoutes(
   url: URL,
   req: IncomingMessage,
-  res: ServerResponse
+  res: ServerResponse,
 ): Promise<boolean> {
   const pathname = url.pathname;
 

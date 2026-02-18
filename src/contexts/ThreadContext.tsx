@@ -1,5 +1,9 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { useThreadActions, type UseThreadActionsReturn, type UseThreadActionsOptions } from '../hooks/useThreadActions';
+import {
+  useThreadActions,
+  type UseThreadActionsReturn,
+  type UseThreadActionsOptions,
+} from '../hooks/useThreadActions';
 import type { Thread, ThreadMetadata, ThreadStatus } from '../types';
 
 type MetadataMap = Record<string, ThreadMetadata>;
@@ -51,23 +55,32 @@ export function ThreadProvider({
     showConfirmModal,
   });
 
-  const value = useMemo<ThreadContextValue>(() => ({
-    ...threadActions,
-    threads,
-    metadata,
-    loading,
-    error,
-    refetch,
-    updateStatus,
-    addBlocker,
-    removeBlocker,
-  }), [threadActions, threads, metadata, loading, error, refetch, updateStatus, addBlocker, removeBlocker]);
-
-  return (
-    <ThreadContext.Provider value={value}>
-      {children}
-    </ThreadContext.Provider>
+  const value = useMemo<ThreadContextValue>(
+    () => ({
+      ...threadActions,
+      threads,
+      metadata,
+      loading,
+      error,
+      refetch,
+      updateStatus,
+      addBlocker,
+      removeBlocker,
+    }),
+    [
+      threadActions,
+      threads,
+      metadata,
+      loading,
+      error,
+      refetch,
+      updateStatus,
+      addBlocker,
+      removeBlocker,
+    ],
   );
+
+  return <ThreadContext.Provider value={value}>{children}</ThreadContext.Provider>;
 }
 
 export function useThreadContext(): ThreadContextValue {

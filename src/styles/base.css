@@ -14,7 +14,9 @@
   --z-modal: 1000;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
 }
@@ -22,7 +24,8 @@ html, body, #root {
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -94,8 +97,13 @@ textarea::placeholder {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .error {
@@ -152,7 +160,7 @@ textarea::placeholder {
   );
   border-radius: 4px;
   border: 1px solid rgba(14, 243, 255, 0.3);
-  box-shadow: 
+  box-shadow:
     0 0 6px rgba(14, 243, 255, 0.3),
     inset 0 0 4px rgba(255, 255, 255, 0.1);
 }
@@ -165,7 +173,7 @@ textarea::placeholder {
     rgba(255, 212, 0, 0.6) 100%
   );
   border-color: rgba(14, 243, 255, 0.5);
-  box-shadow: 
+  box-shadow:
     0 0 10px rgba(14, 243, 255, 0.5),
     0 0 20px rgba(255, 37, 146, 0.3),
     inset 0 0 6px rgba(255, 255, 255, 0.15);
@@ -213,7 +221,7 @@ textarea::placeholder {
   );
   border-radius: 4px;
   border: 1px solid rgba(14, 243, 255, 0.3);
-  box-shadow: 
+  box-shadow:
     0 0 6px rgba(14, 243, 255, 0.3),
     inset 0 0 4px rgba(255, 255, 255, 0.1);
 }
@@ -226,7 +234,7 @@ textarea::placeholder {
     rgba(255, 212, 0, 0.6) 100%
   );
   border-color: rgba(14, 243, 255, 0.5);
-  box-shadow: 
+  box-shadow:
     0 0 10px rgba(14, 243, 255, 0.5),
     0 0 20px rgba(255, 37, 146, 0.3),
     inset 0 0 6px rgba(255, 255, 255, 0.15);

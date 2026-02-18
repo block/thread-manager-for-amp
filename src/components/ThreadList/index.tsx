@@ -2,8 +2,10 @@ import React, { useState, useCallback, useMemo, memo, lazy, Suspense } from 'rea
 import { CheckSquare, Square, MinusSquare } from 'lucide-react';
 import type { Thread, ThreadStatus } from '../../types';
 import { ConfirmModal } from '../ConfirmModal';
-const KanbanView = lazy(() => import('../KanbanView').then(m => ({ default: m.KanbanView })));
-const DetailCardView = lazy(() => import('../DetailCardView/index').then(m => ({ default: m.DetailCardView })));
+const KanbanView = lazy(() => import('../KanbanView').then((m) => ({ default: m.KanbanView })));
+const DetailCardView = lazy(() =>
+  import('../DetailCardView/index').then((m) => ({ default: m.DetailCardView })),
+);
 import { SortHeader } from './SortHeader';
 import { ThreadRow } from './ThreadRow';
 import { BulkActionBar } from './BulkActionBar';
@@ -22,22 +24,22 @@ export { BulkActionBar } from './BulkActionBar';
 export { PaginationBar } from './PaginationBar';
 export { BulkStatusMenu } from './BulkStatusMenu';
 export { STATUS_OPTIONS, PAGE_SIZE } from './constants';
- 
+
 export { useThreadListSelection } from './useThreadListSelection';
- 
+
 export { useThreadListKeyboard } from './useThreadListKeyboard';
 export type { ThreadListProps, ThreadRowProps, BulkAction } from './types';
 export type { ViewMode } from '../Toolbar';
 
-export const ThreadList = memo(function ThreadList({ 
-  threads, 
+export const ThreadList = memo(function ThreadList({
+  threads,
   metadata,
   threadLabels,
-  sortField, 
-  sortDirection, 
-  onSort, 
-  onContinue, 
-  onArchive, 
+  sortField,
+  sortDirection,
+  onSort,
+  onContinue,
+  onArchive,
   onDelete,
   onBulkArchive,
   onBulkDelete,
@@ -57,7 +59,7 @@ export const ThreadList = memo(function ThreadList({
     if (!threadLabels) return undefined;
     const map: Record<string, { name: string }[]> = {};
     for (const [id, names] of Object.entries(threadLabels)) {
-      map[id] = names.map(name => ({ name }));
+      map[id] = names.map((name) => ({ name }));
     }
     return map;
   }, [threadLabels]);
@@ -66,7 +68,7 @@ export const ThreadList = memo(function ThreadList({
   const entries = useMemo(() => buildThreadStacks(threads), [threads]);
 
   const toggleStackExpand = useCallback((headId: string) => {
-    setExpandedStacks(prev => {
+    setExpandedStacks((prev) => {
       const next = new Set(prev);
       if (next.has(headId)) {
         next.delete(headId);
@@ -82,7 +84,7 @@ export const ThreadList = memo(function ThreadList({
   const startIdx = (currentPage - 1) * PAGE_SIZE;
   const endIdx = startIdx + PAGE_SIZE;
   const paginatedEntries = entries.slice(startIdx, endIdx);
-  
+
   // Flatten for selection/keyboard hooks (include expanded stack children)
   const paginatedThreads = useMemo(() => {
     const result: Thread[] = [];
@@ -95,14 +97,8 @@ export const ThreadList = memo(function ThreadList({
     return result;
   }, [paginatedEntries, expandedStacks]);
 
-  const {
-    selectedIds,
-    toggleSelect,
-    selectAll,
-    clearSelection,
-    isAllSelected,
-    isSomeSelected,
-  } = useThreadListSelection({ threads, paginatedThreads });
+  const { selectedIds, toggleSelect, selectAll, clearSelection, isAllSelected, isSomeSelected } =
+    useThreadListSelection({ threads, paginatedThreads });
 
   const { focusedThreadId } = useThreadListKeyboard({
     threads,
@@ -121,12 +117,15 @@ export const ThreadList = memo(function ThreadList({
     setBulkAction(null);
   }, [bulkAction, selectedIds, onBulkArchive, onBulkDelete, clearSelection]);
 
-  const handleBulkStatusChange = useCallback((status: ThreadStatus) => {
-    if (onBulkStatusChange) {
-      onBulkStatusChange([...selectedIds], status);
-      clearSelection();
-    }
-  }, [selectedIds, onBulkStatusChange, clearSelection]);
+  const handleBulkStatusChange = useCallback(
+    (status: ThreadStatus) => {
+      if (onBulkStatusChange) {
+        onBulkStatusChange([...selectedIds], status);
+        clearSelection();
+      }
+    },
+    [selectedIds, onBulkStatusChange, clearSelection],
+  );
 
   const setCurrentPage = useCallback((page: number) => {
     setRequestedPage(page);
@@ -189,12 +188,47 @@ export const ThreadList = memo(function ThreadList({
                     )}
                   </button>
                 </th>
-                <SortHeader field="status" currentField={sortField} direction={sortDirection} onSort={onSort}>Status</SortHeader>
-                <SortHeader field="title" currentField={sortField} direction={sortDirection} onSort={onSort}>Title</SortHeader>
+                <SortHeader
+                  field="status"
+                  currentField={sortField}
+                  direction={sortDirection}
+                  onSort={onSort}
+                >
+                  Status
+                </SortHeader>
+                <SortHeader
+                  field="title"
+                  currentField={sortField}
+                  direction={sortDirection}
+                  onSort={onSort}
+                >
+                  Title
+                </SortHeader>
                 <th>Labels</th>
-                <SortHeader field="lastUpdated" currentField={sortField} direction={sortDirection} onSort={onSort}>Updated</SortHeader>
-                <SortHeader field="contextPercent" currentField={sortField} direction={sortDirection} onSort={onSort}>Context</SortHeader>
-                <SortHeader field="cost" currentField={sortField} direction={sortDirection} onSort={onSort}>Cost <CostInfoTip /></SortHeader>
+                <SortHeader
+                  field="lastUpdated"
+                  currentField={sortField}
+                  direction={sortDirection}
+                  onSort={onSort}
+                >
+                  Updated
+                </SortHeader>
+                <SortHeader
+                  field="contextPercent"
+                  currentField={sortField}
+                  direction={sortDirection}
+                  onSort={onSort}
+                >
+                  Context
+                </SortHeader>
+                <SortHeader
+                  field="cost"
+                  currentField={sortField}
+                  direction={sortDirection}
+                  onSort={onSort}
+                >
+                  Cost <CostInfoTip />
+                </SortHeader>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -202,7 +236,7 @@ export const ThreadList = memo(function ThreadList({
               {paginatedEntries.map((entry) => {
                 const stackSize = getStackSize(entry);
                 const isExpanded = expandedStacks.has(entry.thread.id);
-                
+
                 return (
                   <React.Fragment key={entry.thread.id}>
                     <ThreadRow
@@ -220,7 +254,9 @@ export const ThreadList = memo(function ThreadList({
                       isExpanded={isExpanded}
                       onToggleExpand={() => toggleStackExpand(entry.thread.id)}
                     />
-                    {entry.kind === 'stack' && entry.stack && isExpanded && 
+                    {entry.kind === 'stack' &&
+                      entry.stack &&
+                      isExpanded &&
                       entry.stack.ancestors.map((ancestor) => (
                         <ThreadRow
                           key={ancestor.id}
@@ -236,8 +272,7 @@ export const ThreadList = memo(function ThreadList({
                           onSelect={toggleSelect}
                           isStackChild
                         />
-                      ))
-                    }
+                      ))}
                   </React.Fragment>
                 );
               })}

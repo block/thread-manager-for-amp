@@ -26,7 +26,7 @@ export function WorkspacePicker({ isOpen, onClose, onSelect }: WorkspacePickerPr
       (ws) =>
         ws.name.toLowerCase().includes(query) ||
         ws.path.toLowerCase().includes(query) ||
-        ws.repo?.toLowerCase().includes(query)
+        ws.repo?.toLowerCase().includes(query),
     );
   }, [workspaces, search]);
 
@@ -104,14 +104,13 @@ export function WorkspacePicker({ isOpen, onClose, onSelect }: WorkspacePickerPr
           <>
             {/* Default option - no workspace (only when not searching) */}
             {!search && (
-              <button
-                className="workspace-option default"
-                onClick={() => handleSelect(null)}
-              >
+              <button className="workspace-option default" onClick={() => handleSelect(null)}>
                 <Plus size={18} />
                 <div className="workspace-info">
                   <span className="workspace-name">New thread (no workspace)</span>
-                  <span className="workspace-path">Start fresh without a specific project context</span>
+                  <span className="workspace-path">
+                    Start fresh without a specific project context
+                  </span>
                 </div>
               </button>
             )}
@@ -146,15 +145,11 @@ export function WorkspacePicker({ isOpen, onClose, onSelect }: WorkspacePickerPr
             ))}
 
             {filteredWorkspaces.length === 0 && search && (
-              <div className="workspace-empty">
-                No workspaces matching "{search}"
-              </div>
+              <div className="workspace-empty">No workspaces matching "{search}"</div>
             )}
 
             {workspaces.length === 0 && !search && (
-              <div className="workspace-empty">
-                No workspaces found. Scanning ~/Development...
-              </div>
+              <div className="workspace-empty">No workspaces found. Scanning ~/Development...</div>
             )}
 
             {/* Custom path input */}
@@ -170,14 +165,14 @@ export function WorkspacePicker({ isOpen, onClose, onSelect }: WorkspacePickerPr
                     autoFocus
                     aria-label="Custom workspace path"
                   />
-                  <button 
+                  <button
                     className="custom-path-btn"
                     onClick={handleCustomSubmit}
                     disabled={!customPath.trim()}
                   >
                     Create
                   </button>
-                  <button 
+                  <button
                     className="custom-path-cancel"
                     onClick={() => {
                       setShowCustomInput(false);

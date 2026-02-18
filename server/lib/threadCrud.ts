@@ -29,11 +29,14 @@ interface GetThreadsOptions {
   cursor?: string | null;
 }
 
-export async function getThreads({ limit = 50, cursor = null }: GetThreadsOptions = {}): Promise<ThreadsResult> {
+export async function getThreads({
+  limit = 50,
+  cursor = null,
+}: GetThreadsOptions = {}): Promise<ThreadsResult> {
   try {
     const files = await readdir(THREADS_DIR);
     const threadFiles = files.filter((f: string) => f.startsWith('T-') && f.endsWith('.json'));
-    
+
     // Get file stats for sorting before loading full content
     const fileStats = await Promise.all(
       threadFiles.map(async (file: string): Promise<FileStat | null> => {
@@ -44,13 +47,12 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
         } catch {
           return null;
         }
-      })
+      }),
     );
-    
+
     // Sort by mtime descending
-    const sortedFiles = (fileStats.filter(Boolean) as FileStat[])
-      .sort((a, b) => b.mtime - a.mtime);
-    
+    const sortedFiles = (fileStats.filter(Boolean) as FileStat[]).sort((a, b) => b.mtime - a.mtime);
+
     // Find cursor position and slice
     let startIndex = 0;
     if (cursor) {
@@ -59,10 +61,10 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
         startIndex = cursorIndex + 1;
       }
     }
-    
+
     const slicedFiles = sortedFiles.slice(startIndex, startIndex + limit);
     const hasMore = startIndex + limit < sortedFiles.length;
-    
+
     const threads = await Promise.all(
       slicedFiles.map(async ({ file }): Promise<Thread | null> => {
         const filePath = join(THREADS_DIR, file);
@@ -70,9 +72,9 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           const content = await readFile(filePath, 'utf-8');
           const data = JSON.parse(content) as ThreadFile;
           const fileStat: Stats = await stat(filePath);
-          
+
           const messages = data.messages || [];
-          
+
           // Get title from first user message or use thread ID
           let title = data.title || '';
           if (!title && messages.length > 0) {
@@ -84,7 +86,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
               } else if (Array.isArray(firstUser.content)) {
                 const textBlock = firstUser.content.find(
                   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-                  (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text'
+                  (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text',
                 );
                 textContent = textBlock?.text || '';
               }
@@ -93,7 +95,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
             }
           }
           if (!title) title = file.replace('.json', '');
-          
+
           // Extract model from tags
           const tags = data.env?.initial?.tags || [];
           const modelTag = tags.find((t) => t.startsWith('model:'));
@@ -110,9 +112,9 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
               model = modelName;
             }
           }
-          
+
           // Calculate token usage and cost
-          let freshInputTokens = 0;  // Non-cached input tokens
+          let freshInputTokens = 0; // Non-cached input tokens
           let totalOutputTokens = 0;
           let cacheCreation = 0;
           let cacheRead = 0;
@@ -121,7 +123,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           let turns = 0;
           const hiddenToolCounts: ToolCostCounts = {};
           const taskPromptLengths: number[] = [];
-          
+
           for (const msg of messages) {
             if (msg.usage) {
               freshInputTokens += msg.usage.inputTokens || 0;
@@ -158,11 +160,10 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
             turns,
           });
           const cost = tokenCost + estimateToolCosts(hiddenToolCounts, taskPromptLengths);
-          
-          const contextPercent = maxContextTokens > 0 
-            ? Math.round((contextTokens / maxContextTokens) * 100) 
-            : 0;
-          
+
+          const contextPercent =
+            maxContextTokens > 0 ? Math.round((contextTokens / maxContextTokens) * 100) : 0;
+
           // Extract workspace/repo info
           const trees = data.env?.initial?.trees || [];
           const workspace = trees[0]?.displayName || null;
@@ -174,7 +175,7 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
             const match = repoUrl.match(/[:/]([^/]+\/[^/]+?)(?:\.git)?$/);
             repo = match?.[1] ?? repoUrl;
           }
-          
+
           // Extract handoff relationships
           const relationships = data.relationships || [];
           let handoffParentId: string | null = null;
@@ -187,13 +188,13 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
                 // "I am the child" → threadID is my parent
                 handoffParentId = rel.threadID;
               } else if (rel.role === 'parent') {
-              /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+                /* eslint-enable @typescript-eslint/no-unnecessary-condition */
                 // "I am the parent" → threadID is my child (use last one seen)
                 handoffChildId = rel.threadID;
               }
             }
           }
-          
+
           // Extract touched files from tool uses
           const touchedFiles = new Set<string>();
           for (const msg of messages) {
@@ -232,16 +233,14 @@ export async function getThreads({ limit = 50, cursor = null }: GetThreadsOption
           console.error(`[threads] Failed to parse ${file}:`, error.message);
           return null;
         }
-      })
+      }),
     );
-    
+
     const validThreads = threads.filter((t): t is Thread => t !== null);
-    
+
     const lastThread = validThreads[validThreads.length - 1];
-    const nextCursor = lastThread && hasMore
-      ? lastThread.id
-      : null;
-    
+    const nextCursor = lastThread && hasMore ? lastThread.id : null;
+
     return {
       threads: validThreads,
       nextCursor,
@@ -260,14 +259,14 @@ interface FileChangesData {
 
 export async function getThreadChanges(threadId: string): Promise<FileChange[]> {
   const threadPath = join(THREADS_DIR, `${threadId}.json`);
-  
+
   try {
     const content = await readFile(threadPath, 'utf-8');
     const data = JSON.parse(content) as ThreadFile;
     const messages = data.messages || [];
-    
+
     const fileChanges = new Map<string, FileChangesData>();
-    
+
     for (const msg of messages) {
       if (msg.role === 'assistant' && Array.isArray(msg.content)) {
         for (const block of msg.content) {
@@ -275,7 +274,7 @@ export async function getThreadChanges(threadId: string): Promise<FileChange[]> 
           if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
             const toolBlock = block as ToolUseContent;
             const { name, input } = toolBlock as { name?: string; input?: ToolUseContent['input'] };
-            
+
             if (name === 'create_file' && input?.path) {
               const path = input.path;
               if (!fileChanges.has(path)) {
@@ -306,12 +305,12 @@ export async function getThreadChanges(threadId: string): Promise<FileChange[]> 
         }
       }
     }
-    
+
     const changes: FileChange[] = [];
     for (const [path, changeData] of fileChanges) {
       const filename = path.split('/').pop() || path;
       const dir = path.split('/').slice(-3, -1).join('/');
-      
+
       changes.push({
         path,
         filename,
@@ -321,7 +320,7 @@ export async function getThreadChanges(threadId: string): Promise<FileChange[]> 
         edits: changeData.edits.slice(0, 10),
       });
     }
-    
+
     changes.sort((a, b) => b.editCount - a.editCount);
     return changes;
   } catch (e) {
@@ -339,7 +338,7 @@ async function cleanupThreadFiles(threadId: string): Promise<void> {
   // Delete artifacts directory
   const threadArtifactsDir = join(ARTIFACTS_DIR, threadId);
   await rm(threadArtifactsDir, { recursive: true, force: true }).catch(() => {});
-  
+
   // Delete SQLite records (metadata, blocks, artifacts)
   deleteThreadData(threadId);
 }
@@ -358,16 +357,16 @@ interface SecretsFile {
 
 export async function deleteThread(threadId: string): Promise<DeleteResult> {
   const secretsPath = join(AMP_HOME, '.local', 'share', 'amp', 'secrets.json');
-  
+
   try {
     const secretsContent = await readFile(secretsPath, 'utf-8');
     const secrets = JSON.parse(secretsContent) as SecretsFile;
     const apiKey = secrets.apiKey || secrets.API_KEY || secrets.amp_api_key;
-    
+
     if (!apiKey) {
       throw new Error('No API key found');
     }
-    
+
     // Try remote delete first (with timeout)
     const controller = new AbortController();
     const deleteTimeout = setTimeout(() => controller.abort(), 10000);
@@ -375,25 +374,25 @@ export async function deleteThread(threadId: string): Promise<DeleteResult> {
     try {
       response = await fetch(`https://ampcode.com/api/threads/${threadId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${apiKey}` },
+        headers: { Authorization: `Bearer ${apiKey}` },
         signal: controller.signal,
       });
     } finally {
       clearTimeout(deleteTimeout);
     }
-    
+
     if (!response.ok && response.status !== 404) {
       const text = await response.text();
       throw new Error(`Remote delete failed: ${text}`);
     }
-    
+
     // Delete local file
     const threadPath = join(THREADS_DIR, `${threadId}.json`);
     await unlink(threadPath);
-    
+
     // Cleanup all thread-related files and database records
     await cleanupThreadFiles(threadId);
-    
+
     return { success: true };
   } catch (e) {
     const error = e as Error;
@@ -401,10 +400,10 @@ export async function deleteThread(threadId: string): Promise<DeleteResult> {
     try {
       const threadPath = join(THREADS_DIR, `${threadId}.json`);
       await unlink(threadPath);
-      
+
       // Cleanup all thread-related files and database records
       await cleanupThreadFiles(threadId);
-      
+
       return { success: true, localOnly: true };
     } catch {
       return { success: false, error: error.message };
@@ -417,7 +416,9 @@ interface CreateThreadResult {
   workspace: string | null;
 }
 
-export async function createThread(workspacePath: string | null = null): Promise<CreateThreadResult> {
+export async function createThread(
+  workspacePath: string | null = null,
+): Promise<CreateThreadResult> {
   // Run amp threads new from the specified workspace directory
   const cwd = workspacePath || AMP_HOME;
   const stdout = await runAmp(['threads', 'new'], { cwd });

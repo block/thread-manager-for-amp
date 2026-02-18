@@ -10,7 +10,12 @@ interface ArtifactNoteEditorProps {
   onCancel: () => void;
 }
 
-export function ArtifactNoteEditor({ threadId, artifact, onSave, onCancel }: ArtifactNoteEditorProps) {
+export function ArtifactNoteEditor({
+  threadId,
+  artifact,
+  onSave,
+  onCancel,
+}: ArtifactNoteEditorProps) {
   const [title, setTitle] = useState(artifact?.title || '');
   const [content, setContent] = useState(artifact?.content || '');
   const [type, setType] = useState<ArtifactType>(artifact?.type || 'note');
@@ -18,23 +23,23 @@ export function ArtifactNoteEditor({ threadId, artifact, onSave, onCancel }: Art
 
   const handleSave = useCallback(async () => {
     if (!title.trim()) return;
-    
+
     setSaving(true);
     try {
       const method = artifact ? 'PATCH' : 'POST';
       const url = artifact ? '/api/artifact' : '/api/artifacts';
-      const body = artifact 
+      const body = artifact
         ? { id: artifact.id, title, content }
         : { threadId, type, title, content };
-      
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      
+
       if (response.ok) {
-        const savedArtifact = await response.json() as Artifact;
+        const savedArtifact = (await response.json()) as Artifact;
         onSave(savedArtifact);
       }
     } catch (err) {
@@ -47,8 +52,8 @@ export function ArtifactNoteEditor({ threadId, artifact, onSave, onCancel }: Art
   return (
     <div className="artifact-note-editor">
       <div className="artifact-note-header">
-        <select 
-          value={type} 
+        <select
+          value={type}
           onChange={(e) => setType(e.target.value as ArtifactType)}
           className="artifact-type-select"
           disabled={!!artifact}
@@ -77,7 +82,11 @@ export function ArtifactNoteEditor({ threadId, artifact, onSave, onCancel }: Art
         <button onClick={onCancel} className="artifact-btn cancel">
           <X size={14} /> Cancel
         </button>
-        <button onClick={handleSave} disabled={saving || !title.trim()} className="artifact-btn save">
+        <button
+          onClick={handleSave}
+          disabled={saving || !title.trim()}
+          className="artifact-btn save"
+        >
           <Check size={14} /> {artifact ? 'Update' : 'Save'}
         </button>
       </div>
@@ -142,7 +151,11 @@ export function ArtifactNoteCard({ artifact, onEdit, onDelete }: ArtifactNoteCar
             <button onClick={onEdit} className="artifact-action-btn">
               <Edit3 size={12} /> Edit
             </button>
-            <button onClick={handleDelete} disabled={deleting} className="artifact-action-btn delete">
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="artifact-action-btn delete"
+            >
               <Trash2 size={12} /> Delete
             </button>
           </div>
@@ -158,30 +171,40 @@ interface ArtifactNotesListProps {
   onArtifactsChange: (artifacts: Artifact[]) => void;
 }
 
-export function ArtifactNotesList({ threadId, artifacts, onArtifactsChange }: ArtifactNotesListProps) {
+export function ArtifactNotesList({
+  threadId,
+  artifacts,
+  onArtifactsChange,
+}: ArtifactNotesListProps) {
   const [showEditor, setShowEditor] = useState(false);
   const [editingArtifact, setEditingArtifact] = useState<Artifact | undefined>();
 
-  const handleSave = useCallback((saved: Artifact) => {
-    if (editingArtifact) {
-      onArtifactsChange(artifacts.map(a => a.id === saved.id ? saved : a));
-    } else {
-      onArtifactsChange([saved, ...artifacts]);
-    }
-    setShowEditor(false);
-    setEditingArtifact(undefined);
-  }, [artifacts, editingArtifact, onArtifactsChange]);
+  const handleSave = useCallback(
+    (saved: Artifact) => {
+      if (editingArtifact) {
+        onArtifactsChange(artifacts.map((a) => (a.id === saved.id ? saved : a)));
+      } else {
+        onArtifactsChange([saved, ...artifacts]);
+      }
+      setShowEditor(false);
+      setEditingArtifact(undefined);
+    },
+    [artifacts, editingArtifact, onArtifactsChange],
+  );
 
-  const handleDelete = useCallback((id: number) => {
-    onArtifactsChange(artifacts.filter(a => a.id !== id));
-  }, [artifacts, onArtifactsChange]);
+  const handleDelete = useCallback(
+    (id: number) => {
+      onArtifactsChange(artifacts.filter((a) => a.id !== id));
+    },
+    [artifacts, onArtifactsChange],
+  );
 
   const handleEdit = useCallback((artifact: Artifact) => {
     setEditingArtifact(artifact);
     setShowEditor(true);
   }, []);
 
-  const noteArtifacts = artifacts.filter(a => ['note', 'research', 'plan'].includes(a.type));
+  const noteArtifacts = artifacts.filter((a) => ['note', 'research', 'plan'].includes(a.type));
 
   return (
     <div className="artifact-notes-list">
@@ -200,8 +223,8 @@ export function ArtifactNotesList({ threadId, artifacts, onArtifactsChange }: Ar
           <Plus size={14} /> Add note
         </button>
       )}
-      
-      {noteArtifacts.map(artifact => (
+
+      {noteArtifacts.map((artifact) => (
         <ArtifactNoteCard
           key={artifact.id}
           artifact={artifact}

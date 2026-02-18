@@ -58,7 +58,11 @@ export function LoadingToast({ state, onComplete }: LoadingToastProps) {
 
   if (animationPhase && savedState) {
     return (
-      <div className={`loading-toast ${animationPhase === 'exiting' ? 'exiting' : ''}`} aria-live="polite" role="status">
+      <div
+        className={`loading-toast ${animationPhase === 'exiting' ? 'exiting' : ''}`}
+        aria-live="polite"
+        role="status"
+      >
         <LoadingSteps state={completeAllSteps(savedState)} />
       </div>
     );

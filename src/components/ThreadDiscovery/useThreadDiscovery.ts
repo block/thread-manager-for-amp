@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { apiGet } from '../../api/client';
-import type { 
-  FileChange, 
-  ThreadGitActivity, 
-  ThreadChain as ThreadChainType, 
+import type {
+  FileChange,
+  ThreadGitActivity,
+  ThreadChain as ThreadChainType,
   RelatedThread,
   Thread,
   GitStatus,
@@ -62,17 +62,17 @@ function extractDocArtifacts(messages: Message[]): DocArtifact[] {
     if (msg.type !== 'tool_use' || msg.toolName !== 'create_file') continue;
     const path = msg.toolInput?.path;
     if (!path || typeof path !== 'string' || seen.has(path)) continue;
-    
+
     const lowerPath = path.toLowerCase();
     const filename = lowerPath.split('/').pop() || '';
-    
+
     let type: 'research' | 'plan' | null = null;
     if (filename.includes('research') || filename.includes('findings')) {
       type = 'research';
     } else if (filename.includes('plan') || filename === 'todo.md' || filename === 'tasks.md') {
       type = 'plan';
     }
-    
+
     if (type && filename.endsWith('.md')) {
       seen.add(path);
       docs.push({ path, shortPath: shortenPath(path), type, messageId: msg.id });
@@ -88,15 +88,15 @@ function extractLoadedSkills(messages: Message[]): LoadedSkill[] {
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
     if (!msg || msg.type !== 'tool_use' || msg.toolName !== 'skill') continue;
-    
+
     const skillName = msg.toolInput?.name;
     if (!skillName || typeof skillName !== 'string' || seen.has(skillName)) continue;
-    
+
     // Check if there's a successful tool_result for this skill
-    const hasResult = messages.slice(i + 1).some(
-      m => m.type === 'tool_result' && m.toolId === msg.toolId && m.success !== false
-    );
-    
+    const hasResult = messages
+      .slice(i + 1)
+      .some((m) => m.type === 'tool_result' && m.toolId === msg.toolId && m.success !== false);
+
     if (hasResult) {
       seen.add(skillName);
       skills.push({
@@ -122,11 +122,11 @@ export interface UseThreadDiscoveryResult {
   activeTab: TabId | null;
   setActiveTab: (tab: TabId | null) => void;
   handleTabClick: (tab: TabId) => void;
-  
+
   summary: SummaryData;
   loading: boolean;
   refreshing: boolean;
-  
+
   changes: FileChange[];
   gitActivity: ThreadGitActivity | null;
   chain: ThreadChainType | null;
@@ -139,17 +139,17 @@ export interface UseThreadDiscoveryResult {
   loadedSkills: LoadedSkill[];
   availableSkillsCount: number;
   availableSkills: AvailableSkill[];
-  
+
   uncommittedCount: number;
   showSourceControl: boolean;
   setShowSourceControl: (show: boolean) => void;
   viewingImageIndex: number | null;
   setViewingImageIndex: (index: number | null) => void;
-  
+
   artifactCount: number;
   hasLinkedIssue: boolean;
   hasAnyData: boolean;
-  
+
   handleRefresh: () => Promise<void>;
   handleLinkedIssueUpdate: (url: string | null) => void;
 }
@@ -171,10 +171,10 @@ export function useThreadDiscovery({
     chainCount: 0,
     relatedCount: 0,
   });
-  
+
   const docArtifacts = useMemo(() => extractDocArtifacts(messages), [messages]);
   const loadedSkills = useMemo(() => extractLoadedSkills(messages), [messages]);
-  
+
   const [changes, setChanges] = useState<FileChange[]>([]);
   const [gitActivity, setGitActivity] = useState<ThreadGitActivity | null>(null);
   const [chain, setChain] = useState<ThreadChainType | null>(null);
@@ -203,88 +203,162 @@ export function useThreadDiscovery({
       console.debug(e instanceof Error ? e.message : String(e));
     };
 
-    const p1 = apiGet<FileChange[]>(`/api/thread-changes?threadId=${encodeURIComponent(tid)}`, signal)
-      .catch((e: unknown) => { suppress(e); return [] as FileChange[]; })
-      .then((data) => { if (!signal.aborted) {
-        setChanges(data);
-        setSummary(prev => ({ ...prev, fileCount: data.length, editCount: data.reduce((sum, c) => sum + c.editCount, 0) }));
-      }});
+    const p1 = apiGet<FileChange[]>(
+      `/api/thread-changes?threadId=${encodeURIComponent(tid)}`,
+      signal,
+    )
+      .catch((e: unknown) => {
+        suppress(e);
+        return [] as FileChange[];
+      })
+      .then((data) => {
+        if (!signal.aborted) {
+          setChanges(data);
+          setSummary((prev) => ({
+            ...prev,
+            fileCount: data.length,
+            editCount: data.reduce((sum, c) => sum + c.editCount, 0),
+          }));
+        }
+      });
 
-    const p2 = apiGet<ThreadGitActivity>(`/api/thread-git-activity?threadId=${encodeURIComponent(tid)}`, signal)
-      .catch((e: unknown) => { suppress(e); return null; })
+    const p2 = apiGet<ThreadGitActivity>(
+      `/api/thread-git-activity?threadId=${encodeURIComponent(tid)}`,
+      signal,
+    )
+      .catch((e: unknown) => {
+        suppress(e);
+        return null;
+      })
       /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
-      .then((data) => { if (!signal.aborted) {
-        setGitActivity(data);
-        const workspace = data?.workspaces?.[0];
-        setSummary(prev => ({ ...prev, commitCount: workspace?.commits?.filter(c => c.confidence === 'high').length || 0, prCount: workspace?.prs?.length || 0 }));
-      }});
-      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      .then((data) => {
+        if (!signal.aborted) {
+          setGitActivity(data);
+          const workspace = data?.workspaces?.[0];
+          setSummary((prev) => ({
+            ...prev,
+            commitCount: workspace?.commits?.filter((c) => c.confidence === 'high').length || 0,
+            prCount: workspace?.prs?.length || 0,
+          }));
+        }
+      });
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
-    const p3 = apiGet<ThreadChainType>(`/api/thread-chain?threadId=${encodeURIComponent(tid)}`, signal)
-      .catch((e: unknown) => { suppress(e); return null; })
+    const p3 = apiGet<ThreadChainType>(
+      `/api/thread-chain?threadId=${encodeURIComponent(tid)}`,
+      signal,
+    )
+      .catch((e: unknown) => {
+        suppress(e);
+        return null;
+      })
       /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
-      .then((data) => { if (!signal.aborted) {
-        setChain(data);
-        const chainCount = data ? (data.ancestors?.length || 0) + (data.descendants?.length || 0) : 0;
-        setSummary(prev => ({ ...prev, chainCount }));
-      }});
-      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      .then((data) => {
+        if (!signal.aborted) {
+          setChain(data);
+          const chainCount = data
+            ? (data.ancestors?.length || 0) + (data.descendants?.length || 0)
+            : 0;
+          setSummary((prev) => ({ ...prev, chainCount }));
+        }
+      });
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
-    const p4 = (onOpenThreadRef.current
-      ? apiGet<RelatedThread[]>(`/api/related-threads?threadId=${encodeURIComponent(tid)}`, signal).catch((e: unknown) => { suppress(e); return [] as RelatedThread[]; })
-      : Promise.resolve([] as RelatedThread[])
-    ).then((data) => { if (!signal.aborted) {
-      setRelated(data);
-      setSummary(prev => ({ ...prev, relatedCount: data.length }));
-    }});
+    const p4 = (
+      onOpenThreadRef.current
+        ? apiGet<RelatedThread[]>(
+            `/api/related-threads?threadId=${encodeURIComponent(tid)}`,
+            signal,
+          ).catch((e: unknown) => {
+            suppress(e);
+            return [] as RelatedThread[];
+          })
+        : Promise.resolve([] as RelatedThread[])
+    ).then((data) => {
+      if (!signal.aborted) {
+        setRelated(data);
+        setSummary((prev) => ({ ...prev, relatedCount: data.length }));
+      }
+    });
 
     const p5 = apiGet<GitStatus>(`/api/git-status?threadId=${encodeURIComponent(tid)}`, signal)
-      .catch((e: unknown) => { suppress(e); return null; })
+      .catch((e: unknown) => {
+        suppress(e);
+        return null;
+      })
       /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
-      .then((data) => { if (!signal.aborted) {
-        const threadUncommitted = data?.files?.filter(f => f.touchedByThread).length || 0;
-        setUncommittedCount(threadUncommitted);
-      }});
-      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+      .then((data) => {
+        if (!signal.aborted) {
+          const threadUncommitted = data?.files?.filter((f) => f.touchedByThread).length || 0;
+          setUncommittedCount(threadUncommitted);
+        }
+      });
+    /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
-    const p6 = apiGet<ThreadImage[]>(`/api/thread-images?threadId=${encodeURIComponent(tid)}`, signal)
-      .catch((e: unknown) => { suppress(e); return [] as ThreadImage[]; })
-      .then((data) => { if (!signal.aborted) { setImages(data); }});
+    const p6 = apiGet<ThreadImage[]>(
+      `/api/thread-images?threadId=${encodeURIComponent(tid)}`,
+      signal,
+    )
+      .catch((e: unknown) => {
+        suppress(e);
+        return [] as ThreadImage[];
+      })
+      .then((data) => {
+        if (!signal.aborted) {
+          setImages(data);
+        }
+      });
 
     const p7 = apiGet<Artifact[]>(`/api/artifacts?threadId=${encodeURIComponent(tid)}`, signal)
-      .catch((e: unknown) => { suppress(e); return [] as Artifact[]; })
-      .then((data) => { if (!signal.aborted) { setSavedArtifacts(data); }});
+      .catch((e: unknown) => {
+        suppress(e);
+        return [] as Artifact[];
+      })
+      .then((data) => {
+        if (!signal.aborted) {
+          setSavedArtifacts(data);
+        }
+      });
 
     const p8 = apiGet<SkillsSummary>('/api/skills-summary', signal)
-      .catch((e: unknown) => { suppress(e); return { count: 0, skills: [] } as SkillsSummary; })
-      .then((data) => { if (!signal.aborted) {
-        setAvailableSkillsCount(data.count);
-        setAvailableSkills(data.skills);
-      }});
+      .catch((e: unknown) => {
+        suppress(e);
+        return { count: 0, skills: [] } as SkillsSummary;
+      })
+      .then((data) => {
+        if (!signal.aborted) {
+          setAvailableSkillsCount(data.count);
+          setAvailableSkills(data.skills);
+        }
+      });
 
     // Set loading=false one tick after all data setters have been applied,
     // so chips from the final fetch render before the spinner disappears.
     void Promise.all([p1, p2, p3, p4, p5, p6, p7, p8]).then(() => {
       if (!signal.aborted) {
-        requestAnimationFrame(() => { if (!signal.aborted) setLoading(false); });
+        requestAnimationFrame(() => {
+          if (!signal.aborted) setLoading(false);
+        });
       }
     });
 
-    return () => { controller.abort(); };
+    return () => {
+      controller.abort();
+    };
   }, [threadId]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       const gitData = await apiGet<ThreadGitActivity>(
-        `/api/thread-git-activity?threadId=${encodeURIComponent(threadId)}&refresh=1`
+        `/api/thread-git-activity?threadId=${encodeURIComponent(threadId)}&refresh=1`,
       );
       setGitActivity(gitData);
       /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard for API response */
       const workspace = gitData?.workspaces?.[0];
-      setSummary(prev => ({
+      setSummary((prev) => ({
         ...prev,
-        commitCount: workspace?.commits?.filter(c => c.confidence === 'high').length || 0,
+        commitCount: workspace?.commits?.filter((c) => c.confidence === 'high').length || 0,
         prCount: workspace?.prs?.length || 0,
       }));
       /* eslint-enable @typescript-eslint/no-unnecessary-condition */
@@ -294,7 +368,7 @@ export function useThreadDiscovery({
   }, [threadId]);
 
   const handleTabClick = useCallback((tab: TabId) => {
-    setActiveTab(prev => prev === tab ? null : tab);
+    setActiveTab((prev) => (prev === tab ? null : tab));
   }, []);
 
   const allImages: ThreadImage[] = useMemo(() => {
@@ -304,32 +378,40 @@ export function useThreadDiscovery({
     }
     return combined;
   }, [images, sessionImages]);
-  
+
   const noteArtifacts = useMemo(
-    () => savedArtifacts.filter(a => ['note', 'research', 'plan'].includes(a.type)),
-    [savedArtifacts]
+    () => savedArtifacts.filter((a) => ['note', 'research', 'plan'].includes(a.type)),
+    [savedArtifacts],
   );
   const artifactCount = allImages.length + docArtifacts.length + noteArtifacts.length;
   const hasLinkedIssue = !!metadata?.linked_issue_url;
-  const hasAnyData = summary.fileCount > 0 || summary.commitCount > 0 || 
-                     summary.prCount > 0 || summary.chainCount > 0 || summary.relatedCount > 0 ||
-                     artifactCount > 0 || hasLinkedIssue;
+  const hasAnyData =
+    summary.fileCount > 0 ||
+    summary.commitCount > 0 ||
+    summary.prCount > 0 ||
+    summary.chainCount > 0 ||
+    summary.relatedCount > 0 ||
+    artifactCount > 0 ||
+    hasLinkedIssue;
 
-  const handleLinkedIssueUpdate = useCallback((url: string | null) => {
-    if (onMetadataChange && metadata) {
-      onMetadataChange({ ...metadata, linked_issue_url: url });
-    }
-  }, [metadata, onMetadataChange]);
+  const handleLinkedIssueUpdate = useCallback(
+    (url: string | null) => {
+      if (onMetadataChange && metadata) {
+        onMetadataChange({ ...metadata, linked_issue_url: url });
+      }
+    },
+    [metadata, onMetadataChange],
+  );
 
   return {
     activeTab,
     setActiveTab,
     handleTabClick,
-    
+
     summary,
     loading,
     refreshing,
-    
+
     changes,
     gitActivity,
     chain,
@@ -342,17 +424,17 @@ export function useThreadDiscovery({
     loadedSkills,
     availableSkillsCount,
     availableSkills,
-    
+
     uncommittedCount,
     showSourceControl,
     setShowSourceControl,
     viewingImageIndex,
     setViewingImageIndex,
-    
+
     artifactCount,
     hasLinkedIssue,
     hasAnyData,
-    
+
     handleRefresh,
     handleLinkedIssueUpdate,
   };

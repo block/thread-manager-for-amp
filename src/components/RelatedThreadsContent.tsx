@@ -27,11 +27,7 @@ export function RelatedThreadsContent({ related, onOpenThread }: RelatedThreadsC
     <div className="discovery-related">
       <div className="related-threads-list">
         {related.map((r) => (
-          <button
-            key={r.id}
-            className="related-thread-item"
-            onClick={() => handleClick(r)}
-          >
+          <button key={r.id} className="related-thread-item" onClick={() => handleClick(r)}>
             <div className="related-thread-info">
               <span className="related-thread-title">{r.title}</span>
               <span className="related-thread-meta">
@@ -41,7 +37,9 @@ export function RelatedThreadsContent({ related, onOpenThread }: RelatedThreadsC
             </div>
             <div className="related-files">
               <FileCode size={12} />
-              <span>{r.commonFileCount} shared file{r.commonFileCount === 1 ? '' : 's'}</span>
+              <span>
+                {r.commonFileCount} shared file{r.commonFileCount === 1 ? '' : 's'}
+              </span>
             </div>
           </button>
         ))}

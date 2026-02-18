@@ -1,7 +1,11 @@
 import { Circle, CheckCircle2, PauseCircle, AlertCircle, Loader2 } from 'lucide-react';
 import type { ThreadStatus, RunningStatus } from './types';
 
-export function getStatusIcon(status: ThreadStatus | undefined, runningStatus: RunningStatus | null, size: number = 12) {
+export function getStatusIcon(
+  status: ThreadStatus | undefined,
+  runningStatus: RunningStatus | null,
+  size: number = 12,
+) {
   if (runningStatus === 'running') {
     return <Loader2 size={size} className="sidebar-status-icon running" />;
   }

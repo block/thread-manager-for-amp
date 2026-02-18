@@ -10,8 +10,8 @@ export function TerminalStatusBar({ usage }: TerminalStatusBarProps) {
           {usage.contextPercent}%
         </span>
         <div className="context-bar">
-          <div 
-            className={`context-fill ${usage.contextPercent > 80 ? 'warning' : ''}`} 
+          <div
+            className={`context-fill ${usage.contextPercent > 80 ? 'warning' : ''}`}
             style={{ width: `${Math.min(usage.contextPercent, 100)}%` }}
           />
         </div>

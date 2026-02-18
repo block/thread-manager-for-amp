@@ -71,7 +71,7 @@ export function setupShellWebSocket(server: Server): WebSocketServer {
               // Strip Hermit-injected vars that conflict with nvm/fnm in user shells
               const upper = k.toUpperCase();
               return upper !== 'NPM_CONFIG_PREFIX' && upper !== 'HERMIT_ENV';
-            })
+            }),
           ),
           TERM: 'xterm-256color',
           COLORTERM: 'truecolor',
@@ -80,7 +80,10 @@ export function setupShellWebSocket(server: Server): WebSocketServer {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error('[SHELL] Failed to spawn PTY:', err);
-      const errorMsg: ShellServerMessage = { type: 'error', content: `Failed to start shell: ${errorMessage}` };
+      const errorMsg: ShellServerMessage = {
+        type: 'error',
+        content: `Failed to start shell: ${errorMessage}`,
+      };
       ws.send(JSON.stringify(errorMsg));
       ws.close();
       return;
@@ -104,7 +107,9 @@ export function setupShellWebSocket(server: Server): WebSocketServer {
     let isAlive = true;
     const pingInterval = setInterval(() => {
       if (!isAlive) {
-        console.warn(`[SHELL] No pong received for session ${sessionId}, terminating stale connection`);
+        console.warn(
+          `[SHELL] No pong received for session ${sessionId}, terminating stale connection`,
+        );
         ws.terminate();
         return;
       }

@@ -2,7 +2,8 @@ import { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Info } from 'lucide-react';
 
-const TOOLTIP_TEXT = 'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data';
+const TOOLTIP_TEXT =
+  'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data';
 
 export function CostInfoTip() {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
@@ -22,20 +23,16 @@ export function CostInfoTip() {
 
   return (
     <>
-      <span
-        ref={iconRef}
-        className="cost-info-icon"
-        onMouseEnter={show}
-        onMouseLeave={hide}
-      >
+      <span ref={iconRef} className="cost-info-icon" onMouseEnter={show} onMouseLeave={hide}>
         <Info size={10} />
       </span>
-      {pos && createPortal(
-        <div className="cost-tooltip-portal" style={{ top: pos.top, left: pos.left }}>
-          {TOOLTIP_TEXT}
-        </div>,
-        document.body,
-      )}
+      {pos &&
+        createPortal(
+          <div className="cost-tooltip-portal" style={{ top: pos.top, left: pos.left }}>
+            {TOOLTIP_TEXT}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

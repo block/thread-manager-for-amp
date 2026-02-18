@@ -44,7 +44,12 @@ export interface ToolUseContent {
   };
 }
 
-export type MessageContentBlock = string | TextContent | ImageContent | ToolUseContent | { type: string; [key: string]: unknown };
+export type MessageContentBlock =
+  | string
+  | TextContent
+  | ImageContent
+  | ToolUseContent
+  | { type: string; [key: string]: unknown };
 export type MessageContent = string | MessageContentBlock[];
 
 export interface ThreadMessage {
@@ -74,7 +79,7 @@ export interface ThreadEnv {
 export interface ThreadFile {
   title?: string;
   visibility?: 'Private' | 'Public' | 'Workspace';
-  created?: number;  // Unix timestamp in milliseconds
+  created?: number; // Unix timestamp in milliseconds
   messages?: ThreadMessage[];
   relationships?: ThreadRelationship[];
   env?: ThreadEnv;

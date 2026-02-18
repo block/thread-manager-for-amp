@@ -37,7 +37,7 @@ interface LinkedIssueBody {
 export async function handleMetadataRoutes(
   url: URL,
   req: IncomingMessage,
-  res: ServerResponse
+  res: ServerResponse,
 ): Promise<boolean> {
   // GET /api/running-threads - Get threads with active WebSocket connections
   if (url.pathname === '/api/running-threads' && req.method === 'GET') {
@@ -51,7 +51,10 @@ export async function handleMetadataRoutes(
       return jsonResponse(res, { error: 'threadIds required' }, 400);
     }
 
-    const threadIds = threadIdsParam.split(',').map(id => decodeURIComponent(id)).filter(Boolean);
+    const threadIds = threadIdsParam
+      .split(',')
+      .map((id) => decodeURIComponent(id))
+      .filter(Boolean);
     if (threadIds.length === 0) {
       return jsonResponse(res, {});
     }
@@ -64,16 +67,19 @@ export async function handleMetadataRoutes(
     const settled = await Promise.allSettled(
       capped.map(async (threadId) => {
         try {
-          const labels = await callAmpInternalAPI<{ name: string }[]>('getThreadLabels', { thread: threadId });
+          const labels = await callAmpInternalAPI<{ name: string }[]>('getThreadLabels', {
+            thread: threadId,
+          });
           return { threadId, labels };
         } catch (err) {
           const error = err as Error;
-          if (error.message?.includes('Permission denied')) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+          if (error.message?.includes('Permission denied')) {
             return { threadId, labels: [] as { name: string }[] };
           }
           throw err;
         }
-      })
+      }),
     );
 
     for (const result of settled) {
@@ -92,14 +98,15 @@ export async function handleMetadataRoutes(
     if (!threadId) {
       return jsonResponse(res, { error: 'threadId required' }, 400);
     }
-    
+
     try {
       const result = await callAmpInternalAPI('getThreadLabels', { thread: threadId });
       return jsonResponse(res, result);
     } catch (err) {
       const error = err as Error;
       // Silently return empty for permission errors - API may not be available
-      if (error.message?.includes('Permission denied')) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+      if (error.message?.includes('Permission denied')) {
         return jsonResponse(res, []);
       }
       console.error('Failed to get thread labels:', error);
@@ -111,20 +118,21 @@ export async function handleMetadataRoutes(
   if (url.pathname === '/api/thread-labels' && req.method === 'PUT') {
     const body = await parseBody<ThreadLabelsBody>(req);
     const { threadId, labels } = body;
-    
+
     if (!threadId) {
       return jsonResponse(res, { error: 'threadId required' }, 400);
     }
     if (!Array.isArray(labels)) {
       return jsonResponse(res, { error: 'labels must be an array' }, 400);
     }
-    
+
     try {
       const result = await callAmpInternalAPI('setThreadLabels', { thread: threadId, labels });
       return jsonResponse(res, result);
     } catch (err) {
       const error = err as Error;
-      if (error.message?.includes('Permission denied')) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+      if (error.message?.includes('Permission denied')) {
         return jsonResponse(res, { error: 'Labels API not available' }, 403);
       }
       console.error('Failed to set thread labels:', error);
@@ -135,13 +143,14 @@ export async function handleMetadataRoutes(
   // GET /api/user-labels - Get all labels the user has created
   if (url.pathname === '/api/user-labels' && req.method === 'GET') {
     const query = url.searchParams.get('query') || '';
-    
+
     try {
       const result = await callAmpInternalAPI('getUserLabels', { query });
       return jsonResponse(res, result);
     } catch (err) {
       const error = err as Error;
-      if (error.message?.includes('Permission denied')) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+      if (error.message?.includes('Permission denied')) {
         return jsonResponse(res, []);
       }
       console.error('Failed to get user labels:', error);
@@ -151,7 +160,7 @@ export async function handleMetadataRoutes(
   // GET /api/thread-status - Get our custom metadata (status, goal, blockers)
   if (url.pathname === '/api/thread-status' && req.method === 'GET') {
     const threadId = url.searchParams.get('threadId');
-    
+
     if (threadId) {
       const metadata = getThreadMetadata(threadId);
       return jsonResponse(res, metadata);
@@ -166,16 +175,16 @@ export async function handleMetadataRoutes(
   if (url.pathname === '/api/thread-status' && req.method === 'PATCH') {
     const body = await parseBody<ThreadStatusBody>(req);
     const { threadId, status } = body;
-    
+
     if (!threadId) {
       return jsonResponse(res, { error: 'threadId required' }, 400);
     }
-    
+
     let result;
     if (status !== undefined) {
       result = updateThreadStatus(threadId, status);
     }
-    
+
     return jsonResponse(res, result || getThreadMetadata(threadId));
   }
 
@@ -183,11 +192,11 @@ export async function handleMetadataRoutes(
   if (url.pathname === '/api/thread-block' && req.method === 'POST') {
     const body = await parseBody<ThreadBlockBody>(req);
     const { threadId, blockedByThreadId, reason } = body;
-    
+
     if (!threadId || !blockedByThreadId) {
       return jsonResponse(res, { error: 'threadId and blockedByThreadId required' }, 400);
     }
-    
+
     const result = addThreadBlock(threadId, blockedByThreadId, reason ?? null);
     return jsonResponse(res, result);
   }
@@ -196,11 +205,11 @@ export async function handleMetadataRoutes(
   if (url.pathname === '/api/thread-block' && req.method === 'DELETE') {
     const body = await parseBody<ThreadBlockBody>(req);
     const { threadId, blockedByThreadId } = body;
-    
+
     if (!threadId || !blockedByThreadId) {
       return jsonResponse(res, { error: 'threadId and blockedByThreadId required' }, 400);
     }
-    
+
     const result = removeThreadBlock(threadId, blockedByThreadId);
     return jsonResponse(res, result);
   }
@@ -209,11 +218,11 @@ export async function handleMetadataRoutes(
   if (url.pathname === '/api/thread-linked-issue' && req.method === 'PATCH') {
     const body = await parseBody<LinkedIssueBody>(req);
     const { threadId, url: issueUrl } = body;
-    
+
     if (!threadId) {
       return jsonResponse(res, { error: 'threadId required' }, 400);
     }
-    
+
     const result = updateLinkedIssue(threadId, issueUrl ?? null);
     return jsonResponse(res, result);
   }

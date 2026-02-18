@@ -7,10 +7,10 @@ export interface ParsedIssue {
 
 export function parseIssueUrl(url: string): ParsedIssue | null {
   if (!url) return null;
-  
+
   try {
     const parsed = new URL(url);
-    
+
     // Linear: https://linear.app/TEAM/issue/TEAM-123/...
     if (parsed.hostname === 'linear.app') {
       const match = url.match(/\/issue\/([A-Z]+-\d+)/i);
@@ -23,7 +23,7 @@ export function parseIssueUrl(url: string): ParsedIssue | null {
         };
       }
     }
-    
+
     // GitHub: https://github.com/org/repo/issues/123
     if (parsed.hostname === 'github.com') {
       const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)/);
@@ -46,7 +46,7 @@ export function parseIssueUrl(url: string): ParsedIssue | null {
         };
       }
     }
-    
+
     // Jira: https://jira.example.com/browse/PROJ-123
     if (url.includes('/browse/')) {
       const match = url.match(/\/browse\/([A-Z]+-\d+)/i);
@@ -59,7 +59,7 @@ export function parseIssueUrl(url: string): ParsedIssue | null {
         };
       }
     }
-    
+
     // Unknown but valid URL
     return {
       type: 'unknown',
@@ -74,10 +74,14 @@ export function parseIssueUrl(url: string): ParsedIssue | null {
 
 export function getIssueColor(type: ParsedIssue['type']): string {
   switch (type) {
-    case 'linear': return 'var(--accent-purple, #8B5CF6)';
-    case 'github': return 'var(--text-primary)';
-    case 'jira': return 'var(--accent-blue)';
-    default: return 'var(--text-muted)';
+    case 'linear':
+      return 'var(--accent-purple, #8B5CF6)';
+    case 'github':
+      return 'var(--text-primary)';
+    case 'jira':
+      return 'var(--accent-blue)';
+    default:
+      return 'var(--text-muted)';
   }
 }
 
@@ -85,14 +89,14 @@ export function extractIssueUrl(text: string): string | null {
   // Match Linear URLs
   const linearMatch = text.match(/https:\/\/linear\.app\/[^\s]+\/issue\/[A-Z]+-\d+[^\s]*/i);
   if (linearMatch) return linearMatch[0];
-  
+
   // Match GitHub issue/PR URLs
   const githubMatch = text.match(/https:\/\/github\.com\/[^\s]+\/(issues|pull)\/\d+[^\s]*/i);
   if (githubMatch) return githubMatch[0];
-  
+
   // Match Jira URLs
   const jiraMatch = text.match(/https:\/\/[^\s]+\/browse\/[A-Z]+-\d+[^\s]*/i);
   if (jiraMatch) return jiraMatch[0];
-  
+
   return null;
 }

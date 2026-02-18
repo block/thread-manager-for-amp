@@ -23,9 +23,12 @@ export function useThreadMetadata() {
     void fetchAll();
   }, [fetchAll]);
 
-  const getMetadata = useCallback((threadId: string): ThreadMetadata => {
-    return metadata[threadId] || { thread_id: threadId, status: 'active' };
-  }, [metadata]);
+  const getMetadata = useCallback(
+    (threadId: string): ThreadMetadata => {
+      return metadata[threadId] || { thread_id: threadId, status: 'active' };
+    },
+    [metadata],
+  );
 
   const updateStatus = useCallback(async (threadId: string, status: ThreadStatus) => {
     try {
@@ -33,7 +36,7 @@ export function useThreadMetadata() {
         threadId,
         status,
       });
-      setMetadata(prev => ({ ...prev, [threadId]: updated }));
+      setMetadata((prev) => ({ ...prev, [threadId]: updated }));
       return updated;
     } catch (err) {
       console.error('Failed to update status:', err);
@@ -41,20 +44,23 @@ export function useThreadMetadata() {
     }
   }, []);
 
-  const addBlocker = useCallback(async (threadId: string, blockedByThreadId: string, reason?: string) => {
-    try {
-      const updated = await apiPost<ThreadMetadata>('/api/thread-block', {
-        threadId,
-        blockedByThreadId,
-        reason,
-      });
-      setMetadata(prev => ({ ...prev, [threadId]: updated }));
-      return updated;
-    } catch (err) {
-      console.error('Failed to add blocker:', err);
-      throw err;
-    }
-  }, []);
+  const addBlocker = useCallback(
+    async (threadId: string, blockedByThreadId: string, reason?: string) => {
+      try {
+        const updated = await apiPost<ThreadMetadata>('/api/thread-block', {
+          threadId,
+          blockedByThreadId,
+          reason,
+        });
+        setMetadata((prev) => ({ ...prev, [threadId]: updated }));
+        return updated;
+      } catch (err) {
+        console.error('Failed to add blocker:', err);
+        throw err;
+      }
+    },
+    [],
+  );
 
   const removeBlocker = useCallback(async (threadId: string, blockedByThreadId: string) => {
     try {
@@ -62,7 +68,7 @@ export function useThreadMetadata() {
         threadId,
         blockedByThreadId,
       });
-      setMetadata(prev => ({ ...prev, [threadId]: updated }));
+      setMetadata((prev) => ({ ...prev, [threadId]: updated }));
       return updated;
     } catch (err) {
       console.error('Failed to remove blocker:', err);

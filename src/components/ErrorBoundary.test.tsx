@@ -14,7 +14,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <div>Child content</div>
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByText('Child content')).toBeInTheDocument();
   });
@@ -24,7 +24,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -37,7 +37,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary fallback={<div>Custom fallback</div>}>
         <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByText('Custom fallback')).toBeInTheDocument();
     vi.restoreAllMocks();
@@ -55,7 +55,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <MaybeThrow />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
 
     expect(screen.getByRole('alert')).toBeInTheDocument();

@@ -33,7 +33,12 @@ interface ThreadLabelEditorProps {
   compact?: boolean;
 }
 
-export function ThreadLabelEditor({ threadId, initialLabels, onLabelsChange, compact = false }: ThreadLabelEditorProps) {
+export function ThreadLabelEditor({
+  threadId,
+  initialLabels,
+  onLabelsChange,
+  compact = false,
+}: ThreadLabelEditorProps) {
   const [labels, setLabels] = useState<ThreadLabel[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [newLabel, setNewLabel] = useState('');
@@ -43,7 +48,9 @@ export function ThreadLabelEditor({ threadId, initialLabels, onLabelsChange, com
 
   const loadLabels = useCallback(async () => {
     try {
-      const result = await apiGet<ThreadLabel[]>(`/api/thread-labels?threadId=${encodeURIComponent(threadId)}`);
+      const result = await apiGet<ThreadLabel[]>(
+        `/api/thread-labels?threadId=${encodeURIComponent(threadId)}`,
+      );
       setLabels(result);
       setError(null);
     } catch (err) {
@@ -82,7 +89,7 @@ export function ThreadLabelEditor({ threadId, initialLabels, onLabelsChange, com
       setError('Label must be 32 characters or less');
       return;
     }
-    if (labels.some(l => l.name === labelName)) {
+    if (labels.some((l) => l.name === labelName)) {
       setError('Label already exists');
       return;
     }
@@ -90,7 +97,7 @@ export function ThreadLabelEditor({ threadId, initialLabels, onLabelsChange, com
     setLoading(true);
     setError(null);
     try {
-      const newLabels = [...labels.map(l => l.name), labelName];
+      const newLabels = [...labels.map((l) => l.name), labelName];
       await apiPut<ThreadLabel[]>('/api/thread-labels', { threadId, labels: newLabels });
       await loadLabels();
       setNewLabel('');
@@ -107,7 +114,7 @@ export function ThreadLabelEditor({ threadId, initialLabels, onLabelsChange, com
   const handleRemoveLabel = async (labelName: string) => {
     setLoading(true);
     try {
-      const newLabels = labels.filter(l => l.name !== labelName).map(l => l.name);
+      const newLabels = labels.filter((l) => l.name !== labelName).map((l) => l.name);
       await apiPut<ThreadLabel[]>('/api/thread-labels', { threadId, labels: newLabels });
       await loadLabels();
       onLabelsChange?.();
@@ -130,15 +137,20 @@ export function ThreadLabelEditor({ threadId, initialLabels, onLabelsChange, com
   };
 
   return (
-    <div className={`thread-label-editor ${compact ? 'compact' : ''}`} onClick={e => e.stopPropagation()}>
-      {labels.map(label => {
+    <div
+      className={`thread-label-editor ${compact ? 'compact' : ''}`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {labels.map((label) => {
         const colors = getLabelColor(label.name);
         return (
-          <button 
-            key={label.id} 
-            className="label-tag" 
+          <button
+            key={label.id}
+            className="label-tag"
             title={`Click to remove "${label.name}"`}
-            onClick={() => { void handleRemoveLabel(label.name); }}
+            onClick={() => {
+              void handleRemoveLabel(label.name);
+            }}
             disabled={loading}
             style={{
               background: colors.bg,
@@ -151,7 +163,7 @@ export function ThreadLabelEditor({ threadId, initialLabels, onLabelsChange, com
           </button>
         );
       })}
-      
+
       {isEditing ? (
         <div className="label-input-wrapper">
           <input
@@ -176,7 +188,7 @@ export function ThreadLabelEditor({ threadId, initialLabels, onLabelsChange, com
           {error && <span className="label-error">{error}</span>}
         </div>
       ) : (
-        <button 
+        <button
           className="label-add-btn"
           onClick={() => setIsEditing(true)}
           disabled={loading}

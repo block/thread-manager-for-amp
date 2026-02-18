@@ -22,27 +22,16 @@ export function BulkActionBar({
     <div className="bulk-action-bar">
       <span className="bulk-count">{selectedCount} selected</span>
       <div className="bulk-actions">
-        {onBulkStatusChange && (
-          <BulkStatusMenu onStatusChange={onBulkStatusChange} />
-        )}
-        <button
-          className="bulk-btn archive"
-          onClick={() => onBulkAction('archive')}
-        >
+        {onBulkStatusChange && <BulkStatusMenu onStatusChange={onBulkStatusChange} />}
+        <button className="bulk-btn archive" onClick={() => onBulkAction('archive')}>
           <Archive size={14} />
           Archive
         </button>
-        <button
-          className="bulk-btn delete"
-          onClick={() => onBulkAction('delete')}
-        >
+        <button className="bulk-btn delete" onClick={() => onBulkAction('delete')}>
           <Trash2 size={14} />
           Delete
         </button>
-        <button
-          className="bulk-btn clear"
-          onClick={onClearSelection}
-        >
+        <button className="bulk-btn clear" onClick={onClearSelection}>
           Deselect
         </button>
       </div>

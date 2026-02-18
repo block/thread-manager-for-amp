@@ -17,13 +17,11 @@ export function useRunningThreads(): UseRunningThreadsResult {
   const fetchRunningThreads = useCallback(async () => {
     try {
       const data = await apiGet<RunningThreadsMap>('/api/running-threads');
-      setRunningThreads(prev => {
+      setRunningThreads((prev) => {
         const prevKeys = Object.keys(prev).sort().join(',');
         const newKeys = Object.keys(data).sort().join(',');
         if (prevKeys !== newKeys) return data;
-        const changed = Object.entries(data).some(([k, v]) => 
-          prev[k]?.status !== v.status
-        );
+        const changed = Object.entries(data).some(([k, v]) => prev[k]?.status !== v.status);
         return changed ? data : prev;
       });
     } catch (error) {
@@ -38,7 +36,9 @@ export function useRunningThreads(): UseRunningThreadsResult {
 
     const startPolling = () => {
       if (intervalRef.current !== null) return;
-      intervalRef.current = window.setInterval(() => { void fetchRunningThreads(); }, POLL_INTERVAL_MS);
+      intervalRef.current = window.setInterval(() => {
+        void fetchRunningThreads();
+      }, POLL_INTERVAL_MS);
     };
 
     const stopPolling = () => {

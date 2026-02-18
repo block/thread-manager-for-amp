@@ -4,7 +4,7 @@ import type { Command, CommandFactoryContext, CommandHandlers } from './types';
 
 export function createNavigationCommands(
   handlers: CommandHandlers,
-  context: CommandFactoryContext
+  context: CommandFactoryContext,
 ): Command[] {
   const { activeThreadId, hasActiveThread, openThreadsCount } = context;
 

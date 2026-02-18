@@ -4,7 +4,7 @@ import type { Command, CommandFactoryContext, CommandHandlers } from './types';
 
 export function createSettingsCommands(
   handlers: CommandHandlers,
-  context: CommandFactoryContext
+  context: CommandFactoryContext,
 ): Command[] {
   const { soundEnabled, toggleSound } = context;
 

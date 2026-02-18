@@ -22,15 +22,18 @@ export function useModalActions(
   modals: UseModalsReturn,
   showError: (message: string) => void,
 ): UseModalActionsReturn {
-  const handleShareThread = useCallback(async (id: string) => {
-    try {
-      const result = await apiPost<{ output: string }>('/api/thread-share', { threadId: id });
-      modals.setOutputModal({ title: 'Share Thread', content: result.output });
-    } catch (err) {
-      console.error('Failed to share:', err);
-      showError('Failed to share thread');
-    }
-  }, [modals, showError]);
+  const handleShareThread = useCallback(
+    async (id: string) => {
+      try {
+        const result = await apiPost<{ output: string }>('/api/thread-share', { threadId: id });
+        modals.setOutputModal({ title: 'Share Thread', content: result.output });
+      } catch (err) {
+        console.error('Failed to share:', err);
+        showError('Failed to share thread');
+      }
+    },
+    [modals, showError],
+  );
 
   const handleShowSkills = useCallback(async () => {
     try {
@@ -92,18 +95,23 @@ export function useModalActions(
     }
   }, [modals, showError]);
 
-  const handleContextAnalyze = useCallback((activeThreadId: string | undefined) => {
-    if (!activeThreadId) return;
-    modals.setOutputModal({
-      title: 'Context Analysis',
-      content: 'Context analysis would show token usage breakdown for the current thread.\nThis feature requires integration with thread metadata.',
-    });
-  }, [modals]);
+  const handleContextAnalyze = useCallback(
+    (activeThreadId: string | undefined) => {
+      if (!activeThreadId) return;
+      modals.setOutputModal({
+        title: 'Context Analysis',
+        content:
+          'Context analysis would show token usage breakdown for the current thread.\nThis feature requires integration with thread metadata.',
+      });
+    },
+    [modals],
+  );
 
   const handleIdeConnect = useCallback(() => {
     modals.setOutputModal({
       title: 'IDE Connection',
-      content: 'IDE connection is managed automatically by the Amp CLI when running in a terminal.\nThis web interface operates independently.',
+      content:
+        'IDE connection is managed automatically by the Amp CLI when running in a terminal.\nThis web interface operates independently.',
     });
   }, [modals]);
 
@@ -126,7 +134,9 @@ export function useModalActions(
       onConfirm: async (source: string) => {
         modals.setInputModal(null);
         try {
-          const result = await apiPost<{ output: string; success: boolean }>('/api/skill-add', { source });
+          const result = await apiPost<{ output: string; success: boolean }>('/api/skill-add', {
+            source,
+          });
           modals.setOutputModal({ title: 'Skill Added', content: result.output });
         } catch (err) {
           console.error('Failed to add skill:', err);
@@ -145,7 +155,10 @@ export function useModalActions(
       onConfirm: async (name: string) => {
         modals.setInputModal(null);
         try {
-          const result = await apiDelete<{ output: string; success: boolean }>('/api/skill-remove', { name });
+          const result = await apiDelete<{ output: string; success: boolean }>(
+            '/api/skill-remove',
+            { name },
+          );
           modals.setOutputModal({ title: 'Skill Removed', content: result.output });
         } catch (err) {
           console.error('Failed to remove skill:', err);
@@ -164,7 +177,9 @@ export function useModalActions(
       onConfirm: async (name: string) => {
         modals.setInputModal(null);
         try {
-          const result = await apiGet<{ output: string }>(`/api/skill-info?name=${encodeURIComponent(name)}`);
+          const result = await apiGet<{ output: string }>(
+            `/api/skill-info?name=${encodeURIComponent(name)}`,
+          );
           modals.setOutputModal({ title: `Skill: ${name}`, content: result.output });
         } catch (err) {
           console.error('Failed to get skill info:', err);

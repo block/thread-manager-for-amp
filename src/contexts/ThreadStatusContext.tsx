@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useCallback, useRef, useMemo, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  type ReactNode,
+} from 'react';
 
 export type TabThreadStatus = 'idle' | 'running' | 'error';
 
@@ -28,14 +36,14 @@ export function ThreadStatusProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setStatus = useCallback((threadId: string, status: TabThreadStatus) => {
-    setState(prev => {
+    setState((prev) => {
       if (prev[threadId] === status) return prev;
       return { ...prev, [threadId]: status };
     });
   }, []);
 
   const clearStatus = useCallback((threadId: string) => {
-    setState(prev => {
+    setState((prev) => {
       if (!prev[threadId]) return prev;
       const { [threadId]: _removed, ...rest } = prev;
       void _removed;
@@ -48,11 +56,7 @@ export function ThreadStatusProvider({ children }: { children: ReactNode }) {
     [getStatus, setStatus, clearStatus],
   );
 
-  return (
-    <ThreadStatusContext.Provider value={value}>
-      {children}
-    </ThreadStatusContext.Provider>
-  );
+  return <ThreadStatusContext.Provider value={value}>{children}</ThreadStatusContext.Provider>;
 }
 
 export function useThreadStatus() {
