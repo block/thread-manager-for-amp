@@ -25,4 +25,4 @@ export function useModalContext(): UseModalsReturn {
   return context;
 }
 
-export type { OutputModalState, ShellTerminalState, UseModalsReturn } from '../hooks/useModals';
+export type { OutputModalState, ShellTerminalState, InputModalState, ConfirmModalState, UseModalsReturn } from '../hooks/useModals';

@@ -1,0 +1,27 @@
+.input-modal-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.input-modal-input {
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+.input-modal-input:focus {
+  border-color: var(--accent-color);
+}
+
+.input-modal-error {
+  color: #ff6b6b;
+  font-size: 12px;
+  margin: 4px 0 0;
+}

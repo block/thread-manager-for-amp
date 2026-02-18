@@ -138,11 +138,7 @@ export function ThreadLabelEditor({ threadId, initialLabels, onLabelsChange, com
             key={label.id} 
             className="label-tag" 
             title={`Click to remove "${label.name}"`}
-            onClick={() => {
-              if (window.confirm(`Remove label "${label.name}" from this thread?`)) {
-                void handleRemoveLabel(label.name);
-              }
-            }}
+            onClick={() => { void handleRemoveLabel(label.name); }}
             disabled={loading}
             style={{
               background: colors.bg,

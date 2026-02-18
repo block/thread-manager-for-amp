@@ -21,5 +21,7 @@
 @import './loading-steps.css';
 @import './sidebar.css';
 @import './shell-terminal.css';
+@import './input-modal.css';
+@import './error-toast.css';
 
 @import './responsive.css';
