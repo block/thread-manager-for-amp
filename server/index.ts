@@ -2,7 +2,7 @@ import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { createServer as createNetServer } from 'net';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { PORT, CORS_HEADERS } from './lib/constants.js';
+import { PORT, getCorsHeaders } from './lib/constants.js';
 import { serveStatic } from './lib/utils.js';
 import { handleThreadRoutes } from './routes/threads.js';
 import { handleGitRoutes } from './routes/git.js';
@@ -50,8 +50,9 @@ function cleanupPortFile(): void {
 }
 
 const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-  // Set CORS headers for all responses
-  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+  // Set CORS headers for all responses (dynamic per-request origin check)
+  const corsHeaders = getCorsHeaders(req.headers.origin);
+  for (const [key, value] of Object.entries(corsHeaders)) {
     res.setHeader(key, value);
   }
 
@@ -77,8 +78,10 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   } catch (err) {
     console.error(`Unhandled error for ${req.method} ${url.pathname}:`, err);
     if (!res.headersSent) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Internal server error' }));
+      const message = err instanceof Error ? err.message : 'Internal server error';
+      const status = message === 'Request body too large' ? 413 : 500;
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: message }));
     }
   }
 });

@@ -13,11 +13,28 @@ function findAmpBin(): string {
 }
 export const AMP_BIN: string = findAmpBin();
 
-export const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-} as const;
+// Only allow requests from localhost origins (or no origin for same-origin / non-browser clients)
+export function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+  try {
+    const url = new URL(origin);
+    return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
+export function getCorsHeaders(origin: string | undefined): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  if (origin && isAllowedOrigin(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+    headers['Vary'] = 'Origin';
+  }
+  return headers;
+}
 
 export const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',

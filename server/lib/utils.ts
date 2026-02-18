@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { spawn, type StdioOptions } from 'child_process';
 import { readFile } from 'fs/promises';
 import { join, extname, normalize } from 'path';
-import { CORS_HEADERS, MIME_TYPES, AMP_BIN, AMP_HOME } from './constants.js';
+import { MIME_TYPES, AMP_BIN, AMP_HOME } from './constants.js';
 export { stripAnsi } from '../../shared/utils.js';
 
 interface RunAmpOptions {
@@ -11,16 +11,32 @@ interface RunAmpOptions {
 }
 
 export function jsonResponse(res: ServerResponse, data: unknown, status: number = 200): boolean {
-  res.writeHead(status, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+  // CORS headers are already set by the top-level handler in index.ts
+  res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
   return true;
 }
 
+const MAX_BODY_BYTES = 5 * 1024 * 1024; // 5 MB
+
 export function parseBody<T = Record<string, unknown>>(req: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+    let size = 0;
+    let rejected = false;
+    req.on('data', (chunk: Buffer) => {
+      if (rejected) return;
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        rejected = true;
+        req.destroy();
+        reject(new Error('Request body too large'));
+        return;
+      }
+      body += chunk.toString();
+    });
     req.on('end', () => {
+      if (rejected) return;
       try {
         resolve((body ? JSON.parse(body) : {}) as T);
       } catch {
