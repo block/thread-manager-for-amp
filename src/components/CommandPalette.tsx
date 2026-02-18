@@ -28,9 +28,9 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
 
   const filteredCommands = useMemo(() => {
     if (!query.trim()) return commands;
-    
+
     const lowerQuery = query.toLowerCase();
-    return commands.filter(cmd => {
+    return commands.filter((cmd) => {
       const searchText = `${cmd.category} ${cmd.label}`.toLowerCase();
       // Simple fuzzy: check if all query chars appear in order
       let queryIdx = 0;
@@ -68,33 +68,39 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
     }
   }, [selectedIndex]);
 
-  const executeCommand = useCallback((cmd: Command) => {
-    if (cmd.disabled) return;
-    onClose();
-    // Small delay to let modal close first
-    setTimeout(() => cmd.action(), 50);
-  }, [onClose]);
+  const executeCommand = useCallback(
+    (cmd: Command) => {
+      if (cmd.disabled) return;
+      onClose();
+      // Small delay to let modal close first
+      setTimeout(() => cmd.action(), 50);
+    },
+    [onClose],
+  );
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setIsKeyboardNav(true);
-        setSelectedIndex(i => Math.min(i + 1, filteredCommands.length - 1));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setIsKeyboardNav(true);
-        setSelectedIndex(i => Math.max(i - 1, 0));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (filteredCommands[selectedIndex]) {
-          executeCommand(filteredCommands[selectedIndex]);
-        }
-        break;
-    }
-  }, [filteredCommands, selectedIndex, executeCommand]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setIsKeyboardNav(true);
+          setSelectedIndex((i) => Math.min(i + 1, filteredCommands.length - 1));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setIsKeyboardNav(true);
+          setSelectedIndex((i) => Math.max(i - 1, 0));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (filteredCommands[selectedIndex]) {
+            executeCommand(filteredCommands[selectedIndex]);
+          }
+          break;
+      }
+    },
+    [filteredCommands, selectedIndex, executeCommand],
+  );
 
   const handleMouseMove = useCallback(() => {
     setIsKeyboardNav(false);
@@ -128,7 +134,7 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
           <X size={16} />
         </button>
       </div>
-      
+
       <div className="command-palette-input-wrapper">
         <span className="command-palette-prompt">&gt;</span>
         <input
@@ -137,7 +143,7 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
           className="command-palette-input"
           placeholder="Type a command..."
           value={query}
-          onChange={e => {
+          onChange={(e) => {
             setQuery(e.target.value);
             setSelectedIndex(0);
           }}
@@ -146,10 +152,16 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
         />
       </div>
 
-      <div className="command-palette-list" ref={listRef} role="listbox" aria-label="Commands" onMouseMove={handleMouseMove}>
-        {groupedCommands.map(group => (
+      <div
+        className="command-palette-list"
+        ref={listRef}
+        role="listbox"
+        aria-label="Commands"
+        onMouseMove={handleMouseMove}
+      >
+        {groupedCommands.map((group) => (
           <div key={group.category} className="command-group">
-            {group.items.map(cmd => {
+            {group.items.map((cmd) => {
               const itemIndex = globalIndex++;
               const isSelected = itemIndex === selectedIndex;
               return (
@@ -167,17 +179,13 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
                     {cmd.icon && <span className="command-icon">{cmd.icon}</span>}
                     {cmd.label}
                   </span>
-                  {cmd.shortcut && (
-                    <span className="command-shortcut">{cmd.shortcut}</span>
-                  )}
+                  {cmd.shortcut && <span className="command-shortcut">{cmd.shortcut}</span>}
                 </div>
               );
             })}
           </div>
         ))}
-        {filteredCommands.length === 0 && (
-          <div className="command-empty">No matching commands</div>
-        )}
+        {filteredCommands.length === 0 && <div className="command-empty">No matching commands</div>}
       </div>
     </BaseModal>
   );

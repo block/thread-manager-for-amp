@@ -51,15 +51,15 @@ export function WorkspaceSourceControlModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    
+
     async function fetchStatus() {
       setLoading(true);
       try {
         const data = await apiGet<WorkspaceGitStatus>(
-          `/api/workspace-git-status?workspace=${encodeURIComponent(workspacePath)}`
+          `/api/workspace-git-status?workspace=${encodeURIComponent(workspacePath)}`,
         );
         setGitStatus(data);
-        
+
         // Auto-select first file if available
         if (data.files.length > 0 && !selectedFileRef.current && data.files[0]) {
           setSelectedFile(data.files[0].path);
@@ -78,18 +78,21 @@ export function WorkspaceSourceControlModal({
     if (selectedFile && isOpen) {
       setLoadingDiff(true);
       setFileDiff(null);
-      
+
       const fullPath = `${workspacePath}/${selectedFile}`;
       void apiGet<FileDiff>(
-        `/api/file-diff?path=${encodeURIComponent(fullPath)}&workspace=${encodeURIComponent(workspacePath)}`
-      ).then(diff => {
-        setFileDiff(diff);
-      }).catch((err: unknown) => {
-        console.error('Failed to load diff:', err);
-        setFileDiff({ error: 'Failed to load diff' });
-      }).finally(() => {
-        setLoadingDiff(false);
-      });
+        `/api/file-diff?path=${encodeURIComponent(fullPath)}&workspace=${encodeURIComponent(workspacePath)}`,
+      )
+        .then((diff) => {
+          setFileDiff(diff);
+        })
+        .catch((err: unknown) => {
+          console.error('Failed to load diff:', err);
+          setFileDiff({ error: 'Failed to load diff' });
+        })
+        .finally(() => {
+          setLoadingDiff(false);
+        });
     }
   }, [selectedFile, isOpen, workspacePath]);
 
@@ -120,7 +123,7 @@ export function WorkspaceSourceControlModal({
   if (loading) {
     return (
       <div className="source-control-modal" onClick={onClose}>
-        <div className="source-control-container" onClick={e => e.stopPropagation()}>
+        <div className="source-control-container" onClick={(e) => e.stopPropagation()}>
           <div className="source-control-loading">Loading workspace changes...</div>
         </div>
       </div>
@@ -130,7 +133,7 @@ export function WorkspaceSourceControlModal({
   if (!gitStatus || gitStatus.error) {
     return (
       <div className="source-control-modal" onClick={onClose}>
-        <div className="source-control-container" onClick={e => e.stopPropagation()}>
+        <div className="source-control-container" onClick={(e) => e.stopPropagation()}>
           <div className="source-control-header">
             <div className="source-control-title">
               <GitBranch size={18} />
@@ -148,13 +151,13 @@ export function WorkspaceSourceControlModal({
     );
   }
 
-  const { oldLines, newLines } = fileDiff?.diff 
-    ? parseDiffToLines(fileDiff.diff) 
+  const { oldLines, newLines } = fileDiff?.diff
+    ? parseDiffToLines(fileDiff.diff)
     : { oldLines: [], newLines: [] };
 
   return (
     <div className="source-control-modal" onClick={onClose}>
-      <div className="source-control-container" onClick={e => e.stopPropagation()}>
+      <div className="source-control-container" onClick={(e) => e.stopPropagation()}>
         <div className="source-control-header">
           <div className="source-control-title">
             <GitBranch size={18} />
@@ -168,18 +171,28 @@ export function WorkspaceSourceControlModal({
 
         <div className="source-control-toolbar">
           <div className="source-control-stats">
-            {gitStatus.addedCount > 0 && <span className="stat-added"><Plus size={12} /> {gitStatus.addedCount}</span>}
-            {gitStatus.modifiedCount > 0 && <span className="stat-modified"><Pencil size={12} /> {gitStatus.modifiedCount}</span>}
-            {gitStatus.deletedCount > 0 && <span className="stat-deleted"><Trash2 size={12} /> {gitStatus.deletedCount}</span>}
+            {gitStatus.addedCount > 0 && (
+              <span className="stat-added">
+                <Plus size={12} /> {gitStatus.addedCount}
+              </span>
+            )}
+            {gitStatus.modifiedCount > 0 && (
+              <span className="stat-modified">
+                <Pencil size={12} /> {gitStatus.modifiedCount}
+              </span>
+            )}
+            {gitStatus.deletedCount > 0 && (
+              <span className="stat-deleted">
+                <Trash2 size={12} /> {gitStatus.deletedCount}
+              </span>
+            )}
           </div>
         </div>
 
         <div className="source-control-body">
           <div className="source-control-files">
             {gitStatus.files.length === 0 ? (
-              <div className="source-control-empty">
-                No uncommitted changes in workspace
-              </div>
+              <div className="source-control-empty">No uncommitted changes in workspace</div>
             ) : (
               gitStatus.files.map((file) => (
                 <button
@@ -201,21 +214,15 @@ export function WorkspaceSourceControlModal({
           </div>
 
           <div className="source-control-diff">
-            {!selectedFile && (
-              <div className="diff-placeholder">
-                Select a file to view changes
-              </div>
-            )}
-            
-            {selectedFile && loadingDiff && (
-              <div className="diff-loading">Loading diff...</div>
-            )}
-            
+            {!selectedFile && <div className="diff-placeholder">Select a file to view changes</div>}
+
+            {selectedFile && loadingDiff && <div className="diff-loading">Loading diff...</div>}
+
             {selectedFile && fileDiff && !loadingDiff && (
               <>
                 <div className="diff-header">
                   <span className="diff-filename">{selectedFile}</span>
-                  <button 
+                  <button
                     className="diff-open-btn"
                     onClick={() => openInEditor(selectedFile)}
                     title="Open in VS Code"
@@ -223,26 +230,24 @@ export function WorkspaceSourceControlModal({
                     <ExternalLink size={14} />
                   </button>
                 </div>
-                
-                {fileDiff.error && (
-                  <div className="diff-error">{fileDiff.error}</div>
-                )}
-                
+
+                {fileDiff.error && <div className="diff-error">{fileDiff.error}</div>}
+
                 {fileDiff.isNew && fileDiff.content && (
                   <div className="diff-new-file">
                     <div className="diff-new-label">New file ({fileDiff.lines} lines)</div>
                     <pre className="diff-content">{fileDiff.content}</pre>
                   </div>
                 )}
-                
+
                 {fileDiff.diff && (
                   <div className="diff-side-by-side">
                     <div className="diff-pane diff-old">
                       <div className="diff-pane-header">Before</div>
                       <pre className="diff-pane-content">
                         {oldLines.map((line, i) => (
-                          <div 
-                            key={i} 
+                          <div
+                            key={i}
                             className={`diff-line ${line === '' && newLines[i] !== '' ? 'empty' : ''} ${line !== '' && newLines[i] === '' ? 'removed' : ''}`}
                           >
                             <span className="line-number">{line === '...' ? '' : i + 1}</span>
@@ -255,8 +260,8 @@ export function WorkspaceSourceControlModal({
                       <div className="diff-pane-header">After</div>
                       <pre className="diff-pane-content">
                         {newLines.map((line, i) => (
-                          <div 
-                            key={i} 
+                          <div
+                            key={i}
                             className={`diff-line ${line === '' && oldLines[i] !== '' ? 'empty' : ''} ${line !== '' && oldLines[i] === '' ? 'added' : ''}`}
                           >
                             <span className="line-number">{line === '...' ? '' : i + 1}</span>

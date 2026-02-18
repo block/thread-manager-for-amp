@@ -19,8 +19,8 @@ export function ImageViewer({ images, currentIndex, onClose, onNavigate }: Image
   };
 
   return (
-    <div 
-      className="image-viewer-overlay" 
+    <div
+      className="image-viewer-overlay"
       onClick={onClose}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -30,35 +30,39 @@ export function ImageViewer({ images, currentIndex, onClose, onNavigate }: Image
       <button className="image-viewer-close" onClick={onClose}>
         <X size={24} />
       </button>
-      
+
       {images.length > 1 && currentIndex > 0 && (
-        <button 
+        <button
           className="image-viewer-nav prev"
-          onClick={(e) => { e.stopPropagation(); onNavigate(currentIndex - 1); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigate(currentIndex - 1);
+          }}
         >
           <ChevronLeft size={32} />
         </button>
       )}
-      
-      <div className="image-viewer-content" onClick={e => e.stopPropagation()}>
-        <img 
+
+      <div className="image-viewer-content" onClick={(e) => e.stopPropagation()}>
+        <img
           src={`data:${current.mediaType};base64,${current.data}`}
           alt={current.sourcePath || `Image ${currentIndex + 1}`}
         />
-        {current.sourcePath && (
-          <div className="image-viewer-caption">{current.sourcePath}</div>
-        )}
+        {current.sourcePath && <div className="image-viewer-caption">{current.sourcePath}</div>}
       </div>
-      
+
       {images.length > 1 && currentIndex < images.length - 1 && (
-        <button 
+        <button
           className="image-viewer-nav next"
-          onClick={(e) => { e.stopPropagation(); onNavigate(currentIndex + 1); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigate(currentIndex + 1);
+          }}
         >
           <ChevronRight size={32} />
         </button>
       )}
-      
+
       {images.length > 1 && (
         <div className="image-viewer-counter">
           {currentIndex + 1} / {images.length}

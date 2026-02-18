@@ -1,5 +1,13 @@
 import { useState, useEffect, memo, useCallback } from 'react';
-import { GitBranch, Plus, Pencil, Trash2, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  GitBranch,
+  Plus,
+  Pencil,
+  Trash2,
+  RefreshCw,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 import { apiGet } from '../../api/client';
 import { WorkspaceSourceControlModal } from './WorkspaceSourceControlModal';
 
@@ -42,7 +50,7 @@ export const WorkspaceSourceControl = memo(function WorkspaceSourceControl({
     setLoading(true);
     try {
       const data = await apiGet<WorkspaceGitStatus>(
-        `/api/workspace-git-status?workspace=${encodeURIComponent(workspacePath)}`
+        `/api/workspace-git-status?workspace=${encodeURIComponent(workspacePath)}`,
       );
       setStatus(data);
     } catch (err) {
@@ -96,24 +104,34 @@ export const WorkspaceSourceControl = memo(function WorkspaceSourceControl({
           </span>
           <GitBranch size={14} />
           <span className="workspace-scm-badge">{totalChanges}</span>
-          {status?.branch && (
-            <span className="workspace-scm-branch">{status.branch}</span>
-          )}
+          {status?.branch && <span className="workspace-scm-branch">{status.branch}</span>}
         </button>
 
         {expanded && (
           <div className="workspace-scm-content">
             <div className="workspace-scm-toolbar">
               <div className="workspace-scm-stats">
-                {(status?.addedCount ?? 0) > 0 && <span className="stat-added"><Plus size={10} /> {status?.addedCount}</span>}
-                {(status?.modifiedCount ?? 0) > 0 && <span className="stat-modified"><Pencil size={10} /> {status?.modifiedCount}</span>}
-                {(status?.deletedCount ?? 0) > 0 && <span className="stat-deleted"><Trash2 size={10} /> {status?.deletedCount}</span>}
+                {(status?.addedCount ?? 0) > 0 && (
+                  <span className="stat-added">
+                    <Plus size={10} /> {status?.addedCount}
+                  </span>
+                )}
+                {(status?.modifiedCount ?? 0) > 0 && (
+                  <span className="stat-modified">
+                    <Pencil size={10} /> {status?.modifiedCount}
+                  </span>
+                )}
+                {(status?.deletedCount ?? 0) > 0 && (
+                  <span className="stat-deleted">
+                    <Trash2 size={10} /> {status?.deletedCount}
+                  </span>
+                )}
               </div>
               <button className="workspace-scm-refresh" onClick={fetchStatus} title="Refresh">
                 <RefreshCw size={12} />
               </button>
             </div>
-            
+
             <div className="workspace-scm-files">
               {status?.files.map((file) => (
                 <button

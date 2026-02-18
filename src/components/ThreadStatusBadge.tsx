@@ -10,39 +10,47 @@ interface ThreadStatusBadgeProps {
   compact?: boolean;
 }
 
-const STATUS_CONFIG: Record<ThreadStatus, { 
-  icon: typeof Circle; 
-  label: string; 
-  color: string;
-  bgColor: string;
-}> = {
-  active: { 
-    icon: Circle, 
-    label: 'Active', 
+const STATUS_CONFIG: Record<
+  ThreadStatus,
+  {
+    icon: typeof Circle;
+    label: string;
+    color: string;
+    bgColor: string;
+  }
+> = {
+  active: {
+    icon: Circle,
+    label: 'Active',
     color: 'var(--accent-cyan)',
     bgColor: 'rgba(14, 243, 255, 0.15)',
   },
-  parked: { 
-    icon: PauseCircle, 
-    label: 'Paused', 
+  parked: {
+    icon: PauseCircle,
+    label: 'Paused',
     color: 'var(--accent-yellow)',
     bgColor: 'rgba(255, 212, 0, 0.15)',
   },
-  done: { 
-    icon: CheckCircle, 
-    label: 'Done', 
+  done: {
+    icon: CheckCircle,
+    label: 'Done',
     color: 'var(--success, #00ff88)',
     bgColor: 'rgba(0, 255, 136, 0.15)',
   },
-  blocked: { 
-    icon: AlertCircle, 
-    label: 'Blocked', 
+  blocked: {
+    icon: AlertCircle,
+    label: 'Blocked',
     color: 'var(--error, #ff5555)',
     bgColor: 'rgba(255, 85, 85, 0.15)',
   },
 };
 
-export const ThreadStatusBadge = memo(function ThreadStatusBadge({ threadId, status, onStatusChange, compact = false }: ThreadStatusBadgeProps) {
+export const ThreadStatusBadge = memo(function ThreadStatusBadge({
+  threadId,
+  status,
+  onStatusChange,
+  compact = false,
+}: ThreadStatusBadgeProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(status);
   const [updating, setUpdating] = useState(false);
@@ -91,8 +99,8 @@ export const ThreadStatusBadge = memo(function ThreadStatusBadge({ threadId, sta
     <div className="thread-status-badge" ref={dropdownRef}>
       <button
         className={`status-badge-btn ${compact ? 'compact' : ''}`}
-        style={{ 
-          color: config.color, 
+        style={{
+          color: config.color,
           backgroundColor: config.bgColor,
           borderColor: config.color,
         }}

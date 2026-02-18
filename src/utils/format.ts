@@ -35,56 +35,95 @@ export function formatToolUse(name: string, input: ToolInput): string {
 function normalizeToolName(name: string): string {
   const lower = name.toLowerCase();
   switch (lower) {
-    case 'bash': return 'Bash';
-    case 'read': return 'Read';
-    case 'grep': return 'Grep';
-    case 'task': return 'Task';
-    case 'oracle': return 'oracle';
-    case 'librarian': return 'librarian';
-    default: return name;
+    case 'bash':
+      return 'Bash';
+    case 'read':
+      return 'Read';
+    case 'grep':
+      return 'Grep';
+    case 'task':
+      return 'Task';
+    case 'oracle':
+      return 'oracle';
+    case 'librarian':
+      return 'librarian';
+    default:
+      return name;
   }
 }
 
 export function getToolIcon(name: string): string {
   const normalized = normalizeToolName(name);
   switch (normalized) {
-    case 'Bash': return '$';
-    case 'Read': return '📄';
-    case 'Grep': return '🔍';
-    case 'edit_file': return '✏️';
-    case 'create_file': return '📝';
-    case 'glob': return '📁';
-    case 'finder': return '🔎';
-    case 'Task': return '🔧';
-    case 'oracle': return '🔮';
-    case 'librarian': return '📚';
-    case 'skill': return '⚡';
-    case 'web_search': return '🌐';
-    case 'read_web_page': return '🌐';
-    case 'mermaid': return '📊';
-    case 'look_at': return '👁️';
-    default: return '🔧';
+    case 'Bash':
+      return '$';
+    case 'Read':
+      return '📄';
+    case 'Grep':
+      return '🔍';
+    case 'edit_file':
+      return '✏️';
+    case 'create_file':
+      return '📝';
+    case 'glob':
+      return '📁';
+    case 'finder':
+      return '🔎';
+    case 'Task':
+      return '🔧';
+    case 'oracle':
+      return '🔮';
+    case 'librarian':
+      return '📚';
+    case 'skill':
+      return '⚡';
+    case 'web_search':
+      return '🌐';
+    case 'read_web_page':
+      return '🌐';
+    case 'mermaid':
+      return '📊';
+    case 'look_at':
+      return '👁️';
+    default:
+      return '🔧';
   }
 }
 
 export function getToolLabel(name: string): string {
   const normalized = normalizeToolName(name);
   switch (normalized) {
-    case 'Bash': return '';
-    case 'Read': return 'Read';
-    case 'Grep': return 'Grep';
-    case 'edit_file': return 'Edit';
-    case 'create_file': return 'Create';
-    case 'glob': return 'glob';
-    case 'finder': return 'finder';
-    case 'Task': return 'Subagent';
-    case 'oracle': return 'Oracle';
-    case 'librarian': return 'Librarian';
-    case 'skill': return 'skill';
-    case 'web_search': return 'Search';
-    case 'read_web_page': return 'Web';
-    case 'mermaid': return 'Diagram';
-    case 'look_at': return 'Look at';
-    default: return name;
+    case 'Bash':
+      return '';
+    case 'Read':
+      return 'Read';
+    case 'Grep':
+      return 'Grep';
+    case 'edit_file':
+      return 'Edit';
+    case 'create_file':
+      return 'Create';
+    case 'glob':
+      return 'glob';
+    case 'finder':
+      return 'finder';
+    case 'Task':
+      return 'Subagent';
+    case 'oracle':
+      return 'Oracle';
+    case 'librarian':
+      return 'Librarian';
+    case 'skill':
+      return 'skill';
+    case 'web_search':
+      return 'Search';
+    case 'read_web_page':
+      return 'Web';
+    case 'mermaid':
+      return 'Diagram';
+    case 'look_at':
+      return 'Look at';
+    default:
+      return name;
   }
 }

@@ -22,7 +22,11 @@ export const Sidebar = memo(function Sidebar({
   onOpenTerminal,
   terminalMinimized,
 }: SidebarProps) {
-  const { sidebarCollapsed: collapsed, handleToggleSidebar: onToggleCollapse, scmRefreshKey } = useSettingsContext();
+  const {
+    sidebarCollapsed: collapsed,
+    handleToggleSidebar: onToggleCollapse,
+    scmRefreshKey,
+  } = useSettingsContext();
   const {
     expandedWorkspaces,
     searchQuery,
@@ -48,7 +52,7 @@ export const Sidebar = memo(function Sidebar({
 
   // Stable callback so PinnedSection's memo() isn't defeated
   const handleTogglePinnedExpanded = useCallback(() => {
-    setPinnedExpanded(prev => !prev);
+    setPinnedExpanded((prev) => !prev);
   }, [setPinnedExpanded]);
 
   // Pre-compute stable toggle callbacks per workspace to avoid inline closures
@@ -71,13 +75,8 @@ export const Sidebar = memo(function Sidebar({
         onToggleAllWorkspaces={toggleAllWorkspaces}
       />
 
-      {!collapsed && (
-        <SidebarSearch
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
-      )}
-      
+      {!collapsed && <SidebarSearch searchQuery={searchQuery} onSearchChange={setSearchQuery} />}
+
       <div className="sidebar-content" ref={sidebarContentRef}>
         {!collapsed && (
           <PinnedSection
@@ -96,13 +95,16 @@ export const Sidebar = memo(function Sidebar({
           />
         )}
 
-        {workspaceGroups.map(group => (
+        {workspaceGroups.map((group) => (
           <WorkspaceNode
             key={group.workspace}
             group={group}
             metadata={metadata}
             expanded={expandedWorkspaces.has(group.workspace)}
-            onToggle={workspaceToggleCallbacks.get(group.workspace) ?? (() => toggleWorkspace(group.workspace))}
+            onToggle={
+              workspaceToggleCallbacks.get(group.workspace) ??
+              (() => toggleWorkspace(group.workspace))
+            }
             onSelectThread={onSelectThread}
             activeThreadId={activeThreadId}
             runningThreads={runningThreads}
@@ -118,7 +120,7 @@ export const Sidebar = memo(function Sidebar({
           />
         ))}
       </div>
-      
+
       <div className={`sidebar-footer ${collapsed ? 'collapsed' : ''}`}>
         {!collapsed && (
           <span className="sidebar-footer-text">
@@ -129,8 +131,8 @@ export const Sidebar = memo(function Sidebar({
           <button
             className={`sidebar-footer-btn ${terminalMinimized ? 'has-session' : ''}`}
             onClick={() => onOpenTerminal()}
-            title={terminalMinimized ? "Restore Terminal (Ctrl+T)" : "Open Terminal (Ctrl+T)"}
-            aria-label={terminalMinimized ? "Restore Terminal" : "Open Terminal"}
+            title={terminalMinimized ? 'Restore Terminal (Ctrl+T)' : 'Open Terminal (Ctrl+T)'}
+            aria-label={terminalMinimized ? 'Restore Terminal' : 'Open Terminal'}
           >
             <span className="terminal-icon">&gt;_</span>
             {terminalMinimized && <span className="terminal-badge">1</span>}
@@ -142,11 +144,31 @@ export const Sidebar = memo(function Sidebar({
         state={contextMenu}
         onClose={closeContextMenu}
         onContinue={() => contextMenu.thread && onSelectThread(contextMenu.thread)}
-        onOpenInBrowser={onOpenInBrowser && contextMenu.thread ? () => onOpenInBrowser(contextMenu.thread?.id ?? '') : undefined}
-        onCopyId={onCopyThreadId && contextMenu.thread ? () => onCopyThreadId(contextMenu.thread?.id ?? '') : undefined}
-        onCopyUrl={onCopyThreadUrl && contextMenu.thread ? () => onCopyThreadUrl(contextMenu.thread?.id ?? '') : undefined}
-        onArchive={onArchiveThread && contextMenu.thread ? () => onArchiveThread(contextMenu.thread?.id ?? '') : undefined}
-        onDelete={onDeleteThread && contextMenu.thread ? () => onDeleteThread(contextMenu.thread?.id ?? '') : undefined}
+        onOpenInBrowser={
+          onOpenInBrowser && contextMenu.thread
+            ? () => onOpenInBrowser(contextMenu.thread?.id ?? '')
+            : undefined
+        }
+        onCopyId={
+          onCopyThreadId && contextMenu.thread
+            ? () => onCopyThreadId(contextMenu.thread?.id ?? '')
+            : undefined
+        }
+        onCopyUrl={
+          onCopyThreadUrl && contextMenu.thread
+            ? () => onCopyThreadUrl(contextMenu.thread?.id ?? '')
+            : undefined
+        }
+        onArchive={
+          onArchiveThread && contextMenu.thread
+            ? () => onArchiveThread(contextMenu.thread?.id ?? '')
+            : undefined
+        }
+        onDelete={
+          onDeleteThread && contextMenu.thread
+            ? () => onDeleteThread(contextMenu.thread?.id ?? '')
+            : undefined
+        }
       />
     </aside>
   );

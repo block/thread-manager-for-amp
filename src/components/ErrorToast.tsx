@@ -17,9 +17,7 @@ export function ErrorToast({ errors, onDismiss }: ErrorToastProps) {
   useEffect(() => {
     if (errors.length === 0) return;
 
-    const timers = errors.map(err =>
-      setTimeout(() => onDismiss(err.id), AUTO_DISMISS_MS)
-    );
+    const timers = errors.map((err) => setTimeout(() => onDismiss(err.id), AUTO_DISMISS_MS));
 
     return () => timers.forEach(clearTimeout);
   }, [errors, onDismiss]);
@@ -28,7 +26,7 @@ export function ErrorToast({ errors, onDismiss }: ErrorToastProps) {
 
   return (
     <div className="error-toast-container" aria-live="assertive">
-      {errors.map(err => (
+      {errors.map((err) => (
         <div key={err.id} className="error-toast" role="alert">
           <AlertCircle size={16} className="error-toast-icon" />
           <span className="error-toast-message">{err.message}</span>

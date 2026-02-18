@@ -48,7 +48,6 @@ function waitForMessage(ws: WebSocket, type: string): Promise<Record<string, unk
   });
 }
 
-
 describe('WebSocket origin validation', () => {
   let server: Server;
   let port: number;

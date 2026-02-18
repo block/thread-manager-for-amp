@@ -104,11 +104,11 @@
   box-shadow: 0 0 0 2px rgba(255, 107, 237, 0.3);
 }
 
-.kanban-card[draggable="true"] {
+.kanban-card[draggable='true'] {
   cursor: grab;
 }
 
-.kanban-card[draggable="true"]:active {
+.kanban-card[draggable='true']:active {
   cursor: grabbing;
   opacity: 0.8;
 }
@@ -255,10 +255,18 @@
   border-bottom: none;
 }
 
-.kanban-card.stack-child.status-active { border-left-color: var(--accent-cyan); }
-.kanban-card.stack-child.status-blocked { border-left-color: var(--error); }
-.kanban-card.stack-child.status-parked { border-left-color: var(--warning); }
-.kanban-card.stack-child.status-done { border-left-color: var(--success); }
+.kanban-card.stack-child.status-active {
+  border-left-color: var(--accent-cyan);
+}
+.kanban-card.stack-child.status-blocked {
+  border-left-color: var(--error);
+}
+.kanban-card.stack-child.status-parked {
+  border-left-color: var(--warning);
+}
+.kanban-card.stack-child.status-done {
+  border-left-color: var(--success);
+}
 
 .kanban-card.stack-child .kanban-card-title {
   font-size: 12px;
@@ -278,10 +286,18 @@
   font-weight: 600;
 }
 
-.kanban-card-status.status-active { color: var(--accent-cyan); }
-.kanban-card-status.status-blocked { color: var(--error); }
-.kanban-card-status.status-parked { color: var(--warning); }
-.kanban-card-status.status-done { color: var(--success); }
+.kanban-card-status.status-active {
+  color: var(--accent-cyan);
+}
+.kanban-card-status.status-blocked {
+  color: var(--error);
+}
+.kanban-card-status.status-parked {
+  color: var(--warning);
+}
+.kanban-card-status.status-done {
+  color: var(--success);
+}
 
 /* Card Grid View */
 .card-grid-view {
@@ -691,11 +707,17 @@
   transition: all 0.15s;
 }
 
-.detail-card.status-active { border-left-color: var(--accent-cyan); }
-.detail-card.status-blocked { border-left-color: var(--error); }
-.detail-card.status-parked { border-left-color: var(--warning); }
-.detail-card.status-done { 
-  border-left-color: var(--success); 
+.detail-card.status-active {
+  border-left-color: var(--accent-cyan);
+}
+.detail-card.status-blocked {
+  border-left-color: var(--error);
+}
+.detail-card.status-parked {
+  border-left-color: var(--warning);
+}
+.detail-card.status-done {
+  border-left-color: var(--success);
   opacity: 0.45;
   background: rgba(12, 25, 50, 0.4);
 }

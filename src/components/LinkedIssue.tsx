@@ -12,7 +12,7 @@ export function LinkedIssueBadge({ url, compact = false }: LinkedIssueBadgeProps
   if (!parsed) return null;
 
   const color = getIssueColor(parsed.type);
-  
+
   return (
     <a
       href={parsed.url}
@@ -99,15 +99,10 @@ export function LinkedIssueEditor({ threadId, currentUrl, onUpdate }: LinkedIssu
             }
           }}
         />
-        <button 
-          onClick={handleSave} 
-          disabled={saving}
-          className="linked-issue-save"
-          title="Save"
-        >
+        <button onClick={handleSave} disabled={saving} className="linked-issue-save" title="Save">
           <Check size={14} />
         </button>
-        <button 
+        <button
           onClick={() => {
             setIsEditing(false);
             setInputValue(currentUrl || '');
@@ -125,15 +120,11 @@ export function LinkedIssueEditor({ threadId, currentUrl, onUpdate }: LinkedIssu
     return (
       <div className="linked-issue-display">
         <LinkedIssueBadge url={currentUrl ?? ''} />
-        <button 
-          onClick={() => setIsEditing(true)} 
-          className="linked-issue-edit"
-          title="Edit"
-        >
+        <button onClick={() => setIsEditing(true)} className="linked-issue-edit" title="Edit">
           Edit
         </button>
-        <button 
-          onClick={handleRemove} 
+        <button
+          onClick={handleRemove}
           disabled={saving}
           className="linked-issue-remove"
           title="Remove"
@@ -145,10 +136,7 @@ export function LinkedIssueEditor({ threadId, currentUrl, onUpdate }: LinkedIssu
   }
 
   return (
-    <button 
-      onClick={() => setIsEditing(true)}
-      className="linked-issue-add"
-    >
+    <button onClick={() => setIsEditing(true)} className="linked-issue-add">
       <Link2 size={14} />
       Link issue
     </button>

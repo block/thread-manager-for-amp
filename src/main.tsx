@@ -1,17 +1,17 @@
-import { StrictMode, type ReactNode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { ErrorBoundary } from './components/ErrorBoundary'
-import { UnreadProvider } from './contexts/UnreadContext'
-import { ThreadStatusProvider } from './contexts/ThreadStatusContext'
-import { SettingsProvider } from './contexts/SettingsContext'
-import { ModalProvider, useModalContext } from './contexts/ModalContext'
-import { ThreadProvider } from './contexts/ThreadContext'
-import { useThreads } from './hooks/useThreads'
-import { useThreadMetadata } from './hooks/useThreadMetadata'
-import { useErrorToast } from './hooks/useErrorToast'
-import { ErrorToast } from './components/ErrorToast'
-import './index.css'
-import App from './App.tsx'
+import { StrictMode, type ReactNode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { UnreadProvider } from './contexts/UnreadContext';
+import { ThreadStatusProvider } from './contexts/ThreadStatusContext';
+import { SettingsProvider } from './contexts/SettingsContext';
+import { ModalProvider, useModalContext } from './contexts/ModalContext';
+import { ThreadProvider } from './contexts/ThreadContext';
+import { useThreads } from './hooks/useThreads';
+import { useThreadMetadata } from './hooks/useThreadMetadata';
+import { useErrorToast } from './hooks/useErrorToast';
+import { ErrorToast } from './components/ErrorToast';
+import './index.css';
+import App from './App.tsx';
 
 // eslint-disable-next-line react-refresh/only-export-components -- internal wrapper component for provider composition
 function DataLayer({ children }: { children: ReactNode }) {
@@ -58,4 +58,4 @@ createRoot(document.getElementById('root')!).render(
       </SettingsProvider>
     </ErrorBoundary>
   </StrictMode>,
-)
+);

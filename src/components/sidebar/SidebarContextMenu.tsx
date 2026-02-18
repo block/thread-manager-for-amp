@@ -51,11 +51,7 @@ export function SidebarContextMenu({
   ];
 
   return createPortal(
-    <div
-      ref={menuRef}
-      className="sidebar-context-menu"
-      style={{ left: state.x, top: state.y }}
-    >
+    <div ref={menuRef} className="sidebar-context-menu" style={{ left: state.x, top: state.y }}>
       {menuItems.map((item, idx) => {
         if (item.type === 'separator') {
           return <div key={idx} className="sidebar-context-menu-separator" />;
@@ -77,6 +73,6 @@ export function SidebarContextMenu({
         );
       })}
     </div>,
-    document.body
+    document.body,
   );
 }

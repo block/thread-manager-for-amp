@@ -30,9 +30,11 @@ const KanbanCard = memo(function KanbanCard({
   allMetadata,
 }: KanbanCardProps) {
   const hasStack = stackSize && stackSize > 1;
-  
+
   return (
-    <div className={`kanban-card-wrapper ${hasStack ? 'has-stack' : ''} ${isExpanded ? 'expanded' : ''}`}>
+    <div
+      className={`kanban-card-wrapper ${hasStack ? 'has-stack' : ''} ${isExpanded ? 'expanded' : ''}`}
+    >
       <div
         className={`kanban-card ${isFocused ? 'focused' : ''}`}
         role="button"
@@ -72,12 +74,15 @@ const KanbanCard = memo(function KanbanCard({
             </span>
           )}
           {thread.cost !== undefined && (
-            <span className="kanban-card-cost" title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data">~${thread.cost.toFixed(2)}</span>
+            <span
+              className="kanban-card-cost"
+              title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data"
+            >
+              ~${thread.cost.toFixed(2)}
+            </span>
           )}
         </div>
-        {thread.workspace && (
-          <div className="kanban-card-workspace">{thread.workspace}</div>
-        )}
+        {thread.workspace && <div className="kanban-card-workspace">{thread.workspace}</div>}
         {meta?.blockers && meta.blockers.length > 0 && (
           <div className="kanban-card-blockers">
             <GitBranch size={10} />
@@ -96,7 +101,7 @@ const KanbanCard = memo(function KanbanCard({
           </a>
         </div>
       </div>
-      
+
       {hasStack && isExpanded && stackAncestors && stackAncestors.length > 0 && (
         <div className="kanban-stack-ancestors">
           {stackAncestors.map((ancestor) => {
@@ -147,10 +152,10 @@ const COLUMNS: { status: ThreadStatus; label: string; color: string }[] = [
   { status: 'done', label: 'Done', color: 'var(--success, #00ff88)' },
 ];
 
-export const KanbanView = memo(function KanbanView({ 
-  threads, 
-  metadata, 
-  onContinue, 
+export const KanbanView = memo(function KanbanView({
+  threads,
+  metadata,
+  onContinue,
   onStatusChange,
   focusedId,
 }: KanbanViewProps) {
@@ -160,7 +165,7 @@ export const KanbanView = memo(function KanbanView({
   const entries = useMemo(() => buildThreadStacks(threads), [threads]);
 
   const toggleStackExpand = useCallback((headId: string) => {
-    setExpandedStacks(prev => {
+    setExpandedStacks((prev) => {
       const next = new Set(prev);
       if (next.has(headId)) {
         next.delete(headId);
@@ -178,12 +183,12 @@ export const KanbanView = memo(function KanbanView({
       parked: [],
       done: [],
     };
-    
+
     for (const entry of entries) {
       const status = metadata[entry.thread.id]?.status || 'active';
       result[status].push(entry);
     }
-    
+
     return result;
   }, [entries, metadata]);
 
@@ -211,8 +216,8 @@ export const KanbanView = memo(function KanbanView({
   return (
     <div className="kanban-view">
       {COLUMNS.map(({ status, label, color }) => (
-        <div 
-          key={status} 
+        <div
+          key={status}
           className="kanban-column"
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, status)}
@@ -225,7 +230,7 @@ export const KanbanView = memo(function KanbanView({
             {columnData[status].map((entry) => {
               const stackSize = getStackSize(entry);
               const isExpanded = expandedStacks.has(entry.thread.id);
-              
+
               return (
                 <KanbanCard
                   key={entry.thread.id}
@@ -242,9 +247,7 @@ export const KanbanView = memo(function KanbanView({
                 />
               );
             })}
-            {columnData[status].length === 0 && (
-              <div className="kanban-empty">No threads</div>
-            )}
+            {columnData[status].length === 0 && <div className="kanban-empty">No threads</div>}
           </div>
         </div>
       ))}

@@ -35,23 +35,26 @@ export function useTerminalManager({
   const startHeight = useRef(50);
 
   useEffect(() => {
-    setThreadOrder(prev => {
-      const threadIds = threads.map(t => t.id);
-      const existingOrder = prev.filter(id => threadIds.includes(id));
-      const newThreads = threadIds.filter(id => !prev.includes(id));
+    setThreadOrder((prev) => {
+      const threadIds = threads.map((t) => t.id);
+      const existingOrder = prev.filter((id) => threadIds.includes(id));
+      const newThreads = threadIds.filter((id) => !prev.includes(id));
       return [...existingOrder, ...newThreads];
     });
   }, [threads]);
 
   const focusChanged = focusThreadId !== prevFocusThreadId;
-  const shouldFocusThread = focusThreadId && 
-    focusThreadId !== lastHandledFocus && 
-    threads.some(t => t.id === focusThreadId) &&
+  const shouldFocusThread =
+    focusThreadId &&
+    focusThreadId !== lastHandledFocus &&
+    threads.some((t) => t.id === focusThreadId) &&
     focusChanged;
 
   const activeId = shouldFocusThread
     ? focusThreadId
-    : (threads.some(t => t.id === selectedId) ? selectedId : (threads[0]?.id || ''));
+    : threads.some((t) => t.id === selectedId)
+      ? selectedId
+      : threads[0]?.id || '';
 
   useEffect(() => {
     setPrevFocusThreadId(focusThreadId);
@@ -69,14 +72,17 @@ export function useTerminalManager({
     onActiveChange?.(activeId);
   }, [activeId, onActiveChange]);
 
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isDragging.current = true;
-    startY.current = e.clientY;
-    startHeight.current = panelHeight;
-    document.body.style.cursor = 'row-resize';
-    document.body.style.userSelect = 'none';
-  }, [panelHeight]);
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      isDragging.current = true;
+      startY.current = e.clientY;
+      startHeight.current = panelHeight;
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+    },
+    [panelHeight],
+  );
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -103,12 +109,15 @@ export function useTerminalManager({
     };
   }, []);
 
-  const setActiveId = useCallback((id: string) => {
-    setSelectedId(id);
-    if (isMinimized) {
-      setIsMinimized(false);
-    }
-  }, [isMinimized]);
+  const setActiveId = useCallback(
+    (id: string) => {
+      setSelectedId(id);
+      if (isMinimized) {
+        setIsMinimized(false);
+      }
+    },
+    [isMinimized],
+  );
 
   const handleTabDragStart = useCallback((e: React.DragEvent, threadId: string) => {
     setDraggedTab(threadId);
@@ -116,65 +125,72 @@ export function useTerminalManager({
     e.dataTransfer.setData('text/plain', threadId);
   }, []);
 
-  const handleTabDragOver = useCallback((e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    if (!draggedTab || draggedTab === targetId) return;
-    
-    setThreadOrder(prev => {
-      const newOrder = [...prev];
-      const draggedIndex = newOrder.indexOf(draggedTab);
-      const targetIndex = newOrder.indexOf(targetId);
-      if (draggedIndex === -1 || targetIndex === -1) return prev;
-      
-      newOrder.splice(draggedIndex, 1);
-      newOrder.splice(targetIndex, 0, draggedTab);
-      return newOrder;
-    });
-  }, [draggedTab]);
+  const handleTabDragOver = useCallback(
+    (e: React.DragEvent, targetId: string) => {
+      e.preventDefault();
+      if (!draggedTab || draggedTab === targetId) return;
+
+      setThreadOrder((prev) => {
+        const newOrder = [...prev];
+        const draggedIndex = newOrder.indexOf(draggedTab);
+        const targetIndex = newOrder.indexOf(targetId);
+        if (draggedIndex === -1 || targetIndex === -1) return prev;
+
+        newOrder.splice(draggedIndex, 1);
+        newOrder.splice(targetIndex, 0, draggedTab);
+        return newOrder;
+      });
+    },
+    [draggedTab],
+  );
 
   const handleTabDragEnd = useCallback(() => {
     setDraggedTab(null);
   }, []);
 
   const moveToFront = useCallback((threadId: string) => {
-    setThreadOrder(prev => {
-      const filtered = prev.filter(id => id !== threadId);
+    setThreadOrder((prev) => {
+      const filtered = prev.filter((id) => id !== threadId);
       return [threadId, ...filtered];
     });
   }, []);
 
-  const handleClose = useCallback((threadId: string) => {
-    if (threads.length === 1) {
-      onCloseAll();
-      return;
-    }
-    
-    const remainingCount = threads.length - 1;
-    if (remainingCount < 3 && layout === 'grid') {
-      setLayout(remainingCount >= 2 ? 'split' : 'tabs');
-    } else if (remainingCount < 2 && layout === 'split') {
-      setLayout('tabs');
-    }
-    
-    if (activeId === threadId) {
-      const idx = threads.findIndex(t => t.id === threadId);
-      const nextThread = threads[idx + 1] || threads[idx - 1];
-      if (nextThread) setSelectedId(nextThread.id);
-    }
-    onClose(threadId);
-  }, [threads, activeId, layout, setLayout, onClose, onCloseAll]);
+  const handleClose = useCallback(
+    (threadId: string) => {
+      if (threads.length === 1) {
+        onCloseAll();
+        return;
+      }
+
+      const remainingCount = threads.length - 1;
+      if (remainingCount < 3 && layout === 'grid') {
+        setLayout(remainingCount >= 2 ? 'split' : 'tabs');
+      } else if (remainingCount < 2 && layout === 'split') {
+        setLayout('tabs');
+      }
+
+      if (activeId === threadId) {
+        const idx = threads.findIndex((t) => t.id === threadId);
+        const nextThread = threads[idx + 1] || threads[idx - 1];
+        if (nextThread) setSelectedId(nextThread.id);
+      }
+      onClose(threadId);
+    },
+    [threads, activeId, layout, setLayout, onClose, onCloseAll],
+  );
 
   const orderedThreads = threadOrder
-    .map(id => threads.find(t => t.id === id))
+    .map((id) => threads.find((t) => t.id === id))
     .filter((t): t is Thread => t !== undefined);
 
-  const visibleThreads = layout === 'tabs' 
-    ? orderedThreads.filter(t => t.id === activeId)
-    : layout === 'split'
-    ? orderedThreads.slice(0, 2)
-    : orderedThreads.slice(0, 4);
+  const visibleThreads =
+    layout === 'tabs'
+      ? orderedThreads.filter((t) => t.id === activeId)
+      : layout === 'split'
+        ? orderedThreads.slice(0, 2)
+        : orderedThreads.slice(0, 4);
 
-  const visibleIds = new Set(visibleThreads.map(t => t.id));
+  const visibleIds = new Set(visibleThreads.map((t) => t.id));
 
   return {
     activeId,

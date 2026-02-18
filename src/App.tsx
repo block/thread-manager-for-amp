@@ -24,18 +24,22 @@ function App() {
   const [refreshLoading, setRefreshLoading] = useState<LoadingState | null>(null);
   const loadingStepRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const advance = (prev: LoadingState | null) => prev ? advanceStep(prev) : null;
+  const advance = (prev: LoadingState | null) => (prev ? advanceStep(prev) : null);
   const handleRefreshWithSteps = useCallback(async () => {
     if (loadingStepRef.current) clearTimeout(loadingStepRef.current);
-    setRefreshLoading(createLoadingState('Syncing Threads', [
-      'Fetching thread list...', 'Loading metadata...', 'Updating labels...',
-    ]));
+    setRefreshLoading(
+      createLoadingState('Syncing Threads', [
+        'Fetching thread list...',
+        'Loading metadata...',
+        'Updating labels...',
+      ]),
+    );
     try {
       await threadCtx.refetch();
       setRefreshLoading(advance);
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 200));
       setRefreshLoading(advance);
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 300));
       setRefreshLoading(advance);
       loadingStepRef.current = setTimeout(() => setRefreshLoading(null), 400);
       settings.triggerScmRefresh();
@@ -45,16 +49,23 @@ function App() {
   }, [threadCtx, settings]);
 
   const handleReset = useCallback(() => {
-    filters.setSearchInput(''); filters.setFilterRepo(null);
-    filters.setFilterWorkspace(null); filters.setFilterLabel(null);
-    filters.setFilterStatus(null); threadCtx.handleCloseAll();
+    filters.setSearchInput('');
+    filters.setFilterRepo(null);
+    filters.setFilterWorkspace(null);
+    filters.setFilterLabel(null);
+    filters.setFilterStatus(null);
+    threadCtx.handleCloseAll();
     settings.handleViewModeChange('table');
   }, [filters, threadCtx, settings]);
 
   const handleNewThread = useCallback(() => modals.setWorkspacePickerOpen(true), [modals]);
-  const handleContinue = useCallback((thread: Thread) => {
-    threadCtx.handleContinue(thread); threadCtx.setActiveThreadId(thread.id);
-  }, [threadCtx]);
+  const handleContinue = useCallback(
+    (thread: Thread) => {
+      threadCtx.handleContinue(thread);
+      threadCtx.setActiveThreadId(thread.id);
+    },
+    [threadCtx],
+  );
 
   return (
     <div className="app">
@@ -66,11 +77,17 @@ function App() {
           activeThreadId={threadCtx.activeThreadId}
           runningThreads={runningThreads}
           onArchiveThread={threadCtx.handleArchive}
-          onOpenInBrowser={(id: string) => window.open(`https://ampcode.com/threads/${id}`, '_blank')}
+          onOpenInBrowser={(id: string) =>
+            window.open(`https://ampcode.com/threads/${id}`, '_blank')
+          }
           onDeleteThread={threadCtx.handleDelete}
           onCopyThreadId={(id: string) => void navigator.clipboard.writeText(id)}
-          onCopyThreadUrl={(id: string) => void navigator.clipboard.writeText(`https://ampcode.com/threads/${id}`)}
-          onOpenTerminal={modals.shellTerminal?.minimized ? modals.restoreShellTerminal : modals.openShellTerminal}
+          onCopyThreadUrl={(id: string) =>
+            void navigator.clipboard.writeText(`https://ampcode.com/threads/${id}`)
+          }
+          onOpenTerminal={
+            modals.shellTerminal?.minimized ? modals.restoreShellTerminal : modals.openShellTerminal
+          }
           terminalMinimized={modals.shellTerminal?.minimized}
         />
 

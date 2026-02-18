@@ -1,7 +1,16 @@
 import { memo } from 'react';
 import { Terminal } from '../terminal';
 import { ErrorBoundary } from '../ErrorBoundary';
-import { X, Columns, Grid2X2, Maximize, Square, Minus, ChevronUp, GripHorizontal } from 'lucide-react';
+import {
+  X,
+  Columns,
+  Grid2X2,
+  Maximize,
+  Square,
+  Minus,
+  ChevronUp,
+  GripHorizontal,
+} from 'lucide-react';
 import { TerminalTabs } from './TerminalTabs';
 import { useTerminalManager } from './useTerminalManager';
 import { useSettingsContext } from '../../contexts/SettingsContext';
@@ -18,9 +27,9 @@ interface TerminalManagerProps {
   focusThreadId?: string;
 }
 
-export const TerminalManager = memo(function TerminalManager({ 
-  threads, 
-  onClose, 
+export const TerminalManager = memo(function TerminalManager({
+  threads,
+  onClose,
   onCloseAll,
   onActiveChange,
   onHandoff,
@@ -63,19 +72,15 @@ export const TerminalManager = memo(function TerminalManager({
     'terminal-manager',
     isMinimized ? 'minimized' : '',
     isExpanded ? 'expanded' : '',
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
-  const panelStyle = (!isExpanded && !isMinimized) 
-    ? { height: `${panelHeight}vh` } 
-    : undefined;
+  const panelStyle = !isExpanded && !isMinimized ? { height: `${panelHeight}vh` } : undefined;
 
   return (
     <div className={managerClass} style={panelStyle}>
-      <div 
-        className="terminal-resize-handle"
-        onMouseDown={handleDragStart}
-        title="Drag to resize"
-      >
+      <div className="terminal-resize-handle" onMouseDown={handleDragStart} title="Drag to resize">
         <GripHorizontal size={16} />
       </div>
       <div className="terminal-dock">
@@ -92,9 +97,9 @@ export const TerminalManager = memo(function TerminalManager({
           onDragOver={handleTabDragOver}
           onDragEnd={handleTabDragEnd}
         />
-        
+
         <div className="terminal-dock-controls">
-          <button 
+          <button
             className={`dock-btn expand ${isExpanded ? 'active' : ''}`}
             onClick={() => setIsExpanded(!isExpanded)}
             title={isExpanded ? 'Restore' : 'Maximize'}
@@ -102,7 +107,7 @@ export const TerminalManager = memo(function TerminalManager({
             {isExpanded ? <Square size={14} /> : <Maximize size={14} />}
           </button>
           {threads.length >= 2 && (
-            <button 
+            <button
               className={`dock-btn split ${layout === 'split' ? 'active' : ''}`}
               onClick={() => setLayout('split')}
               title="Split view"
@@ -111,7 +116,7 @@ export const TerminalManager = memo(function TerminalManager({
             </button>
           )}
           {threads.length >= 3 && (
-            <button 
+            <button
               className={`dock-btn grid ${layout === 'grid' ? 'active' : ''}`}
               onClick={() => setLayout('grid')}
               title="Grid view"
@@ -120,18 +125,14 @@ export const TerminalManager = memo(function TerminalManager({
             </button>
           )}
           <div className="dock-divider" />
-          <button 
+          <button
             className="dock-btn minimize"
             onClick={() => setIsMinimized(!isMinimized)}
             title={isMinimized ? 'Restore' : 'Minimize'}
           >
             {isMinimized ? <ChevronUp size={14} /> : <Minus size={14} />}
           </button>
-          <button 
-            className="dock-btn close"
-            onClick={onCloseAll}
-            title="Close all"
-          >
+          <button className="dock-btn close" onClick={onCloseAll} title="Close all">
             <X size={14} />
           </button>
         </div>
@@ -142,8 +143,8 @@ export const TerminalManager = memo(function TerminalManager({
           {orderedThreads.map((thread) => {
             const isVisible = visibleIds.has(thread.id);
             return (
-              <div 
-                key={thread.id} 
+              <div
+                key={thread.id}
                 className="terminal-pane"
                 style={{ display: isVisible ? undefined : 'none' }}
               >

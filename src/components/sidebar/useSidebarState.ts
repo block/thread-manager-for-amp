@@ -5,7 +5,7 @@ import { PINNED_THREADS_KEY } from './types';
 export function useSidebarState(
   threads: Thread[],
   collapsed: boolean,
-  onSelectThread: (thread: Thread) => void
+  onSelectThread: (thread: Thread) => void,
 ) {
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<Set<string>>(() => new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,7 +33,7 @@ export function useSidebarState(
   }, [pinnedIds]);
 
   const togglePin = useCallback((threadId: string) => {
-    setPinnedIds(prev => {
+    setPinnedIds((prev) => {
       const next = new Set(prev);
       if (next.has(threadId)) {
         next.delete(threadId);
@@ -48,18 +48,18 @@ export function useSidebarState(
   const filteredThreads = useMemo(() => {
     if (!searchQuery.trim()) return threads;
     const query = searchQuery.toLowerCase();
-    return threads.filter(t => t.title.toLowerCase().includes(query));
+    return threads.filter((t) => t.title.toLowerCase().includes(query));
   }, [threads, searchQuery]);
 
   // Separate pinned and unpinned threads
-  const pinnedThreads = useMemo(() => 
-    filteredThreads.filter(t => pinnedIds.has(t.id)),
-    [filteredThreads, pinnedIds]
+  const pinnedThreads = useMemo(
+    () => filteredThreads.filter((t) => pinnedIds.has(t.id)),
+    [filteredThreads, pinnedIds],
   );
 
-  const unpinnedThreads = useMemo(() => 
-    filteredThreads.filter(t => !pinnedIds.has(t.id)),
-    [filteredThreads, pinnedIds]
+  const unpinnedThreads = useMemo(
+    () => filteredThreads.filter((t) => !pinnedIds.has(t.id)),
+    [filteredThreads, pinnedIds],
   );
 
   // Flat list of visible threads for keyboard navigation
@@ -77,13 +77,12 @@ export function useSidebarState(
   // Group unpinned threads by workspace
   const workspaceGroups = useMemo(() => {
     const groups = new Map<string, WorkspaceGroup>();
-    
+
     for (const thread of unpinnedThreads) {
       const workspace = thread.workspace || 'No Workspace';
-      const displayName = workspace === 'No Workspace' 
-        ? 'No Workspace' 
-        : workspace.split('/').pop() || workspace;
-      
+      const displayName =
+        workspace === 'No Workspace' ? 'No Workspace' : workspace.split('/').pop() || workspace;
+
       if (!groups.has(workspace)) {
         groups.set(workspace, {
           workspace,
@@ -92,11 +91,11 @@ export function useSidebarState(
           repos: new Map(),
         });
       }
-      
+
       const group = groups.get(workspace);
       if (!group) continue;
       group.threads.push(thread);
-      
+
       if (thread.repo) {
         const repoName = thread.repo.split('/').pop() || thread.repo;
         const repoThreads = group.repos.get(repoName);
@@ -107,7 +106,7 @@ export function useSidebarState(
         }
       }
     }
-    
+
     return Array.from(groups.values()).sort((a, b) => {
       if (b.threads.length !== a.threads.length) {
         return b.threads.length - a.threads.length;
@@ -117,7 +116,7 @@ export function useSidebarState(
   }, [unpinnedThreads]);
 
   const toggleWorkspace = useCallback((workspace: string) => {
-    setExpandedWorkspaces(prev => {
+    setExpandedWorkspaces((prev) => {
       const next = new Set(prev);
       if (next.has(workspace)) {
         next.delete(workspace);
@@ -129,11 +128,11 @@ export function useSidebarState(
   }, []);
 
   const toggleAllWorkspaces = useCallback(() => {
-    setExpandedWorkspaces(prev => {
+    setExpandedWorkspaces((prev) => {
       if (prev.size > 0) {
         return new Set();
       } else {
-        return new Set(workspaceGroups.map(g => g.workspace));
+        return new Set(workspaceGroups.map((g) => g.workspace));
       }
     });
   }, [workspaceGroups]);
@@ -149,7 +148,7 @@ export function useSidebarState(
   }, []);
 
   const closeContextMenu = useCallback(() => {
-    setContextMenu(prev => ({ ...prev, visible: false, thread: null }));
+    setContextMenu((prev) => ({ ...prev, visible: false, thread: null }));
   }, []);
 
   // Keyboard navigation
@@ -161,10 +160,10 @@ export function useSidebarState(
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setFocusedIndex(prev => Math.min(prev + 1, visibleThreads.length - 1));
+        setFocusedIndex((prev) => Math.min(prev + 1, visibleThreads.length - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setFocusedIndex(prev => Math.max(prev - 1, 0));
+        setFocusedIndex((prev) => Math.max(prev - 1, 0));
       } else if (e.key === 'Enter' && focusedIndex >= 0) {
         e.preventDefault();
         const thread = visibleThreads[focusedIndex];
@@ -188,7 +187,8 @@ export function useSidebarState(
     el?.scrollIntoView({ block: 'nearest' });
   }, [focusedIndex, visibleThreads]);
 
-  const allExpanded = expandedWorkspaces.size === workspaceGroups.length && workspaceGroups.length > 0;
+  const allExpanded =
+    expandedWorkspaces.size === workspaceGroups.length && workspaceGroups.length > 0;
 
   return {
     expandedWorkspaces,

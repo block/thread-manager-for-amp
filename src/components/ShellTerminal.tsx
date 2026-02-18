@@ -99,7 +99,7 @@ export function ShellTerminal({ cwd, onClose, onMinimize, minimized }: ShellTerm
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
     term.open(terminalRef.current);
-    
+
     // Delay fit to ensure container is sized, then scroll to bottom
     setTimeout(() => {
       fitAddon.fit();
@@ -120,11 +120,13 @@ export function ShellTerminal({ cwd, onClose, onMinimize, minimized }: ShellTerm
     const handleResize = () => {
       fitAddon.fit();
       if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ 
-          type: 'resize', 
-          cols: term.cols, 
-          rows: term.rows 
-        }));
+        wsRef.current.send(
+          JSON.stringify({
+            type: 'resize',
+            cols: term.cols,
+            rows: term.rows,
+          }),
+        );
       }
     };
 
@@ -151,26 +153,28 @@ export function ShellTerminal({ cwd, onClose, onMinimize, minimized }: ShellTerm
     setTimeout(() => {
       fitAddonRef.current?.fit();
       if (wsRef.current?.readyState === WebSocket.OPEN && termRef.current) {
-        wsRef.current.send(JSON.stringify({ 
-          type: 'resize', 
-          cols: termRef.current.cols, 
-          rows: termRef.current.rows 
-        }));
+        wsRef.current.send(
+          JSON.stringify({
+            type: 'resize',
+            cols: termRef.current.cols,
+            rows: termRef.current.rows,
+          }),
+        );
         termRef.current.focus();
       }
     }, 100);
   }, [isMaximized, minimized]);
 
   return (
-    <div className={`shell-terminal-overlay ${isMaximized ? 'maximized' : ''} ${minimized ? 'minimized' : ''}`}>
+    <div
+      className={`shell-terminal-overlay ${isMaximized ? 'maximized' : ''} ${minimized ? 'minimized' : ''}`}
+    >
       <div className="shell-terminal-container">
         <div className="shell-terminal-header">
           <div className="shell-terminal-title">
             <TerminalSquare size={16} className="shell-icon" />
             <span>Terminal</span>
-            {sessionInfo && (
-              <span className="shell-info">{sessionInfo.cwd}</span>
-            )}
+            {sessionInfo && <span className="shell-info">{sessionInfo.cwd}</span>}
             <span className={`shell-status ${isConnected ? 'connected' : 'disconnected'}`}>
               {isConnected ? '●' : '○'}
             </span>
@@ -181,8 +185,8 @@ export function ShellTerminal({ cwd, onClose, onMinimize, minimized }: ShellTerm
                 <Minus size={14} />
               </button>
             )}
-            <button 
-              className="shell-btn" 
+            <button
+              className="shell-btn"
               onClick={() => setIsMaximized(!isMaximized)}
               title={isMaximized ? 'Restore window' : 'Maximize'}
             >

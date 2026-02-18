@@ -36,8 +36,8 @@ export function ConfirmModal({
         <button className="modal-btn cancel" onClick={onCancel}>
           {cancelText}
         </button>
-        <button 
-          className={`modal-btn ${isDestructive ? 'destructive' : 'primary'}`} 
+        <button
+          className={`modal-btn ${isDestructive ? 'destructive' : 'primary'}`}
           onClick={onConfirm}
         >
           {confirmText}

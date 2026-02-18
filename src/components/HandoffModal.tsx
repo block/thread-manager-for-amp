@@ -10,7 +10,13 @@ interface HandoffModalProps {
   onCancel: () => void;
 }
 
-export function HandoffModal({ isOpen, threadId, threadTitle, onConfirm, onCancel }: HandoffModalProps) {
+export function HandoffModal({
+  isOpen,
+  threadId,
+  threadTitle,
+  onConfirm,
+  onCancel,
+}: HandoffModalProps) {
   const [goal, setGoal] = useState('');
   const [title, setTitle] = useState('');
   const [phase, setPhase] = useState<'idle' | 'running' | 'error'>('idle');
@@ -61,7 +67,7 @@ export function HandoffModal({ isOpen, threadId, threadTitle, onConfirm, onCance
           </button>
         )}
       </div>
-      
+
       <div className="handoff-modal-body">
         {phase === 'running' ? (
           <div className="handoff-loading">
@@ -72,11 +78,7 @@ export function HandoffModal({ isOpen, threadId, threadTitle, onConfirm, onCance
         ) : (
           <>
             <p className="handoff-thread-id">{threadTitle || threadId}</p>
-            {phase === 'error' && (
-              <div className="handoff-error">
-                {errorMessage}
-              </div>
-            )}
+            {phase === 'error' && <div className="handoff-error">{errorMessage}</div>}
             <label className="handoff-label">
               New thread title
               <span className="handoff-optional">(optional)</span>
@@ -85,7 +87,7 @@ export function HandoffModal({ isOpen, threadId, threadTitle, onConfirm, onCance
               type="text"
               className="handoff-title-input"
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Auto-generated from goal..."
               disabled={isDisabled}
@@ -99,7 +101,7 @@ export function HandoffModal({ isOpen, threadId, threadTitle, onConfirm, onCance
               ref={inputRef}
               className="handoff-input"
               value={goal}
-              onChange={e => setGoal(e.target.value)}
+              onChange={(e) => setGoal(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Continue the previous work..."
               rows={3}
@@ -112,17 +114,13 @@ export function HandoffModal({ isOpen, threadId, threadTitle, onConfirm, onCance
           </>
         )}
       </div>
-      
+
       {phase !== 'running' && (
         <div className="handoff-modal-footer">
           <button className="modal-btn cancel" onClick={onCancel}>
             Cancel
           </button>
-          <button 
-            className="modal-btn primary"
-            onClick={handleSubmit}
-            disabled={isDisabled}
-          >
+          <button className="modal-btn primary" onClick={handleSubmit} disabled={isDisabled}>
             <GitBranch size={14} />
             {phase === 'error' ? 'Retry' : 'Handoff'}
           </button>

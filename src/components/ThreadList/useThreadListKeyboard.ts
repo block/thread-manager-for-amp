@@ -24,12 +24,12 @@ export function useThreadListKeyboard({
         case 'j':
         case 'ArrowDown':
           e.preventDefault();
-          setFocusedIndex(prev => Math.min(prev + 1, threads.length - 1));
+          setFocusedIndex((prev) => Math.min(prev + 1, threads.length - 1));
           break;
         case 'k':
         case 'ArrowUp':
           e.preventDefault();
-          setFocusedIndex(prev => Math.max(prev - 1, 0));
+          setFocusedIndex((prev) => Math.max(prev - 1, 0));
           break;
         case 'Enter': {
           const enterThread = focusedIndex >= 0 ? threads[focusedIndex] : undefined;

@@ -2,7 +2,9 @@ import { useState, memo, lazy, Suspense } from 'react';
 import { ChevronDown, ChevronRight, Check, Loader2, XCircle, Ban } from 'lucide-react';
 import { getToolIcon, getToolLabel, shortenPath, type ToolInput } from '../utils/format';
 
-const MermaidDiagram = lazy(() => import('./MermaidDiagram').then(m => ({ default: m.MermaidDiagram })));
+const MermaidDiagram = lazy(() =>
+  import('./MermaidDiagram').then((m) => ({ default: m.MermaidDiagram })),
+);
 
 export type ToolStatus = 'running' | 'success' | 'error' | 'cancelled' | undefined;
 
@@ -18,7 +20,10 @@ interface ToolBlockProps {
 const MAX_CMD_LENGTH = 80;
 const MAX_DESC_LENGTH = 60;
 
-function formatShortCommand(name: string, input: ToolInput): { text: string; cwd?: string } | string {
+function formatShortCommand(
+  name: string,
+  input: ToolInput,
+): { text: string; cwd?: string } | string {
   const lowerName = name.toLowerCase();
   switch (lowerName) {
     case 'bash': {
@@ -27,9 +32,8 @@ function formatShortCommand(name: string, input: ToolInput): { text: string; cwd
       if (!firstLine) {
         return { text: '(empty command)', cwd: input.cwd ? shortenPath(input.cwd) : undefined };
       }
-      const shortened = firstLine.length > MAX_CMD_LENGTH 
-        ? firstLine.slice(0, MAX_CMD_LENGTH) + '...' 
-        : firstLine;
+      const shortened =
+        firstLine.length > MAX_CMD_LENGTH ? firstLine.slice(0, MAX_CMD_LENGTH) + '...' : firstLine;
       if (input.cwd) {
         return { text: shortened, cwd: shortenPath(input.cwd) };
       }
@@ -53,8 +57,8 @@ function formatShortCommand(name: string, input: ToolInput): { text: string; cwd
       return shortenPath(input.path || '');
     case 'task': {
       const desc = input.description || '';
-      return desc.length > MAX_DESC_LENGTH 
-        ? desc.slice(0, MAX_DESC_LENGTH) + '...' 
+      return desc.length > MAX_DESC_LENGTH
+        ? desc.slice(0, MAX_DESC_LENGTH) + '...'
         : desc || 'Subagent task';
     }
     default:
@@ -79,11 +83,13 @@ function formatFullCommand(name: string, input: ToolInput): string | null {
       return null;
     }
     case 'create_file':
-      return input.content ? input.content.slice(0, 500) + (input.content.length > 500 ? '\n...' : '') : null;
+      return input.content
+        ? input.content.slice(0, 500) + (input.content.length > 500 ? '\n...' : '')
+        : null;
     case 'finder':
       return input.query || null;
     case 'oracle':
-      return input.task 
+      return input.task
         ? `Task: ${input.task}${input.context ? `\n\nContext: ${input.context}` : ''}${input.files ? `\n\nFiles: ${JSON.stringify(input.files)}` : ''}`
         : null;
     case 'librarian':
@@ -91,7 +97,7 @@ function formatFullCommand(name: string, input: ToolInput): string | null {
         ? `Query: ${input.query}${input.context ? `\n\nContext: ${input.context}` : ''}`
         : null;
     case 'task':
-      return input.prompt 
+      return input.prompt
         ? input.prompt.slice(0, 800) + (input.prompt.length > 800 ? '...' : '')
         : null;
     case 'web_search':
@@ -118,17 +124,21 @@ function formatFullCommand(name: string, input: ToolInput): string | null {
 function renderEditFileDiff(oldStr: string, newStr: string) {
   const oldLines = oldStr.split('\n');
   const newLines = newStr.split('\n');
-  
+
   const addedCount = newLines.length;
   const removedCount = oldLines.length;
   const changedCount = Math.min(addedCount, removedCount);
-  
+
   return (
     <div className="edit-diff">
       <div className="edit-diff-header">
-        <span className="diff-stat added">+{addedCount - changedCount + (changedCount > 0 ? changedCount : 0)}</span>
+        <span className="diff-stat added">
+          +{addedCount - changedCount + (changedCount > 0 ? changedCount : 0)}
+        </span>
         <span className="diff-stat removed">~{changedCount}</span>
-        <span className="diff-stat changed">-{removedCount - changedCount + (changedCount > 0 ? 0 : 0)}</span>
+        <span className="diff-stat changed">
+          -{removedCount - changedCount + (changedCount > 0 ? 0 : 0)}
+        </span>
       </div>
       <div className="edit-diff-content">
         {oldLines.map((line, i) => (
@@ -167,17 +177,29 @@ function StatusIcon({ status }: { status: ToolStatus }) {
 
 function getStatusClass(status: ToolStatus): string {
   switch (status) {
-    case 'running': return 'status-running';
-    case 'success': return 'status-success';
-    case 'error': return 'status-error';
-    case 'cancelled': return 'status-cancelled';
-    default: return 'status-success';
+    case 'running':
+      return 'status-running';
+    case 'success':
+      return 'status-success';
+    case 'error':
+      return 'status-error';
+    case 'cancelled':
+      return 'status-cancelled';
+    default:
+      return 'status-success';
   }
 }
 
-export const ToolBlock = memo(function ToolBlock({ toolName, toolInput = {}, onRef, highlighted, status, result }: ToolBlockProps) {
+export const ToolBlock = memo(function ToolBlock({
+  toolName,
+  toolInput = {},
+  onRef,
+  highlighted,
+  status,
+  result,
+}: ToolBlockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   const shortCmdResult = formatShortCommand(toolName, toolInput);
   const shortCmd = typeof shortCmdResult === 'string' ? shortCmdResult : shortCmdResult.text;
   const shortCwd = typeof shortCmdResult === 'object' ? shortCmdResult.cwd : undefined;
@@ -185,10 +207,10 @@ export const ToolBlock = memo(function ToolBlock({ toolName, toolInput = {}, onR
   const isEditFile = toolName === 'edit_file' && toolInput.old_str && toolInput.new_str;
   const isMermaid = toolName === 'mermaid' && !!toolInput.code;
   const isSubagent = toolName === 'Task';
-  
+
   // Only show expand if full command exists and is longer than short version
   const hasExpandable = !!(fullCmd && fullCmd.length > shortCmd.length + 10) || isEditFile;
-  
+
   const icon = getToolIcon(toolName);
   const label = getToolLabel(toolName);
 
@@ -196,15 +218,17 @@ export const ToolBlock = memo(function ToolBlock({ toolName, toolInput = {}, onR
   if (isSubagent) {
     const statusClass = getStatusClass(status);
     return (
-      <div 
+      <div
         ref={onRef}
         className={`tool-block subagent ${statusClass} ${highlighted ? 'highlighted' : ''}`}
       >
-        <div 
-          className={`tool-block-header ${hasExpandable ? 'expandable' : ''}`} 
+        <div
+          className={`tool-block-header ${hasExpandable ? 'expandable' : ''}`}
           onClick={() => hasExpandable && setIsExpanded(!isExpanded)}
         >
-          <span className={`subagent-status ${statusClass}`}><StatusIcon status={status} /></span>
+          <span className={`subagent-status ${statusClass}`}>
+            <StatusIcon status={status} />
+          </span>
           <span className="subagent-label">Subagent</span>
           {hasExpandable && (
             <button className="tool-expand-btn" type="button">
@@ -213,9 +237,7 @@ export const ToolBlock = memo(function ToolBlock({ toolName, toolInput = {}, onR
           )}
         </div>
         <div className="subagent-description">{shortCmd}</div>
-        {result && (
-          <div className="subagent-result">{result}</div>
-        )}
+        {result && <div className="subagent-result">{result}</div>}
         {isExpanded && fullCmd && (
           <div className="tool-block-full subagent-prompt">
             <pre>{fullCmd}</pre>
@@ -226,12 +248,9 @@ export const ToolBlock = memo(function ToolBlock({ toolName, toolInput = {}, onR
   }
 
   return (
-    <div 
-      ref={onRef}
-      className={`tool-block ${highlighted ? 'highlighted' : ''}`}
-    >
-      <div 
-        className={`tool-block-header ${hasExpandable ? 'expandable' : ''}`} 
+    <div ref={onRef} className={`tool-block ${highlighted ? 'highlighted' : ''}`}>
+      <div
+        className={`tool-block-header ${hasExpandable ? 'expandable' : ''}`}
         onClick={() => hasExpandable && setIsExpanded(!isExpanded)}
       >
         <span className="tool-icon">{icon}</span>
@@ -251,7 +270,9 @@ export const ToolBlock = memo(function ToolBlock({ toolName, toolInput = {}, onR
           </Suspense>
         </div>
       )}
-      {isExpanded && isEditFile && renderEditFileDiff(toolInput.old_str ?? '', toolInput.new_str ?? '')}
+      {isExpanded &&
+        isEditFile &&
+        renderEditFileDiff(toolInput.old_str ?? '', toolInput.new_str ?? '')}
       {isExpanded && fullCmd && !isEditFile && !isMermaid && (
         <div className="tool-block-full">
           <pre>{fullCmd}</pre>

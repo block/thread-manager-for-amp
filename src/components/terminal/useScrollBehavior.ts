@@ -7,9 +7,9 @@ interface UseScrollBehaviorOptions {
   messagesContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export function useScrollBehavior({ 
-  messages, 
-  loadingMore, 
+export function useScrollBehavior({
+  messages,
+  loadingMore,
   messagesContainerRef,
 }: UseScrollBehaviorOptions) {
   const prevMessageCount = useRef(0);
@@ -65,7 +65,9 @@ export function useScrollBehavior({
 
     prevLastMessageId.current = currentLastId;
 
-    const wasLoadingOlder = loadingMore || (messages.length > prevMessageCount.current + 1 && prevMessageCount.current > 0);
+    const wasLoadingOlder =
+      loadingMore ||
+      (messages.length > prevMessageCount.current + 1 && prevMessageCount.current > 0);
     prevMessageCount.current = messages.length;
 
     if (wasLoadingOlder) return;

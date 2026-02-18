@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { 
-  GitCommit as GitCommitIcon, 
-  GitBranch, 
-  GitPullRequest, 
-  ChevronDown, 
-  ChevronUp, 
+import {
+  GitCommit as GitCommitIcon,
+  GitBranch,
+  GitPullRequest,
+  ChevronDown,
+  ChevronUp,
   ChevronRight,
   ExternalLink,
   Clock,
@@ -32,13 +32,13 @@ function formatTime(ts: number): string {
 function formatTimeRange(startMs: number, endMs: number): string {
   const start = new Date(startMs);
   const end = new Date(endMs);
-  
+
   const sameDay = start.toDateString() === end.toDateString();
-  
+
   if (sameDay) {
     return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${start.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} – ${end.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
   }
-  
+
   return `${formatTime(startMs)} – ${formatTime(endMs)}`;
 }
 
@@ -71,7 +71,7 @@ export function GitActivityContent({ activity }: GitActivityContentProps) {
     return <div className="discovery-empty">Error loading git data</div>;
   }
 
-  const highConfidenceCommits = workspace.commits.filter(c => c.confidence === 'high');
+  const highConfidenceCommits = workspace.commits.filter((c) => c.confidence === 'high');
   const totalCommits = workspace.commits.length;
   const hasPRs = workspace.prs.length > 0;
   const hasBranches = workspace.branches.length > 0;
@@ -90,22 +90,21 @@ export function GitActivityContent({ activity }: GitActivityContentProps) {
       {workspace.currentBranch && (
         <div className="git-current-branch">
           <GitBranch size={12} />
-          <span>Current: <code>{workspace.currentBranch}</code></span>
+          <span>
+            Current: <code>{workspace.currentBranch}</code>
+          </span>
         </div>
       )}
 
       {/* PRs Section */}
       {hasPRs && (
         <div className="git-section">
-          <button
-            className="git-section-toggle"
-            onClick={() => setExpandedPRs(!expandedPRs)}
-          >
+          <button className="git-section-toggle" onClick={() => setExpandedPRs(!expandedPRs)}>
             <GitPullRequest size={14} />
             <span>Pull Requests ({workspace.prs.length})</span>
             {expandedPRs ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
-          
+
           {expandedPRs && (
             <div className="git-pr-list">
               {workspace.prs.map((pr) => (
@@ -139,7 +138,7 @@ export function GitActivityContent({ activity }: GitActivityContentProps) {
             <span>Likely branches ({workspace.branches.length})</span>
             {expandedBranches ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
-          
+
           {expandedBranches && (
             <div className="git-branch-list">
               {workspace.branches.map((branch) => (
@@ -168,7 +167,7 @@ export function GitActivityContent({ activity }: GitActivityContentProps) {
             </span>
             {expandedCommits ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
-          
+
           {expandedCommits && (
             <div className="git-commit-list">
               {workspace.commits.slice(0, 20).map((commit) => (
@@ -189,11 +188,9 @@ export function GitActivityContent({ activity }: GitActivityContentProps) {
 
 function CommitItem({ commit, repo }: { commit: GitCommit; repo?: string | null }) {
   const [expanded, setExpanded] = useState(false);
-  
-  const commitUrl = repo 
-    ? `https://github.com/${repo}/commit/${commit.sha}` 
-    : null;
-  
+
+  const commitUrl = repo ? `https://github.com/${repo}/commit/${commit.sha}` : null;
+
   return (
     <div className={`git-commit-item ${commit.confidence}`}>
       <div className="commit-header">
@@ -202,42 +199,36 @@ function CommitItem({ commit, repo }: { commit: GitCommit; repo?: string | null 
         ) : (
           <Circle size={12} className="confidence-icon low" />
         )}
-        
+
         {commitUrl ? (
-          <a 
-            href={commitUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="commit-sha"
-          >
+          <a href={commitUrl} target="_blank" rel="noopener noreferrer" className="commit-sha">
             {commit.shortSha}
           </a>
         ) : (
           <code className="commit-sha">{commit.shortSha}</code>
         )}
-        
+
         <span className="commit-subject">{commit.subject}</span>
-        
+
         {commit.matchedFileCount > 0 && (
-          <button 
-            className="commit-files-toggle"
-            onClick={() => setExpanded(!expanded)}
-          >
+          <button className="commit-files-toggle" onClick={() => setExpanded(!expanded)}>
             {commit.matchedFileCount} matched
             {expanded ? <ChevronUp size={10} /> : <ChevronRight size={10} />}
           </button>
         )}
       </div>
-      
+
       <div className="commit-meta">
         <span className="commit-author">{commit.authorName}</span>
         <span className="commit-time">{formatTime(commit.commitTime)}</span>
       </div>
-      
+
       {expanded && commit.matchedFiles.length > 0 && (
         <div className="commit-files">
           {commit.matchedFiles.map((file) => (
-            <div key={file} className="commit-file">{file}</div>
+            <div key={file} className="commit-file">
+              {file}
+            </div>
           ))}
         </div>
       )}

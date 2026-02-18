@@ -5,7 +5,7 @@
   .terminal-container.with-minimap {
     max-width: 100%;
   }
-  
+
   .minimap {
     width: 180px;
   }
@@ -17,74 +17,74 @@
   .header {
     padding: 10px 16px;
   }
-  
+
   .logo h1 {
     font-size: 14px;
   }
-  
+
   .new-thread-btn span {
     display: none;
   }
-  
+
   .new-thread-btn {
     padding: 8px;
   }
-  
+
   /* Main */
   .main {
     padding: 12px 16px;
   }
-  
+
   /* Terminal - hide minimap */
   .minimap {
     display: none;
   }
-  
+
   .terminal-container {
     width: 95%;
     height: 85%;
   }
-  
+
   /* Status bar - compact */
   .terminal-status-bar {
     flex-wrap: wrap;
     gap: 12px;
     padding: 6px 12px;
   }
-  
+
   .status-item {
     gap: 4px;
   }
-  
+
   .status-label {
     font-size: 9px;
   }
-  
+
   .status-value {
     font-size: 11px;
   }
-  
+
   /* Discovery summary - wrap chips */
   .discovery-summary {
     flex-wrap: wrap;
     gap: 6px;
     padding: 6px 10px;
   }
-  
+
   .summary-chip {
     padding: 3px 8px;
     font-size: 10px;
   }
-  
+
   /* Thread list - compact */
   .thread-row {
     padding: 10px 12px;
   }
-  
+
   .thread-title {
     font-size: 13px;
   }
-  
+
   .thread-meta {
     font-size: 10px;
   }
@@ -96,151 +96,151 @@
   .header {
     padding: 8px 12px;
   }
-  
+
   .logo {
     gap: 6px;
   }
-  
+
   .logo svg {
     width: 20px;
     height: 20px;
   }
-  
+
   .logo h1 {
     font-size: 13px;
   }
-  
+
   .thread-count {
     font-size: 10px;
     padding: 3px 8px;
   }
-  
+
   /* Main */
   .main {
     padding: 8px 12px;
   }
-  
+
   /* Terminal - full screen */
   .terminal-overlay {
     padding: 0;
   }
-  
+
   .terminal-container {
     width: 100%;
     height: 100%;
     border-radius: 0;
   }
-  
+
   .terminal-header {
     padding: 8px 12px;
   }
-  
+
   .terminal-title {
     font-size: 12px;
   }
-  
+
   .terminal-input-area {
     padding: 8px 12px;
   }
-  
+
   .terminal-input {
     padding: 10px 12px;
     font-size: 14px;
   }
-  
+
   /* Status bar - minimal */
   .terminal-status-bar {
     gap: 8px;
     padding: 4px 10px;
     font-size: 10px;
   }
-  
+
   .context-bar {
     width: 40px;
   }
-  
+
   /* Discovery */
   .discovery-summary {
     padding: 4px 8px;
   }
-  
+
   .summary-chip span {
     display: none;
   }
-  
+
   .summary-chip svg {
     margin: 0;
   }
-  
+
   .summary-chip::after {
     content: attr(data-count);
     font-size: 10px;
   }
-  
+
   .discovery-content {
     padding: 8px;
   }
-  
+
   /* Thread list */
   .thread-table-header {
     display: none;
   }
-  
+
   .thread-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
     padding: 10px;
   }
-  
+
   .thread-title {
     font-size: 12px;
   }
-  
+
   .thread-meta {
     flex-wrap: wrap;
     gap: 6px;
   }
-  
+
   /* Chat messages */
   .chat-message {
     max-width: 95%;
   }
-  
+
   .chat-bubble {
     padding: 8px 10px;
   }
-  
+
   .chat-content {
     font-size: 13px;
   }
-  
+
   /* Tool blocks */
   .tool-block {
     font-size: 11px;
   }
-  
+
   .tool-block-header {
     padding: 6px 10px;
   }
-  
+
   .tool-result {
     margin-left: 10px;
     padding: 8px 10px;
     font-size: 11px;
   }
-  
+
   /* Source control modal */
   .source-control-container {
     width: 100%;
     height: 100%;
     border-radius: 0;
   }
-  
+
   .source-control-body {
     flex-direction: column;
   }
-  
+
   .source-control-files {
     width: 100%;
     max-height: 200px;
@@ -254,15 +254,15 @@
   .header-actions {
     gap: 8px;
   }
-  
+
   .new-thread-btn {
     padding: 6px;
   }
-  
+
   .discovery-summary {
     justify-content: center;
   }
-  
+
   .summary-actions {
     width: 100%;
     justify-content: flex-end;

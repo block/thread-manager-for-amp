@@ -35,7 +35,11 @@ describe('buildThreadStacks', () => {
   it('groups parent-child into a stack', () => {
     const threads = [
       makeThread({ id: 'parent', lastUpdatedDate: '2025-01-01T00:00:00Z' }),
-      makeThread({ id: 'child', handoffParentId: 'parent', lastUpdatedDate: '2025-01-02T00:00:00Z' }),
+      makeThread({
+        id: 'child',
+        handoffParentId: 'parent',
+        lastUpdatedDate: '2025-01-02T00:00:00Z',
+      }),
     ];
     const entries = buildThreadStacks(threads);
     expect(entries).toHaveLength(1);
@@ -81,7 +85,11 @@ describe('buildThreadStacks', () => {
 
   it('ignores handoffParentId referencing thread not in list', () => {
     const threads = [
-      makeThread({ id: 'child', handoffParentId: 'missing-parent', lastUpdatedDate: '2025-01-01T00:00:00Z' }),
+      makeThread({
+        id: 'child',
+        handoffParentId: 'missing-parent',
+        lastUpdatedDate: '2025-01-01T00:00:00Z',
+      }),
     ];
     const entries = buildThreadStacks(threads);
     expect(entries).toHaveLength(1);
@@ -89,9 +97,7 @@ describe('buildThreadStacks', () => {
   });
 
   it('handles thread with null handoffParentId', () => {
-    const threads = [
-      makeThread({ id: 'a', handoffParentId: null }),
-    ];
+    const threads = [makeThread({ id: 'a', handoffParentId: null })];
     const entries = buildThreadStacks(threads);
     expect(entries).toHaveLength(1);
     expect(at(entries, 0).kind).toBe('thread');
@@ -100,9 +106,21 @@ describe('buildThreadStacks', () => {
   it('groups multiple children of the same parent into one stack', () => {
     const threads = [
       makeThread({ id: 'parent', lastUpdatedDate: '2025-01-01T00:00:00Z' }),
-      makeThread({ id: 'child1', handoffParentId: 'parent', lastUpdatedDate: '2025-01-02T00:00:00Z' }),
-      makeThread({ id: 'child2', handoffParentId: 'parent', lastUpdatedDate: '2025-01-03T00:00:00Z' }),
-      makeThread({ id: 'child3', handoffParentId: 'parent', lastUpdatedDate: '2025-01-04T00:00:00Z' }),
+      makeThread({
+        id: 'child1',
+        handoffParentId: 'parent',
+        lastUpdatedDate: '2025-01-02T00:00:00Z',
+      }),
+      makeThread({
+        id: 'child2',
+        handoffParentId: 'parent',
+        lastUpdatedDate: '2025-01-03T00:00:00Z',
+      }),
+      makeThread({
+        id: 'child3',
+        handoffParentId: 'parent',
+        lastUpdatedDate: '2025-01-04T00:00:00Z',
+      }),
     ];
     const entries = buildThreadStacks(threads);
     expect(entries).toHaveLength(1);
@@ -111,7 +129,7 @@ describe('buildThreadStacks', () => {
     expect(at(entries, 0).thread.id).toBe('child3');
     // All others are ancestors (sorted by recency)
     expect(at(entries, 0).stack?.ancestors).toHaveLength(3);
-    const ancestorIds = at(entries, 0).stack?.ancestors.map(a => a.id) ?? [];
+    const ancestorIds = at(entries, 0).stack?.ancestors.map((a) => a.id) ?? [];
     expect(ancestorIds).toContain('parent');
     expect(ancestorIds).toContain('child1');
     expect(ancestorIds).toContain('child2');
@@ -120,9 +138,21 @@ describe('buildThreadStacks', () => {
   it('handles fan-out: parent with children that also have children', () => {
     const threads = [
       makeThread({ id: 'root', lastUpdatedDate: '2025-01-01T00:00:00Z' }),
-      makeThread({ id: 'branch-a', handoffParentId: 'root', lastUpdatedDate: '2025-01-02T00:00:00Z' }),
-      makeThread({ id: 'branch-b', handoffParentId: 'root', lastUpdatedDate: '2025-01-03T00:00:00Z' }),
-      makeThread({ id: 'leaf', handoffParentId: 'branch-a', lastUpdatedDate: '2025-01-05T00:00:00Z' }),
+      makeThread({
+        id: 'branch-a',
+        handoffParentId: 'root',
+        lastUpdatedDate: '2025-01-02T00:00:00Z',
+      }),
+      makeThread({
+        id: 'branch-b',
+        handoffParentId: 'root',
+        lastUpdatedDate: '2025-01-03T00:00:00Z',
+      }),
+      makeThread({
+        id: 'leaf',
+        handoffParentId: 'branch-a',
+        lastUpdatedDate: '2025-01-05T00:00:00Z',
+      }),
     ];
     const entries = buildThreadStacks(threads);
     expect(entries).toHaveLength(1);
@@ -135,19 +165,20 @@ describe('buildThreadStacks', () => {
 
 describe('flattenEntries', () => {
   it('returns threads in order when no stacks expanded', () => {
-    const threads = [
-      makeThread({ id: 'a' }),
-      makeThread({ id: 'b' }),
-    ];
+    const threads = [makeThread({ id: 'a' }), makeThread({ id: 'b' })];
     const entries = buildThreadStacks(threads);
     const flat = flattenEntries(entries, new Set());
-    expect(flat.map(t => t.id)).toEqual(['a', 'b']);
+    expect(flat.map((t) => t.id)).toEqual(['a', 'b']);
   });
 
   it('includes ancestors when stack is expanded', () => {
     const threads = [
       makeThread({ id: 'parent', lastUpdatedDate: '2025-01-01T00:00:00Z' }),
-      makeThread({ id: 'child', handoffParentId: 'parent', lastUpdatedDate: '2025-01-02T00:00:00Z' }),
+      makeThread({
+        id: 'child',
+        handoffParentId: 'parent',
+        lastUpdatedDate: '2025-01-02T00:00:00Z',
+      }),
     ];
     const entries = buildThreadStacks(threads);
     const headId = at(entries, 0).thread.id; // 'child' is head
@@ -158,7 +189,11 @@ describe('flattenEntries', () => {
   it('does not include ancestors when stack is collapsed', () => {
     const threads = [
       makeThread({ id: 'parent', lastUpdatedDate: '2025-01-01T00:00:00Z' }),
-      makeThread({ id: 'child', handoffParentId: 'parent', lastUpdatedDate: '2025-01-02T00:00:00Z' }),
+      makeThread({
+        id: 'child',
+        handoffParentId: 'parent',
+        lastUpdatedDate: '2025-01-02T00:00:00Z',
+      }),
     ];
     const entries = buildThreadStacks(threads);
     const flat = flattenEntries(entries, new Set());

@@ -52,7 +52,13 @@ const RETRY_BASE_MS = 500;
 function isRetryableError(err: unknown): boolean {
   if (err instanceof Error) {
     const msg = err.message;
-    if (msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT') || msg.includes('ECONNREFUSED') || msg.includes('fetch failed') || msg.includes('UND_ERR_SOCKET')) {
+    if (
+      msg.includes('ECONNRESET') ||
+      msg.includes('ETIMEDOUT') ||
+      msg.includes('ECONNREFUSED') ||
+      msg.includes('fetch failed') ||
+      msg.includes('UND_ERR_SOCKET')
+    ) {
       return true;
     }
     const cause = (err as Error & { cause?: Error }).cause;
@@ -65,7 +71,7 @@ function isRetryableError(err: unknown): boolean {
 
 export async function callAmpInternalAPI<T = unknown>(
   method: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
 ): Promise<T> {
   const config = await getAmpConfig();
   const token = await getAmpToken(config.url);
@@ -108,8 +114,11 @@ export async function callAmpInternalAPI<T = unknown>(
       lastError = err as Error;
       if (attempt < MAX_RETRIES - 1 && isRetryableError(err)) {
         const delay = RETRY_BASE_MS * Math.pow(2, attempt) + Math.random() * 200;
-        console.warn(`Amp API call "${method}" failed (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${Math.round(delay)}ms:`, lastError.message);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        console.warn(
+          `Amp API call "${method}" failed (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${Math.round(delay)}ms:`,
+          lastError.message,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
       throw err;

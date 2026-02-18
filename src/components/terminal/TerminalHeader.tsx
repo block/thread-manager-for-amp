@@ -1,11 +1,7 @@
 import { X } from 'lucide-react';
 import type { TerminalHeaderProps } from './types';
 
-export function TerminalHeader({ 
-  threadTitle, 
-  embedded, 
-  onClose,
-}: TerminalHeaderProps) {
+export function TerminalHeader({ threadTitle, embedded, onClose }: TerminalHeaderProps) {
   if (embedded) {
     return null;
   }

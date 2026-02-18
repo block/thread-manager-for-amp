@@ -34,7 +34,7 @@ export function advanceStep(state: LoadingState): LoadingState {
 export function completeAllSteps(state: LoadingState): LoadingState {
   return {
     ...state,
-    steps: state.steps.map(s => ({ ...s, status: 'complete' as StepStatus })),
+    steps: state.steps.map((s) => ({ ...s, status: 'complete' as StepStatus })),
     currentStepIndex: state.steps.length,
   };
 }

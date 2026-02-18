@@ -13,11 +13,19 @@ import { ErrorToast } from './ErrorToast';
 import { apiGet, apiPut } from '../api/client';
 import type { Thread } from '../types';
 
-const CommandPalette = lazy(() => import('./CommandPalette').then(m => ({ default: m.CommandPalette })));
-const WorkspacePicker = lazy(() => import('./WorkspacePicker').then(m => ({ default: m.WorkspacePicker })));
-const HandoffModal = lazy(() => import('./HandoffModal').then(m => ({ default: m.HandoffModal })));
-const BlockerModal = lazy(() => import('./BlockerModal').then(m => ({ default: m.BlockerModal })));
-const OutputModal = lazy(() => import('./OutputModal').then(m => ({ default: m.OutputModal })));
+const CommandPalette = lazy(() =>
+  import('./CommandPalette').then((m) => ({ default: m.CommandPalette })),
+);
+const WorkspacePicker = lazy(() =>
+  import('./WorkspacePicker').then((m) => ({ default: m.WorkspacePicker })),
+);
+const HandoffModal = lazy(() =>
+  import('./HandoffModal').then((m) => ({ default: m.HandoffModal })),
+);
+const BlockerModal = lazy(() =>
+  import('./BlockerModal').then((m) => ({ default: m.BlockerModal })),
+);
+const OutputModal = lazy(() => import('./OutputModal').then((m) => ({ default: m.OutputModal })));
 
 interface AppModalsProps {
   onRefresh: () => void;
@@ -34,14 +42,17 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
 
   const { threads, metadata, activeThreadId, addBlocker, removeBlocker } = threadActions;
 
-  const handleContinueWithTracking = useCallback((thread: Thread) => {
-    threadActions.handleContinue(thread);
-    threadActions.setActiveThreadId(thread.id);
-  }, [threadActions]);
+  const handleContinueWithTracking = useCallback(
+    (thread: Thread) => {
+      threadActions.handleContinue(thread);
+      threadActions.setActiveThreadId(thread.id);
+    },
+    [threadActions],
+  );
 
   const handleSwitchToPrevious = useCallback(() => {
     if (!activeThreadId || threadActions.openThreads.length < 2) return;
-    const idx = threadActions.openThreads.findIndex(t => t.id === activeThreadId);
+    const idx = threadActions.openThreads.findIndex((t) => t.id === activeThreadId);
     const prevIdx = idx > 0 ? idx - 1 : threadActions.openThreads.length - 1;
     const prevThread = threadActions.openThreads[prevIdx];
     if (prevThread) threadActions.setActiveThreadId(prevThread.id);
@@ -49,7 +60,7 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
 
   const handleSwitchToNext = useCallback(() => {
     if (!activeThreadId || threadActions.openThreads.length < 2) return;
-    const idx = threadActions.openThreads.findIndex(t => t.id === activeThreadId);
+    const idx = threadActions.openThreads.findIndex((t) => t.id === activeThreadId);
     const nextIdx = idx < threadActions.openThreads.length - 1 ? idx + 1 : 0;
     const nextThread = threadActions.openThreads[nextIdx];
     if (nextThread) threadActions.setActiveThreadId(nextThread.id);
@@ -67,9 +78,12 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
     window.open(`https://ampcode.com/threads/${id}`, '_blank');
   }, []);
 
-  const handleHandoff = useCallback((id: string) => {
-    threadActions.setHandoffThreadId(id);
-  }, [threadActions]);
+  const handleHandoff = useCallback(
+    (id: string) => {
+      threadActions.setHandoffThreadId(id);
+    },
+    [threadActions],
+  );
 
   const handleOpenSettings = useCallback(async () => {
     try {
@@ -99,88 +113,109 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
     window.open(`https://ampcode.com/threads/${id}`, '_blank');
   }, []);
 
-  const handleAddLabel = useCallback((id: string) => {
-    modals.setInputModal({
-      title: 'Add Label',
-      label: 'Label name',
-      placeholder: 'lowercase, alphanumeric, hyphens',
-      confirmText: 'Add',
-      validate: (value: string) => {
-        const labelName = value.trim().toLowerCase();
-        if (!/^[a-z0-9][a-z0-9-]*$/.test(labelName)) {
-          return 'Label must be lowercase alphanumeric with hyphens';
-        }
-        return null;
-      },
-      onConfirm: async (value: string) => {
-        const labelName = value.trim().toLowerCase();
-        modals.setInputModal(null);
-        try {
-          const existing = await apiGet<{ name: string }[]>(`/api/thread-labels?threadId=${encodeURIComponent(id)}`);
-          const newLabels = [...existing.map(l => l.name), labelName];
-          await apiPut('/api/thread-labels', { threadId: id, labels: newLabels });
-          setThreadLabels(prev => ({ ...prev, [id]: newLabels }));
-        } catch (err) {
-          console.error('Failed to add label:', err);
-          showError('Failed to add label');
-        }
-      },
-    });
-  }, [modals, setThreadLabels, showError]);
-
-  const handleRemoveLabel = useCallback(async (id: string) => {
-    try {
-      const existing = await apiGet<{ name: string }[]>(`/api/thread-labels?threadId=${encodeURIComponent(id)}`);
-      if (existing.length === 0) {
-        showError('This thread has no labels');
-        return;
-      }
+  const handleAddLabel = useCallback(
+    (id: string) => {
       modals.setInputModal({
-        title: 'Remove Label',
-        label: `Current labels: ${existing.map(l => l.name).join(', ')}`,
-        placeholder: 'Enter label to remove',
-        confirmText: 'Remove',
-        onConfirm: async (labelToRemove: string) => {
+        title: 'Add Label',
+        label: 'Label name',
+        placeholder: 'lowercase, alphanumeric, hyphens',
+        confirmText: 'Add',
+        validate: (value: string) => {
+          const labelName = value.trim().toLowerCase();
+          if (!/^[a-z0-9][a-z0-9-]*$/.test(labelName)) {
+            return 'Label must be lowercase alphanumeric with hyphens';
+          }
+          return null;
+        },
+        onConfirm: async (value: string) => {
+          const labelName = value.trim().toLowerCase();
           modals.setInputModal(null);
           try {
-            const newLabels = existing.filter(l => l.name !== labelToRemove.toLowerCase()).map(l => l.name);
+            const existing = await apiGet<{ name: string }[]>(
+              `/api/thread-labels?threadId=${encodeURIComponent(id)}`,
+            );
+            const newLabels = [...existing.map((l) => l.name), labelName];
             await apiPut('/api/thread-labels', { threadId: id, labels: newLabels });
-            setThreadLabels(prev => ({ ...prev, [id]: newLabels }));
+            setThreadLabels((prev) => ({ ...prev, [id]: newLabels }));
           } catch (err) {
-            console.error('Failed to remove label:', err);
-            showError('Failed to remove label');
+            console.error('Failed to add label:', err);
+            showError('Failed to add label');
           }
         },
       });
-    } catch (err) {
-      console.error('Failed to load labels:', err);
-      showError('Failed to load labels');
-    }
-  }, [modals, setThreadLabels, showError]);
+    },
+    [modals, setThreadLabels, showError],
+  );
 
-  const handleManageBlockers = useCallback((threadId: string) => {
-    modals.setBlockerThreadId(threadId);
-  }, [modals]);
+  const handleRemoveLabel = useCallback(
+    async (id: string) => {
+      try {
+        const existing = await apiGet<{ name: string }[]>(
+          `/api/thread-labels?threadId=${encodeURIComponent(id)}`,
+        );
+        if (existing.length === 0) {
+          showError('This thread has no labels');
+          return;
+        }
+        modals.setInputModal({
+          title: 'Remove Label',
+          label: `Current labels: ${existing.map((l) => l.name).join(', ')}`,
+          placeholder: 'Enter label to remove',
+          confirmText: 'Remove',
+          onConfirm: async (labelToRemove: string) => {
+            modals.setInputModal(null);
+            try {
+              const newLabels = existing
+                .filter((l) => l.name !== labelToRemove.toLowerCase())
+                .map((l) => l.name);
+              await apiPut('/api/thread-labels', { threadId: id, labels: newLabels });
+              setThreadLabels((prev) => ({ ...prev, [id]: newLabels }));
+            } catch (err) {
+              console.error('Failed to remove label:', err);
+              showError('Failed to remove label');
+            }
+          },
+        });
+      } catch (err) {
+        console.error('Failed to load labels:', err);
+        showError('Failed to load labels');
+      }
+    },
+    [modals, setThreadLabels, showError],
+  );
 
-  const handleAddBlocker = useCallback(async (blockedByThreadId: string, reason?: string) => {
-    if (!modals.blockerThreadId) return;
-    try {
-      await addBlocker(modals.blockerThreadId, blockedByThreadId, reason);
-    } catch (err) {
-      console.error('Failed to add blocker:', err);
-      showError('Failed to add blocker');
-    }
-  }, [modals.blockerThreadId, addBlocker, showError]);
+  const handleManageBlockers = useCallback(
+    (threadId: string) => {
+      modals.setBlockerThreadId(threadId);
+    },
+    [modals],
+  );
 
-  const handleRemoveBlocker = useCallback(async (blockedByThreadId: string) => {
-    if (!modals.blockerThreadId) return;
-    try {
-      await removeBlocker(modals.blockerThreadId, blockedByThreadId);
-    } catch (err) {
-      console.error('Failed to remove blocker:', err);
-      showError('Failed to remove blocker');
-    }
-  }, [modals.blockerThreadId, removeBlocker, showError]);
+  const handleAddBlocker = useCallback(
+    async (blockedByThreadId: string, reason?: string) => {
+      if (!modals.blockerThreadId) return;
+      try {
+        await addBlocker(modals.blockerThreadId, blockedByThreadId, reason);
+      } catch (err) {
+        console.error('Failed to add blocker:', err);
+        showError('Failed to add blocker');
+      }
+    },
+    [modals.blockerThreadId, addBlocker, showError],
+  );
+
+  const handleRemoveBlocker = useCallback(
+    async (blockedByThreadId: string) => {
+      if (!modals.blockerThreadId) return;
+      try {
+        await removeBlocker(modals.blockerThreadId, blockedByThreadId);
+      } catch (err) {
+        console.error('Failed to remove blocker:', err);
+        showError('Failed to remove blocker');
+      }
+    },
+    [modals.blockerThreadId, removeBlocker, showError],
+  );
 
   useKeyboardShortcuts({
     handlers: {
@@ -264,7 +299,7 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
         <HandoffModal
           isOpen={!!threadActions.handoffThreadId}
           threadId={threadActions.handoffThreadId || ''}
-          threadTitle={threads.find(t => t.id === threadActions.handoffThreadId)?.title}
+          threadTitle={threads.find((t) => t.id === threadActions.handoffThreadId)?.title}
           onConfirm={threadActions.handleHandoffConfirm}
           onCancel={() => threadActions.setHandoffThreadId(null)}
         />
@@ -272,7 +307,7 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
         <BlockerModal
           isOpen={!!modals.blockerThreadId}
           threadId={modals.blockerThreadId || ''}
-          threadTitle={threads.find(t => t.id === modals.blockerThreadId)?.title || ''}
+          threadTitle={threads.find((t) => t.id === modals.blockerThreadId)?.title || ''}
           blockers={metadata[modals.blockerThreadId ?? '']?.blockers || []}
           threads={threads}
           onAddBlocker={handleAddBlocker}

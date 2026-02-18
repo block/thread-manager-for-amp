@@ -3,10 +3,10 @@ import { MessageSquare, ExternalLink, Archive, Pin, PinOff } from 'lucide-react'
 import { getStatusIcon } from './utils';
 import type { ThreadNodeProps } from './types';
 
-export const ThreadNode = memo(function ThreadNode({ 
-  thread, 
+export const ThreadNode = memo(function ThreadNode({
+  thread,
   status,
-  isActive, 
+  isActive,
   runningStatus,
   isFocused,
   isPinned,
@@ -21,15 +21,18 @@ export const ThreadNode = memo(function ThreadNode({
     action();
   }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onSelect();
-    }
-  }, [onSelect]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onSelect();
+      }
+    },
+    [onSelect],
+  );
 
   return (
-    <div 
+    <div
       className={`sidebar-node thread ${isActive ? 'active' : ''} ${isFocused ? 'focused' : ''}`}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
@@ -44,7 +47,7 @@ export const ThreadNode = memo(function ThreadNode({
         <MessageSquare size={14} />
         <span className="sidebar-node-label">{thread.title}</span>
         <span className="sidebar-thread-actions">
-          <button 
+          <button
             className={`sidebar-action-btn ${isPinned ? 'pinned' : ''}`}
             onClick={(e) => handleActionClick(e, onTogglePin)}
             title={isPinned ? 'Unpin' : 'Pin'}
@@ -52,7 +55,7 @@ export const ThreadNode = memo(function ThreadNode({
             {isPinned ? <PinOff size={12} /> : <Pin size={12} />}
           </button>
           {onOpenInBrowser && (
-            <button 
+            <button
               className="sidebar-action-btn"
               onClick={(e) => handleActionClick(e, onOpenInBrowser)}
               title="Open in browser"
@@ -61,7 +64,7 @@ export const ThreadNode = memo(function ThreadNode({
             </button>
           )}
           {onArchive && (
-            <button 
+            <button
               className="sidebar-action-btn"
               onClick={(e) => handleActionClick(e, onArchive)}
               title="Archive"

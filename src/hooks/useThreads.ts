@@ -25,19 +25,24 @@ export function useThreads() {
     try {
       const cursor = append ? cursorRef.current : null;
       const data = await apiGet<ThreadsResult>(
-        `/api/threads?limit=50${cursor ? `&cursor=${cursor}` : ''}`
+        `/api/threads?limit=50${cursor ? `&cursor=${cursor}` : ''}`,
       );
 
       if (append) {
-        setThreads(prev => [...prev, ...data.threads]);
+        setThreads((prev) => [...prev, ...data.threads]);
       } else {
         // Stabilize reference: skip setState if thread list hasn't meaningfully changed,
         // preventing downstream re-renders (e.g., useFilters label re-fetch) on every poll
-        setThreads(prev => {
+        setThreads((prev) => {
           if (prev.length !== data.threads.length) return data.threads;
           const changed = prev.some((t, i) => {
             const next = data.threads[i];
-            return !next || t.id !== next.id || t.title !== next.title || t.lastUpdated !== next.lastUpdated;
+            return (
+              !next ||
+              t.id !== next.id ||
+              t.title !== next.title ||
+              t.lastUpdated !== next.lastUpdated
+            );
           });
           return changed ? data.threads : prev;
         });
@@ -65,7 +70,7 @@ export function useThreads() {
   }, [hasMore, loadingMore, fetchThreads]);
 
   const removeThread = useCallback((threadId: string) => {
-    setThreads(prev => prev.filter(t => t.id !== threadId));
+    setThreads((prev) => prev.filter((t) => t.id !== threadId));
   }, []);
 
   useEffect(() => {

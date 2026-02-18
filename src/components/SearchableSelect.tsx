@@ -33,20 +33,24 @@ export const SearchableSelect = memo(function SearchableSelect({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const filteredOptions = search
-    ? options.filter(opt => 
-        opt.label.toLowerCase().includes(search.toLowerCase()) ||
-        opt.value.toLowerCase().includes(search.toLowerCase())
+    ? options.filter(
+        (opt) =>
+          opt.label.toLowerCase().includes(search.toLowerCase()) ||
+          opt.value.toLowerCase().includes(search.toLowerCase()),
       )
     : options;
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = options.find((opt) => opt.value === value);
   const displayLabel = selectedOption?.label || allLabel;
 
-  const handleSelect = useCallback((optValue: string | null) => {
-    onChange(optValue);
-    setOpen(false);
-    setSearch('');
-  }, [onChange]);
+  const handleSelect = useCallback(
+    (optValue: string | null) => {
+      onChange(optValue);
+      setOpen(false);
+      setSearch('');
+    },
+    [onChange],
+  );
 
   useEffect(() => {
     if (open && searchable && searchInputRef.current) {

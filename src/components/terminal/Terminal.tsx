@@ -19,29 +19,72 @@ import { useScrollBehavior } from './useScrollBehavior';
 import { useUnread } from '../../contexts/UnreadContext';
 import { useThreadStatus } from '../../contexts/ThreadStatusContext';
 
-export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewThread, onOpenThread, autoFocus = false }: TerminalProps) {
+export function Terminal({
+  thread,
+  onClose,
+  embedded = false,
+  onHandoff,
+  onNewThread,
+  onOpenThread,
+  autoFocus = false,
+}: TerminalProps) {
   const { id: threadId, title: threadTitle } = thread;
   const { markAsSeen } = useUnread();
   const { setStatus: setThreadStatus, clearStatus: clearThreadStatus } = useThreadStatus();
 
   const state = useTerminalState({ thread });
   const {
-    input, activeMinimapId, usage, searchOpen, pendingImage, sessionImages,
-    viewingImage, metadata, containerRef, inputRef, autoInvokeTriggeredRef,
-    setInput, setUsage, setMetadata, setPendingImage, setViewingImage,
-    openSearch, closeSearch, dismissContextWarning, clearPendingImage,
-    closeViewingImage, addSessionImage, clearInput, scrollToMessage, checkContextWarning,
+    input,
+    activeMinimapId,
+    usage,
+    searchOpen,
+    pendingImage,
+    sessionImages,
+    viewingImage,
+    metadata,
+    containerRef,
+    inputRef,
+    autoInvokeTriggeredRef,
+    setInput,
+    setUsage,
+    setMetadata,
+    setPendingImage,
+    setViewingImage,
+    openSearch,
+    closeSearch,
+    dismissContextWarning,
+    clearPendingImage,
+    closeViewingImage,
+    addSessionImage,
+    clearInput,
+    scrollToMessage,
+    checkContextWarning,
   } = state;
 
   const [wsConnected, setWsConnected] = useState(false);
 
   const {
-    messages, setMessages, isLoading, setIsLoading, hasMoreMessages,
-    loadingMore, loadMoreMessages, messagesContainerRef, messagesEndRef, messageRefs,
+    messages,
+    setMessages,
+    isLoading,
+    setIsLoading,
+    hasMoreMessages,
+    loadingMore,
+    loadMoreMessages,
+    messagesContainerRef,
+    messagesEndRef,
+    messageRefs,
   } = useTerminalMessages({ threadId, wsConnected });
 
   const {
-    isConnected, isSending, isRunning, agentStatus, connectionError, sendMessage: wsSendMessage, cancelOperation, reconnect,
+    isConnected,
+    isSending,
+    isRunning,
+    agentStatus,
+    connectionError,
+    sendMessage: wsSendMessage,
+    cancelOperation,
+    reconnect,
   } = useTerminalWebSocket({ threadId, setMessages, setUsage, setIsLoading });
 
   // Sync WS connection state to control message polling
@@ -67,9 +110,12 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
     return () => clearThreadStatus(threadId);
   }, [threadId, clearThreadStatus]);
 
-  const handleScrollToMessage = useCallback((id: string) => {
-    scrollToMessage(id, messageRefs);
-  }, [scrollToMessage, messageRefs]);
+  const handleScrollToMessage = useCallback(
+    (id: string) => {
+      scrollToMessage(id, messageRefs);
+    },
+    [scrollToMessage, messageRefs],
+  );
 
   useEffect(() => {
     if (autoFocus && inputRef.current) {
@@ -93,7 +139,11 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (!containerRef.current?.contains(document.activeElement) && document.activeElement !== document.body) return;
+      if (
+        !containerRef.current?.contains(document.activeElement) &&
+        document.activeElement !== document.body
+      )
+        return;
       if ((isSending || isRunning) && (e.key === 'Escape' || (e.ctrlKey && e.key === 'c'))) {
         e.preventDefault();
         cancelOperation();
@@ -126,35 +176,48 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [embedded, openSearch, containerRef]);
 
-  const minimapItems: MinimapItem[] = useMemo(() => messages
-    .filter(msg => msg.type !== 'tool_result')
-    .map((msg) => {
-      let label = msg.type === 'user' ? 'User:' : 'Assistant:';
-      let preview = msg.content.slice(0, 30).replace(/\n/g, ' ');
-      let type: MinimapItem['type'] = msg.type === 'user' ? 'user' : 'assistant';
-      if (msg.type === 'tool_use' && msg.toolName) {
-        if (msg.toolName === 'Task' && msg.toolInput) {
-          label = 'Subagent';
-          preview = (msg.toolInput.description || '').slice(0, 30);
-        } else {
-          label = msg.toolName;
-          preview = msg.content.slice(0, 25).replace(/\n/g, ' ');
-        }
-        type = 'tool';
-      } else if (msg.type === 'error') {
-        label = 'Error';
-        preview = msg.content.slice(0, 25);
-        type = 'error';
-      }
-      return { id: msg.id, type, label, preview: preview + (msg.content.length > 30 ? '…' : ''), toolName: msg.toolName };
-    }), [messages]);
+  const minimapItems: MinimapItem[] = useMemo(
+    () =>
+      messages
+        .filter((msg) => msg.type !== 'tool_result')
+        .map((msg) => {
+          let label = msg.type === 'user' ? 'User:' : 'Assistant:';
+          let preview = msg.content.slice(0, 30).replace(/\n/g, ' ');
+          let type: MinimapItem['type'] = msg.type === 'user' ? 'user' : 'assistant';
+          if (msg.type === 'tool_use' && msg.toolName) {
+            if (msg.toolName === 'Task' && msg.toolInput) {
+              label = 'Subagent';
+              preview = (msg.toolInput.description || '').slice(0, 30);
+            } else {
+              label = msg.toolName;
+              preview = msg.content.slice(0, 25).replace(/\n/g, ' ');
+            }
+            type = 'tool';
+          } else if (msg.type === 'error') {
+            label = 'Error';
+            preview = msg.content.slice(0, 25);
+            type = 'error';
+          }
+          return {
+            id: msg.id,
+            type,
+            label,
+            preview: preview + (msg.content.length > 30 ? '…' : ''),
+            toolName: msg.toolName,
+          };
+        }),
+    [messages],
+  );
 
   const showContextWarning = checkContextWarning(messages);
 
   const handleSendMessage = useCallback(() => {
     if ((!input.trim() && !pendingImage) || !isConnected) return;
     const messageText = input.trim() || 'Analyze this image';
-    setMessages(prev => [...prev, { id: generateId(), type: 'user', content: messageText, image: pendingImage || undefined }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: generateId(), type: 'user', content: messageText, image: pendingImage || undefined },
+    ]);
     wsSendMessage(messageText, pendingImage || undefined);
     if (pendingImage) addSessionImage(pendingImage);
     clearInput();
@@ -163,37 +226,125 @@ export function Terminal({ thread, onClose, embedded = false, onHandoff, onNewTh
       const issueUrl = extractIssueUrl(messageText);
       if (issueUrl) {
         apiPatch('/api/thread-linked-issue', { threadId, url: issueUrl })
-          .then(() => setMetadata(prev => prev ? { ...prev, linked_issue_url: issueUrl } : prev))
+          .then(() =>
+            setMetadata((prev) => (prev ? { ...prev, linked_issue_url: issueUrl } : prev)),
+          )
           .catch((err: unknown) => console.debug('Auto-link issue failed:', err));
       }
     }
-  }, [input, pendingImage, isConnected, setMessages, wsSendMessage, addSessionImage, clearInput, metadata, threadId, setMetadata]);
+  }, [
+    input,
+    pendingImage,
+    isConnected,
+    setMessages,
+    wsSendMessage,
+    addSessionImage,
+    clearInput,
+    metadata,
+    threadId,
+    setMetadata,
+  ]);
 
   const content = (
-    <div ref={containerRef} className={`terminal-container with-minimap ${embedded ? 'embedded' : ''}`} onClick={e => e.stopPropagation()}>
+    <div
+      ref={containerRef}
+      className={`terminal-container with-minimap ${embedded ? 'embedded' : ''}`}
+      onClick={(e) => e.stopPropagation()}
+    >
       <TerminalHeader threadTitle={threadTitle} embedded={embedded} onClose={onClose} />
-      <ThreadDiscovery threadId={threadId} onOpenThread={onOpenThread} messages={messages} onJumpToMessage={handleScrollToMessage} sessionImages={sessionImages} metadata={metadata || undefined} onMetadataChange={setMetadata} onSearchOpen={openSearch} />
+      <ThreadDiscovery
+        threadId={threadId}
+        onOpenThread={onOpenThread}
+        messages={messages}
+        onJumpToMessage={handleScrollToMessage}
+        sessionImages={sessionImages}
+        metadata={metadata || undefined}
+        onMetadataChange={setMetadata}
+        onSearchOpen={openSearch}
+      />
       <div className="terminal-body">
-        <TerminalMessages messages={messages} isLoading={isLoading} hasMoreMessages={hasMoreMessages} loadingMore={loadingMore} activeMinimapId={activeMinimapId} messagesContainerRef={messagesContainerRef} messagesEndRef={messagesEndRef} messageRefs={messageRefs} onLoadMore={loadMoreMessages} onViewImage={setViewingImage} />
-        <Minimap items={minimapItems} activeId={activeMinimapId} onItemClick={handleScrollToMessage} hasMoreMessages={hasMoreMessages} loadingMore={loadingMore} onLoadMore={loadMoreMessages} />
+        <TerminalMessages
+          messages={messages}
+          isLoading={isLoading}
+          hasMoreMessages={hasMoreMessages}
+          loadingMore={loadingMore}
+          activeMinimapId={activeMinimapId}
+          messagesContainerRef={messagesContainerRef}
+          messagesEndRef={messagesEndRef}
+          messageRefs={messageRefs}
+          onLoadMore={loadMoreMessages}
+          onViewImage={setViewingImage}
+        />
+        <Minimap
+          items={minimapItems}
+          activeId={activeMinimapId}
+          onItemClick={handleScrollToMessage}
+          hasMoreMessages={hasMoreMessages}
+          loadingMore={loadingMore}
+          onLoadMore={loadMoreMessages}
+        />
       </div>
       {usage && <TerminalStatusBar usage={usage} />}
-      {showContextWarning && <ContextWarning threadId={threadId} onHandoff={onHandoff} onNewThread={onNewThread} onDismiss={dismissContextWarning} />}
+      {showContextWarning && (
+        <ContextWarning
+          threadId={threadId}
+          onHandoff={onHandoff}
+          onNewThread={onNewThread}
+          onDismiss={dismissContextWarning}
+        />
+      )}
       {connectionError && (
         <div className="context-limit-modal">
           <div className="context-limit-content">
             <p className="context-limit-message">Connection lost. Unable to reconnect to server.</p>
             <div className="context-limit-actions">
-              <button className="context-limit-btn primary" onClick={reconnect}>Reconnect</button>
+              <button className="context-limit-btn primary" onClick={reconnect}>
+                Reconnect
+              </button>
             </div>
           </div>
         </div>
       )}
-      <TerminalInput input={input} isConnected={isConnected} isSending={isSending} isRunning={isRunning} agentStatus={agentStatus} pendingImage={pendingImage} inputRef={inputRef} onInputChange={setInput} onSend={handleSendMessage} onCancel={cancelOperation} onClose={onClose} onPendingImageRemove={clearPendingImage} onPendingImageSet={setPendingImage} searchOpen={searchOpen} />
-      <MessageSearchModal isOpen={searchOpen} onClose={closeSearch} messages={messages} onJumpToMessage={handleScrollToMessage} />
-      {viewingImage && <ImageViewer images={[{ data: viewingImage.data, mediaType: viewingImage.mediaType, sourcePath: null }]} currentIndex={0} onClose={closeViewingImage} onNavigate={() => {}} />}
+      <TerminalInput
+        input={input}
+        isConnected={isConnected}
+        isSending={isSending}
+        isRunning={isRunning}
+        agentStatus={agentStatus}
+        pendingImage={pendingImage}
+        inputRef={inputRef}
+        onInputChange={setInput}
+        onSend={handleSendMessage}
+        onCancel={cancelOperation}
+        onClose={onClose}
+        onPendingImageRemove={clearPendingImage}
+        onPendingImageSet={setPendingImage}
+        searchOpen={searchOpen}
+      />
+      <MessageSearchModal
+        isOpen={searchOpen}
+        onClose={closeSearch}
+        messages={messages}
+        onJumpToMessage={handleScrollToMessage}
+      />
+      {viewingImage && (
+        <ImageViewer
+          images={[
+            { data: viewingImage.data, mediaType: viewingImage.mediaType, sourcePath: null },
+          ]}
+          currentIndex={0}
+          onClose={closeViewingImage}
+          onNavigate={() => {}}
+        />
+      )}
     </div>
   );
 
-  return embedded ? content : <div className="terminal-overlay" onClick={onClose}>{content}</div>;
+  return embedded ? (
+    content
+  ) : (
+    <div className="terminal-overlay" onClick={onClose}>
+      {content}
+    </div>
+  );
 }

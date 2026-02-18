@@ -1,4 +1,15 @@
-import { ExternalLink, Archive, Trash2, MessageSquare, FileText, GitBranch, Folder, ChevronRight, ChevronDown, Layers } from 'lucide-react';
+import {
+  ExternalLink,
+  Archive,
+  Trash2,
+  MessageSquare,
+  FileText,
+  GitBranch,
+  Folder,
+  ChevronRight,
+  ChevronDown,
+  Layers,
+} from 'lucide-react';
 import { ThreadStatusBadge } from '../ThreadStatusBadge';
 import { LinkedIssueBadge } from '../LinkedIssue';
 import type { Thread, ThreadMetadata, ThreadStatus } from '../../types';
@@ -38,10 +49,10 @@ function getFilename(path: string): string {
   return path.split('/').pop() || path;
 }
 
-export function ThreadCard({ 
-  thread, 
-  metadata, 
-  onContinue, 
+export function ThreadCard({
+  thread,
+  metadata,
+  onContinue,
   onArchive,
   onDelete,
   onStatusChange,
@@ -57,9 +68,11 @@ export function ThreadCard({
   const blockerCount = meta?.blockers?.length || 0;
   const touchedFiles = thread.touchedFiles || [];
   const hasStack = stackSize && stackSize > 1;
-  
+
   return (
-    <div className={`detail-card-wrapper ${hasStack ? 'has-stack' : ''} ${isExpanded ? 'expanded' : ''}`}>
+    <div
+      className={`detail-card-wrapper ${hasStack ? 'has-stack' : ''} ${isExpanded ? 'expanded' : ''}`}
+    >
       <div
         className={`detail-card ${focusedId === thread.id ? 'focused' : ''} status-${status} ${isStackChild ? 'stack-child' : ''}`}
         onClick={() => onContinue(thread)}
@@ -126,7 +139,12 @@ export function ThreadCard({
             </span>
           )}
           {thread.cost !== undefined && (
-            <span className="detail-card-stat cost" title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data">~${thread.cost.toFixed(2)}</span>
+            <span
+              className="detail-card-stat cost"
+              title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data"
+            >
+              ~${thread.cost.toFixed(2)}
+            </span>
           )}
         </div>
 
@@ -178,9 +196,16 @@ export function ThreadCard({
                 </div>
                 <h3 className="detail-card-title">{ancestor.title}</h3>
                 <div className="detail-card-meta">
-                  <span className="detail-card-time">{formatRelativeTime(ancestor.lastUpdated)}</span>
+                  <span className="detail-card-time">
+                    {formatRelativeTime(ancestor.lastUpdated)}
+                  </span>
                   {ancestor.cost !== undefined && (
-                    <span className="detail-card-stat cost" title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data">~${ancestor.cost.toFixed(2)}</span>
+                    <span
+                      className="detail-card-stat cost"
+                      title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data"
+                    >
+                      ~${ancestor.cost.toFixed(2)}
+                    </span>
                   )}
                 </div>
               </div>

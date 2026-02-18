@@ -169,9 +169,7 @@ interface GitStatusError {
   files: GitFileStatus[];
 }
 
-export async function getWorkspaceGitStatus(
-  threadId: string
-): Promise<GitStatus | GitStatusError> {
+export async function getWorkspaceGitStatus(threadId: string): Promise<GitStatus | GitStatusError> {
   const threadPath = join(THREADS_DIR, `${threadId}.json`);
 
   try {
@@ -240,7 +238,7 @@ export async function getWorkspaceGitStatus(
 }
 
 export async function getWorkspaceGitStatusByPath(
-  inputWorkspacePath: string
+  inputWorkspacePath: string,
 ): Promise<WorkspaceGitStatusByPath> {
   try {
     const workspacePath = await validateWorkspacePath(inputWorkspacePath);
@@ -276,26 +274,22 @@ export async function getWorkspaceGitStatusByPath(
 }
 
 export async function getWorkspaceGitStatusDirect(
-  inputWorkspacePath: string
+  inputWorkspacePath: string,
 ): Promise<WorkspaceGitStatusDirect> {
   try {
     const workspacePath = await validateWorkspacePath(inputWorkspacePath);
 
-    const isGit = await spawnGitAndCheckExit(
-      ['-C', workspacePath, 'rev-parse', '--git-dir']
-    );
+    const isGit = await spawnGitAndCheckExit(['-C', workspacePath, 'rev-parse', '--git-dir']);
 
     if (!isGit) {
       return { isGitRepo: false, files: [], workspace: workspacePath };
     }
 
-    const branch = (
-      await spawnGitAndCapture(['-C', workspacePath, 'branch', '--show-current'])
-    ).trim() || 'HEAD';
+    const branch =
+      (await spawnGitAndCapture(['-C', workspacePath, 'branch', '--show-current'])).trim() ||
+      'HEAD';
 
-    const gitStatus = await spawnGitAndCapture(
-      ['-C', workspacePath, 'status', '--porcelain']
-    );
+    const gitStatus = await spawnGitAndCapture(['-C', workspacePath, 'status', '--porcelain']);
 
     const files: DirectGitFileStatus[] = [];
     const statusLines = gitStatus.trim().split('\n').filter(Boolean);
@@ -330,7 +324,7 @@ export async function getWorkspaceGitStatusDirect(
 
 export async function getFileDiff(
   inputFilePath: string,
-  inputWorkspacePath: string
+  inputWorkspacePath: string,
 ): Promise<FileDiff> {
   try {
     const workspacePath = await validateWorkspacePath(inputWorkspacePath);
@@ -339,13 +333,13 @@ export async function getFileDiff(
 
     const diff = await spawnGitAndCapture(
       ['diff', '--no-color', 'HEAD', '--', relativePath],
-      workspacePath
+      workspacePath,
     );
 
     if (!diff.trim()) {
       const cachedDiff = await spawnGitAndCapture(
         ['diff', '--no-color', '--cached', '--', relativePath],
-        workspacePath
+        workspacePath,
       );
 
       if (cachedDiff.trim()) {

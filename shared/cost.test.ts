@@ -190,9 +190,7 @@ describe('estimateToolCosts', () => {
     const counts = { oracle: 1, finder: 3 };
     const oracleCost = TOOL_COST_ESTIMATES.oracle ?? 0;
     const finderCost = TOOL_COST_ESTIMATES.finder ?? 0;
-    const expected =
-      oracleCost * 1 +
-      finderCost * 3;
+    const expected = oracleCost * 1 + finderCost * 3;
     expect(estimateToolCosts(counts)).toBeCloseTo(expected, 6);
   });
 
@@ -226,18 +224,18 @@ describe('estimateTaskCost', () => {
   });
 
   it('returns $2.00 for medium prompts (500–1999 chars)', () => {
-    expect(estimateTaskCost(500)).toBe(2.00);
-    expect(estimateTaskCost(1999)).toBe(2.00);
+    expect(estimateTaskCost(500)).toBe(2.0);
+    expect(estimateTaskCost(1999)).toBe(2.0);
   });
 
   it('returns $4.00 for complex prompts (2000–3999 chars)', () => {
-    expect(estimateTaskCost(2000)).toBe(4.00);
-    expect(estimateTaskCost(3999)).toBe(4.00);
+    expect(estimateTaskCost(2000)).toBe(4.0);
+    expect(estimateTaskCost(3999)).toBe(4.0);
   });
 
   it('returns $7.00 for very complex prompts (4000+ chars)', () => {
-    expect(estimateTaskCost(4000)).toBe(7.00);
-    expect(estimateTaskCost(10000)).toBe(7.00);
+    expect(estimateTaskCost(4000)).toBe(7.0);
+    expect(estimateTaskCost(10000)).toBe(7.0);
   });
 
   it('returns $0.75 for zero-length prompt', () => {

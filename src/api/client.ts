@@ -12,7 +12,11 @@ export class ApiError extends Error {
   }
 }
 
-function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<Response> {
+function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+): Promise<Response> {
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
 
@@ -20,17 +24,19 @@ function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = DE
     ? AbortSignal.any([options.signal, timeoutController.signal])
     : timeoutController.signal;
 
-  return fetch(url, { ...options, signal })
-    .finally(() => clearTimeout(timeoutId));
+  return fetch(url, { ...options, signal }).finally(() => clearTimeout(timeoutId));
 }
 
-async function handleResponse<T>(response: Response, parser: (res: Response) => Promise<T>): Promise<T> {
+async function handleResponse<T>(
+  response: Response,
+  parser: (res: Response) => Promise<T>,
+): Promise<T> {
   if (!response.ok) {
     const text = await response.text().catch(() => '');
     throw new ApiError(
       text || `Request failed: ${response.statusText}`,
       response.status,
-      response.statusText
+      response.statusText,
     );
   }
   return parser(response);

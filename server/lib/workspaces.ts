@@ -45,7 +45,7 @@ export async function getRepoFromGitConfig(repoPath: string): Promise<string | n
   try {
     const configPath = join(repoPath, '.git', 'config');
     if (!(await fileExists(configPath))) return null;
-    
+
     const config = await readFile(configPath, 'utf-8');
     const match = config.match(/url\s*=\s*.*[:/]([^/]+\/[^/]+?)(?:\.git)?$/m);
     return match?.[1] ?? null;
@@ -58,7 +58,7 @@ export async function getKnownWorkspaces(getThreadsFn: GetThreadsFn): Promise<Kn
   // Extract unique workspaces from existing threads
   const { threads } = await getThreadsFn({ limit: 1000 });
   const workspaceMap = new Map<string, KnownWorkspace>();
-  
+
   for (const thread of threads) {
     // Get full workspace info from thread JSON
     const threadPath = join(THREADS_DIR, `${thread.id}.json`);
@@ -66,7 +66,7 @@ export async function getKnownWorkspaces(getThreadsFn: GetThreadsFn): Promise<Kn
       const content = await readFile(threadPath, 'utf-8');
       const data = JSON.parse(content) as ThreadData;
       const trees = data.env?.initial?.trees || [];
-      
+
       for (const tree of trees) {
         const uri = tree.uri || tree.path;
         const path = uri?.replace('file://', '');
@@ -84,7 +84,7 @@ export async function getKnownWorkspaces(getThreadsFn: GetThreadsFn): Promise<Kn
       // Skip if can't read thread
     }
   }
-  
+
   // Also scan ~/Development for git repos
   const devDir = join(homedir(), 'Development');
   try {
@@ -98,7 +98,7 @@ export async function getKnownWorkspaces(getThreadsFn: GetThreadsFn): Promise<Kn
             // Check if it's a git repo
             const gitPath = join(fullPath, '.git');
             const isGitRepo = await fileExists(gitPath);
-            
+
             if (!workspaceMap.has(fullPath)) {
               workspaceMap.set(fullPath, {
                 path: fullPath,
@@ -116,7 +116,7 @@ export async function getKnownWorkspaces(getThreadsFn: GetThreadsFn): Promise<Kn
   } catch (err) {
     console.error('Error scanning Development directory:', err);
   }
-  
+
   return [...workspaceMap.values()].sort((a, b) => {
     // Thread-sourced first, then alphabetical
     if (a.source !== b.source) {

@@ -35,7 +35,7 @@ interface DeleteArtifactBody {
 export async function handleArtifactRoutes(
   url: URL,
   req: IncomingMessage,
-  res: ServerResponse
+  res: ServerResponse,
 ): Promise<boolean> {
   const pathname = url.pathname;
 
@@ -44,7 +44,7 @@ export async function handleArtifactRoutes(
     if (!threadId) {
       return jsonResponse(res, { error: 'threadId required' }, 400);
     }
-    
+
     const artifacts = getArtifacts(threadId);
     return jsonResponse(res, artifacts);
   }
@@ -54,12 +54,14 @@ export async function handleArtifactRoutes(
     if (!id) {
       return jsonResponse(res, { error: 'id required' }, 400);
     }
-    
-    const artifact = getArtifact(parseInt(id, 10)) as (Artifact & { content?: string | null }) | undefined;
+
+    const artifact = getArtifact(parseInt(id, 10)) as
+      | (Artifact & { content?: string | null })
+      | undefined;
     if (!artifact) {
       return jsonResponse(res, { error: 'Artifact not found' }, 404);
     }
-    
+
     if (artifact.file_path && !artifact.content) {
       try {
         const data = await readFile(artifact.file_path);
@@ -72,35 +74,35 @@ export async function handleArtifactRoutes(
         // File might not exist
       }
     }
-    
+
     return jsonResponse(res, artifact);
   }
 
   if (pathname === '/api/artifacts' && req.method === 'POST') {
     const body = await parseBody<CreateArtifactBody>(req);
     const { threadId, type, title, content, mediaType } = body;
-    
+
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
     if (!threadId || !type || !title) {
       return jsonResponse(res, { error: 'threadId, type, and title required' }, 400);
     }
-    
+
     let filePath: string | null = null;
     let storedContent: string | null | undefined = content;
-    
+
     if (type === 'image' && content) {
       const threadDir = join(ARTIFACTS_DIR, threadId);
       await mkdir(threadDir, { recursive: true });
-      
+
       const ext = mediaType?.split('/')[1] || 'png';
       const filename = `${Date.now()}.${ext}`;
       filePath = join(threadDir, filename);
-      
+
       const buffer = Buffer.from(content, 'base64');
       await writeFile(filePath, buffer);
       storedContent = null;
     }
-    
+
     const artifact = createArtifact({
       threadId,
       type,
@@ -109,18 +111,18 @@ export async function handleArtifactRoutes(
       filePath,
       mediaType: mediaType ?? null,
     });
-    
+
     return jsonResponse(res, artifact, 201);
   }
 
   if (pathname === '/api/artifact' && req.method === 'PATCH') {
     const body = await parseBody<UpdateArtifactBody>(req);
     const { id, title, content } = body;
-    
+
     if (!id) {
       return jsonResponse(res, { error: 'id required' }, 400);
     }
-    
+
     const artifact = updateArtifact(parseInt(String(id), 10), { title, content });
     return jsonResponse(res, artifact);
   }
@@ -128,17 +130,17 @@ export async function handleArtifactRoutes(
   if (pathname === '/api/artifact' && req.method === 'DELETE') {
     const body = await parseBody<DeleteArtifactBody>(req);
     const { id } = body;
-    
+
     if (!id) {
       return jsonResponse(res, { error: 'id required' }, 400);
     }
-    
+
     const artifact = deleteArtifact(parseInt(String(id), 10));
-    
+
     if (artifact?.file_path) {
       await unlink(artifact.file_path).catch(() => {});
     }
-    
+
     return jsonResponse(res, { success: true });
   }
 

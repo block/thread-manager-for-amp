@@ -2,12 +2,7 @@ import Database, { Database as DatabaseType, Statement } from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { dirname, join } from 'path';
-import {
-  Artifact,
-  ArtifactType,
-  ThreadBlocker,
-  ThreadStatus,
-} from '../../shared/types.js';
+import { Artifact, ArtifactType, ThreadBlocker, ThreadStatus } from '../../shared/types.js';
 
 // Store database in user's home directory
 const DATA_DIR = join(homedir(), '.amp-thread-manager');
@@ -130,7 +125,11 @@ interface BlockedThreadRow {
 // Prepared statements
 interface Statements {
   getMetadata: Statement<[string], ThreadMetadataRow>;
-  upsertMetadata: Statement<{ thread_id: string; status: ThreadStatus | null; goal: string | null }>;
+  upsertMetadata: Statement<{
+    thread_id: string;
+    status: ThreadStatus | null;
+    goal: string | null;
+  }>;
   updateStatus: Statement<{ thread_id: string; status: ThreadStatus }>;
   updateGoal: Statement<{ thread_id: string; goal: string }>;
   updateLinkedIssue: Statement<{ thread_id: string; linked_issue_url: string | null }>;
@@ -159,7 +158,7 @@ function prepareStatements(instance: DatabaseType): Statements {
     getMetadata: instance.prepare(`
       SELECT * FROM thread_metadata WHERE thread_id = ?
     `),
-    
+
     upsertMetadata: instance.prepare(`
       INSERT INTO thread_metadata (thread_id, status, goal, updated_at)
       VALUES (@thread_id, @status, @goal, unixepoch())
@@ -168,7 +167,7 @@ function prepareStatements(instance: DatabaseType): Statements {
         goal = COALESCE(@goal, goal),
         updated_at = unixepoch()
     `),
-    
+
     updateStatus: instance.prepare(`
       INSERT INTO thread_metadata (thread_id, status, updated_at)
       VALUES (@thread_id, @status, unixepoch())
@@ -176,7 +175,7 @@ function prepareStatements(instance: DatabaseType): Statements {
         status = @status,
         updated_at = unixepoch()
     `),
-    
+
     updateGoal: instance.prepare(`
       INSERT INTO thread_metadata (thread_id, goal, updated_at)
       VALUES (@thread_id, @goal, unixepoch())
@@ -184,7 +183,7 @@ function prepareStatements(instance: DatabaseType): Statements {
         goal = @goal,
         updated_at = unixepoch()
     `),
-    
+
     updateLinkedIssue: instance.prepare(`
       INSERT INTO thread_metadata (thread_id, linked_issue_url, updated_at)
       VALUES (@thread_id, @linked_issue_url, unixepoch())
@@ -192,53 +191,53 @@ function prepareStatements(instance: DatabaseType): Statements {
         linked_issue_url = @linked_issue_url,
         updated_at = unixepoch()
     `),
-    
+
     getAllMetadata: instance.prepare(`
       SELECT * FROM thread_metadata
     `),
-    
+
     getBlockers: instance.prepare(`
       SELECT tb.*, tm.status as blocker_status, tm.goal as blocker_goal
       FROM thread_blocks tb
       LEFT JOIN thread_metadata tm ON tb.blocked_by_thread_id = tm.thread_id
       WHERE tb.thread_id = ?
     `),
-    
+
     getBlocking: instance.prepare(`
       SELECT tb.*, tm.status as blocked_status, tm.goal as blocked_goal
       FROM thread_blocks tb
       LEFT JOIN thread_metadata tm ON tb.thread_id = tm.thread_id
       WHERE tb.blocked_by_thread_id = ?
     `),
-    
+
     addBlock: instance.prepare(`
       INSERT OR IGNORE INTO thread_blocks (thread_id, blocked_by_thread_id, reason)
       VALUES (@thread_id, @blocked_by_thread_id, @reason)
     `),
-    
+
     removeBlock: instance.prepare(`
       DELETE FROM thread_blocks 
       WHERE thread_id = @thread_id AND blocked_by_thread_id = @blocked_by_thread_id
     `),
-    
+
     getBlockedThreads: instance.prepare(`
       SELECT DISTINCT thread_id FROM thread_blocks
     `),
-    
+
     // Artifact statements
     getArtifacts: instance.prepare(`
       SELECT * FROM artifacts WHERE thread_id = ? ORDER BY created_at DESC
     `),
-    
+
     getArtifact: instance.prepare(`
       SELECT * FROM artifacts WHERE id = ?
     `),
-    
+
     createArtifact: instance.prepare(`
       INSERT INTO artifacts (thread_id, type, title, content, file_path, media_type)
       VALUES (@thread_id, @type, @title, @content, @file_path, @media_type)
     `),
-    
+
     updateArtifact: instance.prepare(`
       UPDATE artifacts SET
         title = COALESCE(@title, title),
@@ -246,7 +245,7 @@ function prepareStatements(instance: DatabaseType): Statements {
         updated_at = unixepoch()
       WHERE id = @id
     `),
-    
+
     deleteArtifact: instance.prepare(`
       DELETE FROM artifacts WHERE id = ?
     `),
@@ -273,16 +272,16 @@ export function getThreadMetadata(threadId: string): ThreadMetadataWithBlockers 
   const stmts = getStatements();
   const metadata = stmts.getMetadata.get(threadId);
   if (!metadata) {
-    return { 
-      thread_id: threadId, 
-      status: 'active', 
+    return {
+      thread_id: threadId,
+      status: 'active',
       goal: null,
       linked_issue_url: null,
       created_at: 0,
       updated_at: 0,
     };
   }
-  
+
   // Get blockers
   const blockers = stmts.getBlockers.all(threadId);
   const result: ThreadMetadataWithBlockers = {
@@ -293,17 +292,15 @@ export function getThreadMetadata(threadId: string): ThreadMetadataWithBlockers 
       blocker_status: b.blocker_status,
     })),
   };
-  
+
   return result;
 }
 
 export function getAllThreadMetadata(): Record<string, ThreadMetadataWithBlockers> {
   const stmts = getStatements();
   const all = stmts.getAllMetadata.all();
-  const blockedSet = new Set(
-    stmts.getBlockedThreads.all().map((r) => r.thread_id)
-  );
-  
+  const blockedSet = new Set(stmts.getBlockedThreads.all().map((r) => r.thread_id));
+
   // Create a map for quick lookup
   const metadataMap: Record<string, ThreadMetadataWithBlockers> = {};
   for (const m of all) {
@@ -318,17 +315,17 @@ export function getAllThreadMetadata(): Record<string, ThreadMetadataWithBlocker
       isBlocked: blockedSet.has(m.thread_id),
     };
   }
-  
+
   return metadataMap;
 }
 
 export function updateThreadStatus(
   threadId: string,
-  status: ThreadStatus
+  status: ThreadStatus,
 ): ThreadMetadataWithBlockers {
   const stmts = getStatements();
   stmts.updateStatus.run({ thread_id: threadId, status });
-  
+
   // If marking as done, auto-unblock threads blocked by this one
   if (status === 'done') {
     const blocking = stmts.getBlocking.all(threadId);
@@ -339,14 +336,14 @@ export function updateThreadStatus(
       });
     }
   }
-  
+
   return getThreadMetadata(threadId);
 }
 
 export function addThreadBlock(
   threadId: string,
   blockedByThreadId: string,
-  reason: string | null = null
+  reason: string | null = null,
 ): ThreadMetadataWithBlockers {
   const stmts = getStatements();
   stmts.addBlock.run({
@@ -354,26 +351,26 @@ export function addThreadBlock(
     blocked_by_thread_id: blockedByThreadId,
     reason,
   });
-  
+
   // Auto-set status to blocked if not already
   const metadata = stmts.getMetadata.get(threadId);
   if (!metadata || metadata.status !== 'blocked') {
     stmts.updateStatus.run({ thread_id: threadId, status: 'blocked' });
   }
-  
+
   return getThreadMetadata(threadId);
 }
 
 export function removeThreadBlock(
   threadId: string,
-  blockedByThreadId: string
+  blockedByThreadId: string,
 ): ThreadMetadataWithBlockers {
   const stmts = getStatements();
   stmts.removeBlock.run({
     thread_id: threadId,
     blocked_by_thread_id: blockedByThreadId,
   });
-  
+
   // Check if still blocked by other threads
   const remainingBlockers = stmts.getBlockers.all(threadId);
   if (remainingBlockers.length === 0) {
@@ -382,7 +379,7 @@ export function removeThreadBlock(
       stmts.updateStatus.run({ thread_id: threadId, status: 'active' });
     }
   }
-  
+
   return getThreadMetadata(threadId);
 }
 
@@ -392,7 +389,7 @@ export function getThreadsBlockedBy(threadId: string): ThreadBlockRow[] {
 
 export function updateLinkedIssue(
   threadId: string,
-  url: string | null
+  url: string | null,
 ): ThreadMetadataWithBlockers {
   getStatements().updateLinkedIssue.run({
     thread_id: threadId,
@@ -449,7 +446,7 @@ interface UpdateArtifactParams {
 
 export function updateArtifact(
   id: number,
-  { title, content }: UpdateArtifactParams
+  { title, content }: UpdateArtifactParams,
 ): Artifact | undefined {
   getStatements().updateArtifact.run({ id, title: title ?? null, content: content ?? null });
   return getArtifact(id);
@@ -471,7 +468,9 @@ interface DeleteStatements {
 function prepareDeleteStatements(instance: DatabaseType): DeleteStatements {
   return {
     metadata: instance.prepare(`DELETE FROM thread_metadata WHERE thread_id = ?`),
-    blocks: instance.prepare(`DELETE FROM thread_blocks WHERE thread_id = ? OR blocked_by_thread_id = ?`),
+    blocks: instance.prepare(
+      `DELETE FROM thread_blocks WHERE thread_id = ? OR blocked_by_thread_id = ?`,
+    ),
     artifacts: instance.prepare(`DELETE FROM artifacts WHERE thread_id = ?`),
   };
 }
@@ -492,13 +491,13 @@ interface DeleteThreadDataResult {
 export function deleteThreadData(threadId: string): DeleteThreadDataResult {
   // Get artifacts to return file paths for cleanup
   const artifacts = getArtifacts(threadId);
-  
+
   // Delete all related records
   const delStmts = getDeleteStmts();
   delStmts.artifacts.run(threadId);
   delStmts.blocks.run(threadId, threadId);
   delStmts.metadata.run(threadId);
-  
+
   return { artifacts };
 }
 

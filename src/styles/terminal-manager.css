@@ -22,8 +22,12 @@
 }
 
 @keyframes slideUpManager {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 /* Resize handle */
@@ -124,7 +128,9 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
-  transition: background-color 0.2s, box-shadow 0.2s;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .terminal-tab-status.status-idle {
@@ -144,8 +150,13 @@
 }
 
 @keyframes status-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .terminal-tab-title {
@@ -170,8 +181,13 @@
 }
 
 @keyframes unread-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .terminal-tab.has-unread {
@@ -312,7 +328,7 @@
   border-right: none;
 }
 
-.terminal-panes.layout-grid .terminal-pane:nth-child(n+3) {
+.terminal-panes.layout-grid .terminal-pane:nth-child(n + 3) {
   border-bottom: none;
 }
 

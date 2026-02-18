@@ -45,13 +45,13 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           manualChunks: {
-            'markdown': ['react-markdown', 'remark-gfm'],
-            'vendor': ['react', 'react-dom'],
-            'icons': ['lucide-react'],
-            'terminal': ['@xterm/xterm', '@xterm/addon-fit'],
-          }
-        }
-      }
-    }
+            markdown: ['react-markdown', 'remark-gfm'],
+            vendor: ['react', 'react-dom'],
+            icons: ['lucide-react'],
+            terminal: ['@xterm/xterm', '@xterm/addon-fit'],
+          },
+        },
+      },
+    },
   };
 });

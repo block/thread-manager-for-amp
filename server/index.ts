@@ -38,7 +38,9 @@ async function findAvailablePort(startPort: number, maxAttempts = 10): Promise<n
     const port = startPort + i;
     if (await isPortAvailable(port)) return port;
   }
-  throw new Error(`No available port found between ${startPort} and ${startPort + maxAttempts - 1}`);
+  throw new Error(
+    `No available port found between ${startPort} and ${startPort + maxAttempts - 1}`,
+  );
 }
 
 function cleanupPortFile(): void {
@@ -92,8 +94,14 @@ setupShellWebSocket(server);
 
 // Clean up port file on exit
 process.on('exit', cleanupPortFile);
-process.on('SIGINT', () => { cleanupPortFile(); process.exit(0); });
-process.on('SIGTERM', () => { cleanupPortFile(); process.exit(0); });
+process.on('SIGINT', () => {
+  cleanupPortFile();
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  cleanupPortFile();
+  process.exit(0);
+});
 
 async function start(): Promise<void> {
   const port = await findAvailablePort(PORT);

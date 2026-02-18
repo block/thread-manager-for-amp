@@ -53,13 +53,13 @@ function getMessageTypeLabel(type: Message['type']): string {
 
 function highlightMatch(text: string, query: string): React.ReactNode {
   if (!query) return text;
-  
+
   const lowerText = text.toLowerCase();
   const lowerQuery = query.toLowerCase();
   const index = lowerText.indexOf(lowerQuery);
-  
+
   if (index === -1) return text;
-  
+
   return (
     <>
       {text.slice(0, index)}
@@ -69,11 +69,11 @@ function highlightMatch(text: string, query: string): React.ReactNode {
   );
 }
 
-export function MessageSearchModal({ 
-  isOpen, 
-  onClose, 
-  messages, 
-  onJumpToMessage 
+export function MessageSearchModal({
+  isOpen,
+  onClose,
+  messages,
+  onJumpToMessage,
 }: MessageSearchModalProps) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -82,21 +82,21 @@ export function MessageSearchModal({
 
   const results = useMemo<SearchResult[]>(() => {
     if (!query.trim()) return [];
-    
+
     const lowerQuery = query.toLowerCase();
     const matches: SearchResult[] = [];
-    
+
     messages.forEach((message, index) => {
       const lowerContent = message.content.toLowerCase();
       const matchIndex = lowerContent.indexOf(lowerQuery);
-      
+
       if (matchIndex !== -1) {
         const start = Math.max(0, matchIndex - 30);
         const end = Math.min(message.content.length, matchIndex + query.length + 50);
         let preview = message.content.slice(start, end).replace(/\n/g, ' ');
         if (start > 0) preview = '...' + preview;
         if (end < message.content.length) preview = preview + '...';
-        
+
         matches.push({
           message,
           matchIndex,
@@ -105,7 +105,7 @@ export function MessageSearchModal({
         });
       }
     });
-    
+
     return matches;
   }, [query, messages]);
 
@@ -125,30 +125,36 @@ export function MessageSearchModal({
     }
   }, [clampedSelectedIndex, results.length]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex(prev => Math.min(prev + 1, results.length - 1));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex(prev => Math.max(prev - 1, 0));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (results[clampedSelectedIndex]) {
-          onJumpToMessage(results[clampedSelectedIndex].message.id);
-          onClose();
-        }
-        break;
-    }
-  }, [results, clampedSelectedIndex, onJumpToMessage, onClose]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.min(prev + 1, results.length - 1));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex((prev) => Math.max(prev - 1, 0));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (results[clampedSelectedIndex]) {
+            onJumpToMessage(results[clampedSelectedIndex].message.id);
+            onClose();
+          }
+          break;
+      }
+    },
+    [results, clampedSelectedIndex, onJumpToMessage, onClose],
+  );
 
-  const handleResultClick = useCallback((result: SearchResult) => {
-    onJumpToMessage(result.message.id);
-    onClose();
-  }, [onJumpToMessage, onClose]);
+  const handleResultClick = useCallback(
+    (result: SearchResult) => {
+      onJumpToMessage(result.message.id);
+      onClose();
+    },
+    [onJumpToMessage, onClose],
+  );
 
   return (
     <BaseModal
@@ -169,7 +175,7 @@ export function MessageSearchModal({
               className="message-search-input"
               placeholder="Search messages..."
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={(e) => setQuery(e.target.value)}
               aria-label="Search messages"
             />
           </div>
@@ -177,8 +183,13 @@ export function MessageSearchModal({
             <X size={18} />
           </button>
         </div>
-        
-        <div className="message-search-results" ref={resultsRef} role="listbox" aria-label="Search results">
+
+        <div
+          className="message-search-results"
+          ref={resultsRef}
+          role="listbox"
+          aria-label="Search results"
+        >
           {query && results.length === 0 && (
             <div className="message-search-empty">No results found</div>
           )}
@@ -204,13 +215,15 @@ export function MessageSearchModal({
             </div>
           ))}
         </div>
-        
+
         {results.length > 0 && (
           <div className="message-search-footer">
             <span className="message-search-hint">
               <kbd>↑↓</kbd> Navigate <kbd>Enter</kbd> Jump <kbd>Esc</kbd> Close
             </span>
-            <span className="message-search-count">{results.length} result{results.length !== 1 ? 's' : ''}</span>
+            <span className="message-search-count">
+              {results.length} result{results.length !== 1 ? 's' : ''}
+            </span>
           </div>
         )}
       </div>

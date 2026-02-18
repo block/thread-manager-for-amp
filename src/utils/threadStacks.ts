@@ -16,7 +16,7 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
   // A parent can have multiple children (fan-out handoffs)
   const parentToChildren = new Map<string, string[]>();
   const childToParent = new Map<string, string>();
-  
+
   for (const t of threads) {
     if (t.handoffParentId && threadMap.has(t.handoffParentId)) {
       childToParent.set(t.id, t.handoffParentId);
@@ -101,7 +101,10 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
   return entries;
 }
 
-export function flattenEntries(entries: ThreadListEntry[], expandedStackIds: Set<string>): Thread[] {
+export function flattenEntries(
+  entries: ThreadListEntry[],
+  expandedStackIds: Set<string>,
+): Thread[] {
   const result: Thread[] = [];
   for (const entry of entries) {
     result.push(entry.thread);

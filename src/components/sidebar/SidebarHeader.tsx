@@ -21,7 +21,7 @@ export function SidebarHeader({
               </span>
             </span>
           )}
-          <button 
+          <button
             className="sidebar-expand-all-btn"
             onClick={onToggleAllWorkspaces}
             title={allExpanded ? 'Collapse all' : 'Expand all'}
@@ -31,7 +31,7 @@ export function SidebarHeader({
           <div className="sidebar-header-spacer" />
         </>
       )}
-      <button 
+      <button
         className="sidebar-collapse-btn"
         onClick={onToggleCollapse}
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}

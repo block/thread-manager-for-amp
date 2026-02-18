@@ -8,11 +8,11 @@ export function useErrorToast() {
 
   const showError = useCallback((message: string) => {
     const id = `error-${++nextId}`;
-    setErrors(prev => [...prev, { id, message }]);
+    setErrors((prev) => [...prev, { id, message }]);
   }, []);
 
   const dismissError = useCallback((id: string) => {
-    setErrors(prev => prev.filter(e => e.id !== id));
+    setErrors((prev) => prev.filter((e) => e.id !== id));
   }, []);
 
   return { errors, showError, dismissError };

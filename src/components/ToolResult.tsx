@@ -16,8 +16,10 @@ function looksLikeMarkdown(content: string): boolean {
 
 function looksLikeJson(content: string): boolean {
   const trimmed = content.trim();
-  return (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-         (trimmed.startsWith('[') && trimmed.endsWith(']'));
+  return (
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']'))
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- explicit for readability
@@ -85,7 +87,9 @@ function renderDiff(diffContent: string): React.ReactNode {
           return (
             <div key={i} className={`diff-line ${lineClass}`}>
               <span className="diff-line-marker">{marker}</span>
-              <span className="diff-line-content">{line.slice(lineClass === 'added' || lineClass === 'removed' ? 1 : 0) || ' '}</span>
+              <span className="diff-line-content">
+                {line.slice(lineClass === 'added' || lineClass === 'removed' ? 1 : 0) || ' '}
+              </span>
             </div>
           );
         })}
@@ -97,44 +101,106 @@ function renderDiff(diffContent: string): React.ReactNode {
 function highlightJson(json: unknown, keyGen: () => string, indent = 0): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   const spaces = '  '.repeat(indent);
-  
+
   if (json === null) {
-    nodes.push(<span key={keyGen()} className="json-null">null</span>);
+    nodes.push(
+      <span key={keyGen()} className="json-null">
+        null
+      </span>,
+    );
   } else if (typeof json === 'boolean') {
-    nodes.push(<span key={keyGen()} className="json-boolean">{json.toString()}</span>);
+    nodes.push(
+      <span key={keyGen()} className="json-boolean">
+        {json.toString()}
+      </span>,
+    );
   } else if (typeof json === 'number') {
-    nodes.push(<span key={keyGen()} className="json-number">{json}</span>);
+    nodes.push(
+      <span key={keyGen()} className="json-number">
+        {json}
+      </span>,
+    );
   } else if (typeof json === 'string') {
     const escaped = json.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    nodes.push(<span key={keyGen()} className="json-string">"{escaped}"</span>);
+    nodes.push(
+      <span key={keyGen()} className="json-string">
+        "{escaped}"
+      </span>,
+    );
   } else if (Array.isArray(json)) {
     if (json.length === 0) {
-      nodes.push(<span key={keyGen()} className="json-bracket">[]</span>);
+      nodes.push(
+        <span key={keyGen()} className="json-bracket">
+          []
+        </span>,
+      );
     } else {
-      nodes.push(<span key={keyGen()} className="json-bracket">[</span>, '\n');
+      nodes.push(
+        <span key={keyGen()} className="json-bracket">
+          [
+        </span>,
+        '\n',
+      );
       json.forEach((item, i) => {
         nodes.push(spaces + '  ');
         nodes.push(...highlightJson(item, keyGen, indent + 1));
-        if (i < json.length - 1) nodes.push(<span key={keyGen()} className="json-punctuation">,</span>);
+        if (i < json.length - 1)
+          nodes.push(
+            <span key={keyGen()} className="json-punctuation">
+              ,
+            </span>,
+          );
         nodes.push('\n');
       });
-      nodes.push(spaces, <span key={keyGen()} className="json-bracket">]</span>);
+      nodes.push(
+        spaces,
+        <span key={keyGen()} className="json-bracket">
+          ]
+        </span>,
+      );
     }
   } else if (typeof json === 'object') {
     const entries = Object.entries(json as Record<string, unknown>);
     if (entries.length === 0) {
-      nodes.push(<span key={keyGen()} className="json-bracket">{'{}'}</span>);
+      nodes.push(
+        <span key={keyGen()} className="json-bracket">
+          {'{}'}
+        </span>,
+      );
     } else {
-      nodes.push(<span key={keyGen()} className="json-bracket">{'{'}</span>, '\n');
+      nodes.push(
+        <span key={keyGen()} className="json-bracket">
+          {'{'}
+        </span>,
+        '\n',
+      );
       entries.forEach(([key, value], i) => {
         nodes.push(spaces + '  ');
-        nodes.push(<span key={keyGen()} className="json-key">"{key}"</span>);
-        nodes.push(<span key={keyGen()} className="json-punctuation">: </span>);
+        nodes.push(
+          <span key={keyGen()} className="json-key">
+            "{key}"
+          </span>,
+        );
+        nodes.push(
+          <span key={keyGen()} className="json-punctuation">
+            :{' '}
+          </span>,
+        );
         nodes.push(...highlightJson(value, keyGen, indent + 1));
-        if (i < entries.length - 1) nodes.push(<span key={keyGen()} className="json-punctuation">,</span>);
+        if (i < entries.length - 1)
+          nodes.push(
+            <span key={keyGen()} className="json-punctuation">
+              ,
+            </span>,
+          );
         nodes.push('\n');
       });
-      nodes.push(spaces, <span key={keyGen()} className="json-bracket">{'}'}</span>);
+      nodes.push(
+        spaces,
+        <span key={keyGen()} className="json-bracket">
+          {'}'}
+        </span>,
+      );
     }
   }
   return nodes;
@@ -143,14 +209,14 @@ function highlightJson(json: unknown, keyGen: () => string, indent = 0): React.R
 export function ToolResult({ content, success, onRef }: ToolResultProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const instanceId = useId();
-  
+
   const extractedContent = useMemo(() => extractNestedResult(content), [content]);
-  
+
   const isDiffOrJson = looksLikeJson(extractedContent);
   const needsExpansion = extractedContent.length > PREVIEW_CHARS || isDiffOrJson;
-  
-  const displayContent = isExpanded 
-    ? extractedContent 
+
+  const displayContent = isExpanded
+    ? extractedContent
     : extractedContent.slice(0, PREVIEW_CHARS) + (needsExpansion ? '...' : '');
 
   const contentType = useMemo(() => {
@@ -185,7 +251,7 @@ export function ToolResult({ content, success, onRef }: ToolResultProps) {
   }
 
   return (
-    <div 
+    <div
       ref={onRef}
       className={`tool-result ${success ? 'success' : 'error'} ${isExpanded ? 'expanded' : 'collapsed'} ${contentType.type === 'markdown' ? 'markdown' : ''}`}
     >
@@ -199,10 +265,7 @@ export function ToolResult({ content, success, onRef }: ToolResultProps) {
         )}
       </div>
       {needsExpansion && (
-        <button 
-          className="tool-result-toggle"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
+        <button className="tool-result-toggle" onClick={() => setIsExpanded(!isExpanded)}>
           {isExpanded ? (
             <>
               <ChevronDown size={14} />

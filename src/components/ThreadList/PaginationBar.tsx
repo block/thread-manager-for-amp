@@ -25,17 +25,34 @@ export function PaginationBar({
     <div className="pagination-bar">
       <span className="pagination-info">
         {viewMode === 'table' ? (
-          <>Showing <strong>{startIdx + 1}–{Math.min(endIdx, totalCount)}</strong> of <strong>{totalCount}</strong> threads</>
+          <>
+            Showing{' '}
+            <strong>
+              {startIdx + 1}–{Math.min(endIdx, totalCount)}
+            </strong>{' '}
+            of <strong>{totalCount}</strong> threads
+          </>
         ) : (
-          <><strong>{totalCount}</strong> threads</>
+          <>
+            <strong>{totalCount}</strong> threads
+          </>
         )}
       </span>
-      
+
       <div className="footer-hints">
-        <span className="hint"><kbd>j</kbd><kbd>k</kbd> navigate</span>
-        <span className="hint"><kbd>⌘O</kbd> commands</span>
-        <span className="hint"><kbd>⌘N</kbd> new</span>
-        <span className="hint"><kbd>⌘R</kbd> refresh</span>
+        <span className="hint">
+          <kbd>j</kbd>
+          <kbd>k</kbd> navigate
+        </span>
+        <span className="hint">
+          <kbd>⌘O</kbd> commands
+        </span>
+        <span className="hint">
+          <kbd>⌘N</kbd> new
+        </span>
+        <span className="hint">
+          <kbd>⌘R</kbd> refresh
+        </span>
       </div>
 
       {viewMode === 'table' && totalPages > 1 && (

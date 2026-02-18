@@ -13,7 +13,14 @@ import type {
 } from '../../shared/types.js';
 
 const CACHE_DIR = join(AMP_HOME, '.local', 'share', 'amp-thread-manager', 'cache', 'thread-git');
-const PR_INDEX_PATH = join(AMP_HOME, '.local', 'share', 'amp-thread-manager', 'cache', 'pr-index.json');
+const PR_INDEX_PATH = join(
+  AMP_HOME,
+  '.local',
+  'share',
+  'amp-thread-manager',
+  'cache',
+  'pr-index.json',
+);
 
 interface TimeWindow {
   startMs: number;
@@ -255,7 +262,7 @@ function parseGitLog(output: string): RawCommit[] {
     const authorName = parts[2] ?? '';
     const authorEmail = parts[3] ?? '';
     const subject = parts[4] ?? '';
-    const files = lines.slice(1).filter(f => f.trim());
+    const files = lines.slice(1).filter((f) => f.trim());
 
     commits.push({
       sha,
@@ -272,7 +279,11 @@ function parseGitLog(output: string): RawCommit[] {
   return commits;
 }
 
-async function getCommitsInWindow(workspacePath: string, startISO: string, endISO: string): Promise<RawCommit[]> {
+async function getCommitsInWindow(
+  workspacePath: string,
+  startISO: string,
+  endISO: string,
+): Promise<RawCommit[]> {
   try {
     const output = await runGit(
       [
@@ -283,7 +294,7 @@ async function getCommitsInWindow(workspacePath: string, startISO: string, endIS
         '--name-only',
         '--pretty=format:---%n%H%x09%ad%x09%an%x09%ae%x09%s',
       ],
-      workspacePath
+      workspacePath,
     );
 
     return parseGitLog(output);
@@ -294,8 +305,8 @@ async function getCommitsInWindow(workspacePath: string, startISO: string, endIS
 }
 
 function scoreCommits(commits: RawCommit[], touchedRelSet: Set<string>): GitCommit[] {
-  return commits.map(commit => {
-    const matchedFiles = commit.files.filter(f => touchedRelSet.has(f));
+  return commits.map((commit) => {
+    const matchedFiles = commit.files.filter((f) => touchedRelSet.has(f));
     const confidence: 'high' | 'low' = matchedFiles.length > 0 ? 'high' : 'low';
 
     return {
@@ -307,10 +318,13 @@ function scoreCommits(commits: RawCommit[], touchedRelSet: Set<string>): GitComm
   });
 }
 
-async function getBranchesForCommits(workspacePath: string, commits: GitCommit[]): Promise<GitBranch[]> {
+async function getBranchesForCommits(
+  workspacePath: string,
+  commits: GitCommit[],
+): Promise<GitBranch[]> {
   const branchHits = new Map<string, number>();
 
-  const topCommits = commits.filter(c => c.confidence === 'high').slice(0, 10);
+  const topCommits = commits.filter((c) => c.confidence === 'high').slice(0, 10);
 
   for (const commit of topCommits) {
     try {
@@ -337,7 +351,8 @@ async function getBranchesForCommits(workspacePath: string, commits: GitCommit[]
   const branches: GitBranch[] = [...branchHits.entries()]
     .map(([name, hitCount]) => ({
       name,
-      type: name.startsWith('origin/') || name.includes('/') ? 'remote' as const : 'local' as const,
+      type:
+        name.startsWith('origin/') || name.includes('/') ? ('remote' as const) : ('local' as const),
       hitCount,
     }))
     .sort((a, b) => b.hitCount - a.hitCount)
@@ -380,12 +395,18 @@ interface GhPrApiResult {
   base?: { ref: string };
 }
 
-async function getPRsForBranches(workspacePath: string, repo: string | null, branches: GitBranch[]): Promise<LinkedPR[]> {
+async function getPRsForBranches(
+  workspacePath: string,
+  repo: string | null,
+  branches: GitBranch[],
+): Promise<LinkedPR[]> {
   if (!repo) return [];
 
   const prs = new Map<number, LinkedPR>();
 
-  const remoteBranches = branches.filter(b => b.type === 'remote').map(b => b.name.replace(/^origin\//, ''));
+  const remoteBranches = branches
+    .filter((b) => b.type === 'remote')
+    .map((b) => b.name.replace(/^origin\//, ''));
 
   for (const branch of remoteBranches.slice(0, 5)) {
     try {
@@ -402,7 +423,7 @@ async function getPRsForBranches(workspacePath: string, repo: string | null, bra
           '--json',
           'number,title,url,state,createdAt,mergedAt,headRefName,baseRefName',
         ],
-        workspacePath
+        workspacePath,
       );
 
       const prList = JSON.parse(output || '[]') as GhPrListResult[];
@@ -423,17 +444,26 @@ async function getPRsForBranches(workspacePath: string, repo: string | null, bra
   return [...prs.values()];
 }
 
-async function getPRsForCommits(workspacePath: string, repo: string | null, commits: GitCommit[]): Promise<LinkedPR[]> {
+async function getPRsForCommits(
+  workspacePath: string,
+  repo: string | null,
+  commits: GitCommit[],
+): Promise<LinkedPR[]> {
   if (!repo) return [];
 
   const prs = new Map<number, LinkedPR>();
-  const topCommits = commits.filter(c => c.confidence === 'high').slice(0, 5);
+  const topCommits = commits.filter((c) => c.confidence === 'high').slice(0, 5);
 
   for (const commit of topCommits) {
     try {
       const output = await runGh(
-        ['api', '-H', 'Accept: application/vnd.github+json', `repos/${repo}/commits/${commit.sha}/pulls`],
-        workspacePath
+        [
+          'api',
+          '-H',
+          'Accept: application/vnd.github+json',
+          `repos/${repo}/commits/${commit.sha}/pulls`,
+        ],
+        workspacePath,
       );
 
       const prList = JSON.parse(output || '[]') as GhPrApiResult[];
@@ -525,7 +555,7 @@ async function updatePrIndex(threadId: string, prs: LinkedPR[]): Promise<void> {
   for (const key of Object.keys(index)) {
     const entries = index[key];
     if (!entries) continue;
-    const filtered = entries.filter(id => id !== threadId);
+    const filtered = entries.filter((id) => id !== threadId);
     index[key] = filtered;
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- TODO: refactor to use Map
     if (filtered.length === 0) delete index[key];
@@ -543,7 +573,10 @@ async function updatePrIndex(threadId: string, prs: LinkedPR[]): Promise<void> {
   await savePrIndex(index);
 }
 
-export async function getThreadGitActivity(threadId: string, forceRefresh = false): Promise<ThreadGitActivity> {
+export async function getThreadGitActivity(
+  threadId: string,
+  forceRefresh = false,
+): Promise<ThreadGitActivity> {
   const threadPath = join(THREADS_DIR, `${threadId}.json`);
 
   try {
@@ -593,10 +626,13 @@ export async function getThreadGitActivity(threadId: string, forceRefresh = fals
       }
 
       const cache = await loadCache(threadId);
-      const cachedWorkspace = cache?.workspaces.find(w => w.workspacePath === workspacePath);
+      const cachedWorkspace = cache?.workspaces.find((w) => w.workspacePath === workspacePath);
 
       const cacheValid =
-        cachedWorkspace && cache?.threadMtimeMs === threadStat.mtimeMs && cachedWorkspace.gitHeadSha === headSha && !forceRefresh;
+        cachedWorkspace &&
+        cache?.threadMtimeMs === threadStat.mtimeMs &&
+        cachedWorkspace.gitHeadSha === headSha &&
+        !forceRefresh;
 
       if (cacheValid) {
         workspaces.push(cachedWorkspace);
@@ -611,11 +647,15 @@ export async function getThreadGitActivity(threadId: string, forceRefresh = fals
       const touchedRelSet = new Set(touchedRel);
 
       const remotes = tree.remotes || tree.repository?.remotes || [];
-      const originRemote = remotes.find(r => r.name === 'origin') || remotes[0];
+      const originRemote = remotes.find((r) => r.name === 'origin') || remotes[0];
       const repoUrl = originRemote?.url || tree.repository?.url;
       const repo = parseGitHubRepo(repoUrl);
 
-      const rawCommits = await getCommitsInWindow(workspacePath, timeWindow.startISO, timeWindow.endISO);
+      const rawCommits = await getCommitsInWindow(
+        workspacePath,
+        timeWindow.startISO,
+        timeWindow.endISO,
+      );
       const commits = scoreCommits(rawCommits, touchedRelSet);
 
       commits.sort((a, b) => {
@@ -631,7 +671,7 @@ export async function getThreadGitActivity(threadId: string, forceRefresh = fals
 
       let prs = await getPRsForBranches(workspacePath, repo, branches);
 
-      if (prs.length === 0 && commits.some(c => c.confidence === 'high')) {
+      if (prs.length === 0 && commits.some((c) => c.confidence === 'high')) {
         prs = await getPRsForCommits(workspacePath, repo, commits);
       }
 
@@ -664,7 +704,7 @@ export async function getThreadGitActivity(threadId: string, forceRefresh = fals
 
     await saveCache(threadId, result);
 
-    const allPrs = workspaces.flatMap(w => w.prs);
+    const allPrs = workspaces.flatMap((w) => w.prs);
     await updatePrIndex(threadId, allPrs);
 
     return result;

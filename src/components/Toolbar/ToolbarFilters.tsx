@@ -36,7 +36,9 @@ export const ToolbarFilters = memo(function ToolbarFilters({
     };
   }, [threads]);
 
-  const activeFilterCount = [selectedRepo, selectedWorkspace, selectedLabel, selectedStatus].filter(Boolean).length;
+  const activeFilterCount = [selectedRepo, selectedWorkspace, selectedLabel, selectedStatus].filter(
+    Boolean,
+  ).length;
 
   const clearFilters = () => {
     onRepoChange(null);
@@ -48,7 +50,7 @@ export const ToolbarFilters = memo(function ToolbarFilters({
   return (
     <div className={styles.viewsLeft}>
       <SearchableSelect
-        options={repos.map(r => ({ value: r, label: r }))}
+        options={repos.map((r) => ({ value: r, label: r }))}
         value={selectedRepo}
         onChange={onRepoChange}
         allLabel="All repos"
@@ -60,7 +62,7 @@ export const ToolbarFilters = memo(function ToolbarFilters({
       <SearchableSelect
         options={[
           ...(hasNoWorkspace ? [{ value: '__NO_WORKSPACE__', label: 'No workspace' }] : []),
-          ...workspaces.map(ws => ({ value: ws, label: ws })),
+          ...workspaces.map((ws) => ({ value: ws, label: ws })),
         ]}
         value={selectedWorkspace}
         onChange={onWorkspaceChange}
@@ -71,7 +73,7 @@ export const ToolbarFilters = memo(function ToolbarFilters({
       />
 
       <SearchableSelect
-        options={labels.map(l => ({ value: l, label: l }))}
+        options={labels.map((l) => ({ value: l, label: l }))}
         value={selectedLabel}
         onChange={onLabelChange}
         allLabel="All labels"
@@ -81,7 +83,7 @@ export const ToolbarFilters = memo(function ToolbarFilters({
       />
 
       <SearchableSelect
-        options={STATUS_OPTIONS.map(s => ({ value: s.value, label: s.label }))}
+        options={STATUS_OPTIONS.map((s) => ({ value: s.value, label: s.label }))}
         value={selectedStatus}
         onChange={(v) => onStatusChange(v as ThreadStatus | null)}
         allLabel="All statuses"

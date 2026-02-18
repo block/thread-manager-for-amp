@@ -2,7 +2,9 @@ import { lazy, Suspense } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const MermaidDiagram = lazy(() => import('./MermaidDiagram').then(m => ({ default: m.MermaidDiagram })));
+const MermaidDiagram = lazy(() =>
+  import('./MermaidDiagram').then((m) => ({ default: m.MermaidDiagram })),
+);
 
 interface MarkdownContentProps {
   content: string;
@@ -25,8 +27,10 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
           }
           if (className === 'language-mermaid') {
             const code = Array.isArray(children)
-              ? children.filter(c => typeof c === 'string').join('')
-              : typeof children === 'string' ? children : '';
+              ? children.filter((c) => typeof c === 'string').join('')
+              : typeof children === 'string'
+                ? children
+                : '';
             return (
               <Suspense fallback={<div className="mermaid-loading">Loading diagram…</div>}>
                 <MermaidDiagram code={code.replace(/\n$/, '')} />

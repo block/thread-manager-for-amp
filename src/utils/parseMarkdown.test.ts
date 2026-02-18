@@ -136,7 +136,11 @@ file content here
 \`\`\``;
     const messages = parseMarkdownHistory(md);
     expect(messages).toHaveLength(1);
-    expectMessage(at(messages, 0), { type: 'tool_result', success: true, content: 'file content here' });
+    expectMessage(at(messages, 0), {
+      type: 'tool_result',
+      success: true,
+      content: 'file content here',
+    });
   });
 
   it('skips empty tool results', () => {
@@ -267,7 +271,7 @@ Hello
 Hi there`;
     const a = parseMarkdownHistory(md);
     const b = parseMarkdownHistory(md);
-    expect(a.map(m => m.id)).toEqual(b.map(m => m.id));
+    expect(a.map((m) => m.id)).toEqual(b.map((m) => m.id));
   });
 
   it('handles section with no content after header', () => {

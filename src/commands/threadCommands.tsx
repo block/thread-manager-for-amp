@@ -1,13 +1,28 @@
 import {
-  Plus, GitBranch, RefreshCw, Edit3, Share2, ExternalLink, Copy,
-  Archive, Trash2, Map, Tag, X, Link2, Clock, ArrowLeft, ArrowRight, Search,
+  Plus,
+  GitBranch,
+  RefreshCw,
+  Edit3,
+  Share2,
+  ExternalLink,
+  Copy,
+  Archive,
+  Trash2,
+  Map,
+  Tag,
+  X,
+  Link2,
+  Clock,
+  ArrowLeft,
+  ArrowRight,
+  Search,
 } from 'lucide-react';
 import { CATEGORIES } from './categories';
 import type { Command, CommandFactoryContext, CommandHandlers } from './types';
 
 export function createThreadCommands(
   handlers: CommandHandlers,
-  context: CommandFactoryContext
+  context: CommandFactoryContext,
 ): Command[] {
   const { activeThreadId, hasActiveThread, openThreadsCount } = context;
 

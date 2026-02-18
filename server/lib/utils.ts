@@ -71,10 +71,14 @@ export function runAmp(args: string[], options: RunAmpOptions = {}): Promise<str
     const stderrChunks: Buffer[] = [];
 
     if (child.stdout) {
-      child.stdout.on('data', (data: Buffer) => { stdoutChunks.push(data); });
+      child.stdout.on('data', (data: Buffer) => {
+        stdoutChunks.push(data);
+      });
     }
     if (child.stderr) {
-      child.stderr.on('data', (data: Buffer) => { stderrChunks.push(data); });
+      child.stderr.on('data', (data: Buffer) => {
+        stderrChunks.push(data);
+      });
     }
 
     const timeout = setTimeout(() => {
@@ -91,7 +95,7 @@ export function runAmp(args: string[], options: RunAmpOptions = {}): Promise<str
       clearTimeout(timeout);
       const stdout = Buffer.concat(stdoutChunks).toString('utf-8');
       const stderr = Buffer.concat(stderrChunks).toString('utf-8');
-      
+
       if (code !== 0) {
         reject(new Error(stderr || `amp exited with code ${code}`));
       } else {
@@ -116,11 +120,11 @@ export function formatRelativeTime(date: Date): string {
 }
 
 export async function serveStatic(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const filePath = req.url === '/' ? '/index.html' : (req.url?.split('?')[0] || '/index.html');
-  
+  const filePath = req.url === '/' ? '/index.html' : req.url?.split('?')[0] || '/index.html';
+
   const distDir = join(process.cwd(), 'dist');
   const normalizedPath = normalize(join(distDir, filePath));
-  
+
   if (!normalizedPath.startsWith(distDir)) {
     res.writeHead(403);
     res.end('Forbidden');

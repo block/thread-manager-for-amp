@@ -10,11 +10,7 @@ export interface ModalProviderProps {
 export function ModalProvider({ children }: ModalProviderProps) {
   const modals = useModals();
 
-  return (
-    <ModalContext.Provider value={modals}>
-      {children}
-    </ModalContext.Provider>
-  );
+  return <ModalContext.Provider value={modals}>{children}</ModalContext.Provider>;
 }
 
 export function useModalContext(): UseModalsReturn {
@@ -25,4 +21,10 @@ export function useModalContext(): UseModalsReturn {
   return context;
 }
 
-export type { OutputModalState, ShellTerminalState, InputModalState, ConfirmModalState, UseModalsReturn } from '../hooks/useModals';
+export type {
+  OutputModalState,
+  ShellTerminalState,
+  InputModalState,
+  ConfirmModalState,
+  UseModalsReturn,
+} from '../hooks/useModals';

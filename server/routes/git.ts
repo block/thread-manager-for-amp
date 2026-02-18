@@ -3,7 +3,11 @@ import { jsonResponse, sendError, getParam } from '../lib/utils.js';
 import { getWorkspaceGitStatus, getWorkspaceGitStatusDirect, getFileDiff } from '../lib/git.js';
 import { getThreadGitActivity } from '../lib/git-activity.js';
 
-export async function handleGitRoutes(url: URL, _req: unknown, res: ServerResponse): Promise<boolean> {
+export async function handleGitRoutes(
+  url: URL,
+  _req: unknown,
+  res: ServerResponse,
+): Promise<boolean> {
   const pathname = url.pathname;
 
   if (pathname === '/api/thread-git-activity') {

@@ -27,25 +27,30 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div role="alert" style={{ 
-          padding: '20px', 
-          background: '#1a0a0a', 
-          color: '#ff6b6b',
-          borderRadius: '8px',
-          margin: '10px'
-        }}>
-          <h3>Something went wrong</h3>
-          <pre style={{ fontSize: '12px', whiteSpace: 'pre-wrap' }}>
-            {this.state.error?.message}
-          </pre>
-          <button 
-            onClick={() => this.setState({ hasError: false, error: null })}
-            style={{ marginTop: '10px', padding: '8px 16px' }}
+      return (
+        this.props.fallback || (
+          <div
+            role="alert"
+            style={{
+              padding: '20px',
+              background: '#1a0a0a',
+              color: '#ff6b6b',
+              borderRadius: '8px',
+              margin: '10px',
+            }}
           >
-            Try again
-          </button>
-        </div>
+            <h3>Something went wrong</h3>
+            <pre style={{ fontSize: '12px', whiteSpace: 'pre-wrap' }}>
+              {this.state.error?.message}
+            </pre>
+            <button
+              onClick={() => this.setState({ hasError: false, error: null })}
+              style={{ marginTop: '10px', padding: '8px 16px' }}
+            >
+              Try again
+            </button>
+          </div>
+        )
       );
     }
 

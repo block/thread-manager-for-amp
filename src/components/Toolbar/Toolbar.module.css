@@ -155,7 +155,9 @@
 }
 
 @keyframes spin {
-  to { transform: translateY(-50%) rotate(360deg); }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
 }
 
 /* Search results dropdown */
@@ -376,10 +378,18 @@
 }
 
 /* Colored filter icons */
-.filterRepo svg { color: var(--accent-cyan); }
-.filterWorkspace svg { color: var(--accent-blue); }
-.filterLabel svg { color: var(--accent-yellow); }
-.filterStatus svg { color: var(--accent-pink); }
+.filterRepo svg {
+  color: var(--accent-cyan);
+}
+.filterWorkspace svg {
+  color: var(--accent-blue);
+}
+.filterLabel svg {
+  color: var(--accent-yellow);
+}
+.filterStatus svg {
+  color: var(--accent-pink);
+}
 
 /* Clear filters button */
 .clearFilters {
@@ -658,39 +668,39 @@
   .container {
     margin: -12px -16px 0 -16px;
   }
-  
+
   .header {
     padding: 10px 16px;
     gap: 10px;
   }
-  
+
   .headerLeft {
     gap: 8px;
   }
-  
+
   .search,
   .contentSearch {
     flex: 1;
     max-width: none;
     min-width: 0;
   }
-  
+
   .contentSearch {
     display: none;
   }
-  
+
   .newBtn span {
     display: none;
   }
-  
+
   .newBtn {
     padding: 8px;
   }
-  
+
   .iconBtn {
     padding: 6px;
   }
-  
+
   .views {
     flex-wrap: nowrap;
     padding: 8px 16px;
@@ -699,52 +709,52 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
-  
+
   .views::-webkit-scrollbar {
     display: none;
   }
-  
+
   .viewsLeft {
     flex: 0 0 auto;
     gap: 6px;
   }
-  
+
   .viewsRight {
     flex: 0 0 auto;
     margin-left: auto;
   }
-  
+
   .inlineFilter,
   :global(.searchable-select) {
     flex-shrink: 0;
   }
-  
+
   /* Compact filter buttons on mobile */
   :global(.searchable-select-trigger) {
     padding: 5px 8px;
     font-size: 13px;
   }
-  
+
   :global(.searchable-select-label) {
     max-width: 80px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  
+
   .kbdHint {
     display: none;
   }
-  
+
   .clearFilters {
     flex-shrink: 0;
   }
-  
+
   .viewTabs {
     padding: 2px;
     flex-shrink: 0;
   }
-  
+
   .viewTab {
     padding: 6px 10px;
   }
@@ -754,53 +764,53 @@
   .header {
     padding: 8px 12px;
   }
-  
+
   .logo svg {
     width: 20px;
     height: 20px;
   }
-  
+
   .searchInput {
     padding: 8px 12px 8px 34px;
     font-size: 14px;
   }
-  
+
   .searchIcon {
     left: 10px;
   }
-  
+
   .iconBtn {
     padding: 8px;
   }
-  
+
   .views {
     padding: 6px 12px;
     gap: 6px;
   }
-  
+
   /* Hide filter labels on very small screens, show icons only */
   :global(.searchable-select-label) {
     max-width: 60px;
   }
-  
+
   :global(.searchable-select-trigger) {
     padding: 4px 6px;
     font-size: 12px;
   }
-  
+
   .inlineFilter select {
     font-size: 14px;
     padding: 6px 24px 6px 26px;
   }
-  
+
   .viewTabs {
     padding: 2px;
   }
-  
+
   .viewTab {
     padding: 6px 8px;
   }
-  
+
   .viewTab svg {
     width: 18px;
     height: 18px;

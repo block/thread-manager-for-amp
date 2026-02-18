@@ -17,16 +17,16 @@
 // ── Pricing rates (per token) ───────────────────────────────────────────
 
 // Opus 4.5 pricing (≤200K token prompts)
-const OPUS_INPUT_RATE = 5 / 1_000_000;              // $5 per 1M tokens
-const OPUS_CACHE_CREATION_RATE = 6.25 / 1_000_000;  // $6.25 per 1M tokens
-const OPUS_CACHE_READ_RATE = 0.5 / 1_000_000;       // $0.50 per 1M tokens
-const OPUS_OUTPUT_RATE = 25 / 1_000_000;             // $25 per 1M tokens
+const OPUS_INPUT_RATE = 5 / 1_000_000; // $5 per 1M tokens
+const OPUS_CACHE_CREATION_RATE = 6.25 / 1_000_000; // $6.25 per 1M tokens
+const OPUS_CACHE_READ_RATE = 0.5 / 1_000_000; // $0.50 per 1M tokens
+const OPUS_OUTPUT_RATE = 25 / 1_000_000; // $25 per 1M tokens
 
 // Sonnet / non-opus pricing (≤200K token prompts)
-const SONNET_INPUT_RATE = 3 / 1_000_000;             // $3 per 1M tokens
+const SONNET_INPUT_RATE = 3 / 1_000_000; // $3 per 1M tokens
 const SONNET_CACHE_CREATION_RATE = 3.75 / 1_000_000; // $3.75 per 1M tokens
-const SONNET_CACHE_READ_RATE = 0.3 / 1_000_000;      // $0.30 per 1M tokens
-const SONNET_OUTPUT_RATE = 15 / 1_000_000;            // $15 per 1M tokens
+const SONNET_CACHE_READ_RATE = 0.3 / 1_000_000; // $0.30 per 1M tokens
+const SONNET_OUTPUT_RATE = 15 / 1_000_000; // $15 per 1M tokens
 
 // ── Estimated per-call costs for tools with hidden LLM usage ────────────
 // These tools spawn separate inference calls whose tokens don't appear in
@@ -36,16 +36,16 @@ const SONNET_OUTPUT_RATE = 15 / 1_000_000;            // $15 per 1M tokens
 // Flat per-call estimates for tools with hidden LLM usage (except Task,
 // which uses prompt-length scaling — see estimateTaskCost below).
 export const TOOL_COST_ESTIMATES: Record<string, number> = {
-  Task: 2.00,           // Fallback when prompt length unknown (see estimateTaskCost)
-  oracle: 0.50,         // Single GPT-5.2 reasoning call
-  finder: 0.15,         // 1-3 LLM search calls
-  librarian: 0.35,      // Multiple LLM calls with GitHub context
-  read_thread: 0.10,    // 1 LLM extraction call
-  find_thread: 0.03,    // Search query with minimal LLM
-  web_search: 0.80,     // $0.01/search + LLM extraction + retrieval tokens
-  read_web_page: 0.40,  // 1 LLM call for content extraction
-  look_at: 0.10,        // 1 LLM call for image/doc analysis
-  handoff: 0.10,        // 1 LLM call for context summary
+  Task: 2.0, // Fallback when prompt length unknown (see estimateTaskCost)
+  oracle: 0.5, // Single GPT-5.2 reasoning call
+  finder: 0.15, // 1-3 LLM search calls
+  librarian: 0.35, // Multiple LLM calls with GitHub context
+  read_thread: 0.1, // 1 LLM extraction call
+  find_thread: 0.03, // Search query with minimal LLM
+  web_search: 0.8, // $0.01/search + LLM extraction + retrieval tokens
+  read_web_page: 0.4, // 1 LLM call for content extraction
+  look_at: 0.1, // 1 LLM call for image/doc analysis
+  handoff: 0.1, // 1 LLM call for context summary
 };
 
 // Task prompt-length thresholds for cost scaling.
@@ -53,10 +53,10 @@ export const TOOL_COST_ESTIMATES: Record<string, number> = {
 // calls, more inference turns). Empirically calibrated against threads
 // with known Amp CLI reported costs.
 const TASK_COST_TIERS: { maxChars: number; cost: number }[] = [
-  { maxChars: 500,  cost: 0.75 },   // Simple: git rebase, status check
-  { maxChars: 2000, cost: 2.00 },   // Medium: focused edits, single-file
-  { maxChars: 4000, cost: 4.00 },   // Complex: multi-file implementation
-  { maxChars: Infinity, cost: 7.00 }, // Very complex: full feature impl
+  { maxChars: 500, cost: 0.75 }, // Simple: git rebase, status check
+  { maxChars: 2000, cost: 2.0 }, // Medium: focused edits, single-file
+  { maxChars: 4000, cost: 4.0 }, // Complex: multi-file implementation
+  { maxChars: Infinity, cost: 7.0 }, // Very complex: full feature impl
 ];
 
 export function estimateTaskCost(promptLength: number): number {
@@ -73,8 +73,8 @@ export function estimateTaskCost(promptLength: number): number {
 // when the cache expires) Amp actually creates the cache at the higher
 // cache_creation rate. This per-turn overhead accounts for that gap.
 // Empirically: 15K tokens × (cache_creation - cache_read) rate ≈ $0.086.
-const OPUS_TURN_OVERHEAD = 0.09;    // ~15K tokens × $5.75/MTok delta
-const SONNET_TURN_OVERHEAD = 0.05;  // ~15K tokens × $3.45/MTok delta
+const OPUS_TURN_OVERHEAD = 0.09; // ~15K tokens × $5.75/MTok delta
+const SONNET_TURN_OVERHEAD = 0.05; // ~15K tokens × $3.45/MTok delta
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -94,7 +94,14 @@ export interface ToolCostCounts {
 // ── Public API ──────────────────────────────────────────────────────────
 
 export function calculateCost(tokens: CostInput): number {
-  const { inputTokens, cacheCreationTokens, cacheReadTokens, outputTokens, isOpus, turns = 0 } = tokens;
+  const {
+    inputTokens,
+    cacheCreationTokens,
+    cacheReadTokens,
+    outputTokens,
+    isOpus,
+    turns = 0,
+  } = tokens;
 
   if (isOpus) {
     return (

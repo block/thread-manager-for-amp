@@ -20,10 +20,10 @@ interface DateGroupData {
   threads: Thread[];
 }
 
-export function DetailCardView({ 
-  threads, 
-  metadata, 
-  onContinue, 
+export function DetailCardView({
+  threads,
+  metadata,
+  onContinue,
   onArchive,
   onDelete,
   onStatusChange,
@@ -37,7 +37,7 @@ export function DetailCardView({
   const entries = useMemo(() => buildThreadStacks(threads), [threads]);
 
   const toggleStackExpand = useCallback((headId: string) => {
-    setExpandedStacks(prev => {
+    setExpandedStacks((prev) => {
       const next = new Set(prev);
       if (next.has(headId)) {
         next.delete(headId);
@@ -50,11 +50,11 @@ export function DetailCardView({
 
   const dateGroups = useMemo((): DateGroupData[] => {
     if (!groupByDate) return [];
-    
+
     const groups = new Map<string, Thread[]>();
     const order = ['Today', 'Yesterday', 'This Week', 'This Month', 'Older'];
-    
-    threads.forEach(thread => {
+
+    threads.forEach((thread) => {
       const label = getDateLabel(thread.lastUpdatedDate);
       const existing = groups.get(label);
       if (existing) {
@@ -63,14 +63,14 @@ export function DetailCardView({
         groups.set(label, [thread]);
       }
     });
-    
+
     return order
-      .filter(label => groups.has(label))
-      .map(label => ({ label, threads: groups.get(label) ?? [] }));
+      .filter((label) => groups.has(label))
+      .map((label) => ({ label, threads: groups.get(label) ?? [] }));
   }, [threads, groupByDate]);
 
   const toggleGroup = (label: string) => {
-    setCollapsedGroups(prev => {
+    setCollapsedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(label)) {
         next.delete(label);
@@ -84,7 +84,7 @@ export function DetailCardView({
   if (groupByDate) {
     return (
       <div className="detail-card-grouped">
-        {dateGroups.map(group => (
+        {dateGroups.map((group) => (
           <DateGroup
             key={group.label}
             label={group.label}
@@ -92,7 +92,7 @@ export function DetailCardView({
             isCollapsed={collapsedGroups.has(group.label)}
             onToggle={() => toggleGroup(group.label)}
           >
-            {group.threads.map(thread => (
+            {group.threads.map((thread) => (
               <ThreadCard
                 key={thread.id}
                 thread={thread}
@@ -106,20 +106,18 @@ export function DetailCardView({
             ))}
           </DateGroup>
         ))}
-        
-        {threads.length === 0 && (
-          <div className="detail-card-empty">No threads to display</div>
-        )}
+
+        {threads.length === 0 && <div className="detail-card-empty">No threads to display</div>}
       </div>
     );
   }
 
   return (
     <div className="detail-card-grid">
-      {entries.map(entry => {
+      {entries.map((entry) => {
         const stackSize = getStackSize(entry);
         const isExpanded = expandedStacks.has(entry.thread.id);
-        
+
         return (
           <ThreadCard
             key={entry.thread.id}
@@ -137,10 +135,8 @@ export function DetailCardView({
           />
         );
       })}
-      
-      {entries.length === 0 && (
-        <div className="detail-card-empty">No threads to display</div>
-      )}
+
+      {entries.length === 0 && <div className="detail-card-empty">No threads to display</div>}
     </div>
   );
 }

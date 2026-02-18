@@ -30,7 +30,14 @@ export type WsClientMessage =
 // Server -> Client messages
 export type WsServerMessage =
   | { type: 'ready'; threadId: string }
-  | { type: 'usage'; contextPercent: number; inputTokens: number; outputTokens: number; maxTokens: number; estimatedCost: string }
+  | {
+      type: 'usage';
+      contextPercent: number;
+      inputTokens: number;
+      outputTokens: number;
+      maxTokens: number;
+      estimatedCost: string;
+    }
   | { type: 'text'; content: string }
   | { type: 'tool_use'; id: string; name: string; input: ToolInput }
   | { type: 'tool_result'; id: string; success: boolean; result: string }

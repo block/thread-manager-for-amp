@@ -30,11 +30,7 @@ interface SettingsProviderProps {
 export function SettingsProvider({ children }: SettingsProviderProps) {
   const settings = useAppSettings();
 
-  return (
-    <SettingsContext.Provider value={settings}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext.Provider value={settings}>{children}</SettingsContext.Provider>;
 }
 
 export function useSettingsContext(): SettingsContextValue {

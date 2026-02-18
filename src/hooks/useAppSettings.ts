@@ -66,7 +66,7 @@ export function useAppSettings(): UseAppSettingsReturn {
   }, []);
 
   const handleToggleLayout = useCallback(() => {
-    setTerminalLayout(prev => {
+    setTerminalLayout((prev) => {
       if (prev === 'tabs') return 'split';
       if (prev === 'split') return 'grid';
       return 'tabs';
@@ -84,7 +84,7 @@ export function useAppSettings(): UseAppSettingsReturn {
   }, []);
 
   const handleToggleSidebar = useCallback(() => {
-    setSidebarCollapsed(prev => {
+    setSidebarCollapsed((prev) => {
       const newValue = !prev;
       localStorage.setItem('sidebarCollapsed', String(newValue));
       return newValue;
@@ -92,7 +92,7 @@ export function useAppSettings(): UseAppSettingsReturn {
   }, []);
 
   const triggerScmRefresh = useCallback(() => {
-    setScmRefreshKey(prev => prev + 1);
+    setScmRefreshKey((prev) => prev + 1);
   }, []);
 
   return {

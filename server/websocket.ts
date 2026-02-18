@@ -7,10 +7,20 @@ import { Duplex } from 'stream';
 import type { RunningThreadState, RunningThreadsMap, ThreadImage } from '../shared/types.js';
 import type { WsServerMessage } from '../shared/websocket.js';
 import { isWsClientMessage } from '../shared/validation.js';
-import { calculateCost, isHiddenCostTool, TOOL_COST_ESTIMATES, estimateTaskCost } from '../shared/cost.js';
+import {
+  calculateCost,
+  isHiddenCostTool,
+  TOOL_COST_ESTIMATES,
+  estimateTaskCost,
+} from '../shared/cost.js';
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS, isAllowedOrigin } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
-import { THREADS_DIR, ARTIFACTS_DIR, type ThreadFile, type ToolUseContent } from './lib/threadTypes.js';
+import {
+  THREADS_DIR,
+  ARTIFACTS_DIR,
+  type ThreadFile,
+  type ToolUseContent,
+} from './lib/threadTypes.js';
 
 // Grace period before killing child process on disconnect (30 seconds)
 const DISCONNECT_GRACE_PERIOD_MS = 30_000;
@@ -206,7 +216,7 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
               resultStr = block.content;
             } else if (Array.isArray(block.content)) {
               resultStr = block.content
-                .map(c => typeof c === 'string' ? c : (c as { text?: string }).text || '')
+                .map((c) => (typeof c === 'string' ? c : (c as { text?: string }).text || ''))
                 .join('\n');
             }
 
@@ -229,7 +239,7 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
 
         if (typeof event.result === 'string') {
           resultStr = event.result.slice(0, 10000);
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
         } else if (typeof event.result === 'object' && event.result !== null) {
           const resultObj = event.result as { result?: unknown; status?: string };
           if (resultObj.result !== undefined) {
@@ -261,7 +271,7 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
 async function spawnAmpOnSession(
   session: ThreadSession,
   message: string,
-  image: ThreadImage | null = null
+  image: ThreadImage | null = null,
 ): Promise<void> {
   // If a child is already running, interrupt it and queue this message.
   // The SIGINT kills the child before amp persists the user's message to the
@@ -316,16 +326,23 @@ async function spawnAmpOnSession(
       }
     }
 
-    const child = spawn(AMP_BIN, [
-      'threads', 'continue', session.threadId,
-      '--no-ide',
-      '--execute', finalMessage,
-      '--stream-json',
-    ], {
-      cwd: AMP_HOME,
-      env: { ...process.env, CI: '1', TERM: 'dumb' },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const child = spawn(
+      AMP_BIN,
+      [
+        'threads',
+        'continue',
+        session.threadId,
+        '--no-ide',
+        '--execute',
+        finalMessage,
+        '--stream-json',
+      ],
+      {
+        cwd: AMP_HOME,
+        env: { ...process.env, CI: '1', TERM: 'dumb' },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
 
     session.child = child;
     session.startedAt = Date.now();
@@ -401,7 +418,10 @@ async function spawnAmpOnSession(
       if (pending) {
         session.pendingMessage = null;
         void spawnAmpOnSession(session, pending.content, pending.image).catch((err: unknown) => {
-          console.error(`[WS] spawnAmp error for queued message on thread ${session.threadId}:`, err);
+          console.error(
+            `[WS] spawnAmp error for queued message on thread ${session.threadId}:`,
+            err,
+          );
           sendToSession(session, { type: 'error', content: 'Failed to process queued message' });
         });
       }
@@ -461,18 +481,18 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
       }
     }
 
-    session.cumulativeCost = calculateCost({
-      inputTokens: freshInputTokens,
-      cacheCreationTokens: cacheCreation,
-      cacheReadTokens: cacheRead,
-      outputTokens: totalOutputTokens,
-      isOpus: session.isOpus,
-      turns,
-    }) + hiddenToolCost;
+    session.cumulativeCost =
+      calculateCost({
+        inputTokens: freshInputTokens,
+        cacheCreationTokens: cacheCreation,
+        cacheReadTokens: cacheRead,
+        outputTokens: totalOutputTokens,
+        isOpus: session.isOpus,
+        turns,
+      }) + hiddenToolCost;
 
-    const contextPercent = maxContextTokens > 0
-      ? Math.round((contextTokens / maxContextTokens) * 100)
-      : 0;
+    const contextPercent =
+      maxContextTokens > 0 ? Math.round((contextTokens / maxContextTokens) * 100) : 0;
 
     sendToSession(session, {
       type: 'usage',
@@ -492,7 +512,9 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
 function startGracePeriod(session: ThreadSession, reason: string): void {
   if (session.killTimeout) return; // already ticking
 
-  console.warn(`[WS] ${reason} for thread ${session.threadId}, starting ${DISCONNECT_GRACE_PERIOD_MS / 1000}s grace period`);
+  console.warn(
+    `[WS] ${reason} for thread ${session.threadId}, starting ${DISCONNECT_GRACE_PERIOD_MS / 1000}s grace period`,
+  );
   session.currentWs = null;
 
   session.killTimeout = setTimeout(() => {

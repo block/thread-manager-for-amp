@@ -16,7 +16,10 @@ export interface UseKeyboardShortcutsOptions {
   activeThreadId: string | undefined;
 }
 
-export function useKeyboardShortcuts({ handlers, activeThreadId }: UseKeyboardShortcutsOptions): void {
+export function useKeyboardShortcuts({
+  handlers,
+  activeThreadId,
+}: UseKeyboardShortcutsOptions): void {
   const handlersRef = useRef(handlers);
   const activeThreadIdRef = useRef(activeThreadId);
 

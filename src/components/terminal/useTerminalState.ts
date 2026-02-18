@@ -20,7 +20,9 @@ export function useTerminalState({ thread }: UseTerminalStateOptions) {
     if (thread.contextPercent !== undefined && thread.cost !== undefined) {
       return {
         contextPercent: thread.contextPercent,
-        inputTokens: Math.round((thread.contextPercent / 100) * (thread.maxContextTokens || DEFAULT_MAX_CONTEXT_TOKENS)),
+        inputTokens: Math.round(
+          (thread.contextPercent / 100) * (thread.maxContextTokens || DEFAULT_MAX_CONTEXT_TOKENS),
+        ),
         outputTokens: 0,
         maxTokens: thread.maxContextTokens || DEFAULT_MAX_CONTEXT_TOKENS,
         estimatedCost: thread.cost.toFixed(2),
@@ -30,9 +32,15 @@ export function useTerminalState({ thread }: UseTerminalStateOptions) {
   });
   const [contextWarningDismissed, setContextWarningDismissed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [pendingImage, setPendingImage] = useState<{ data: string; mediaType: string } | null>(null);
-  const [sessionImages, setSessionImages] = useState<Array<{ data: string; mediaType: string }>>([]);
-  const [viewingImage, setViewingImage] = useState<{ data: string; mediaType: string } | null>(null);
+  const [pendingImage, setPendingImage] = useState<{ data: string; mediaType: string } | null>(
+    null,
+  );
+  const [sessionImages, setSessionImages] = useState<Array<{ data: string; mediaType: string }>>(
+    [],
+  );
+  const [viewingImage, setViewingImage] = useState<{ data: string; mediaType: string } | null>(
+    null,
+  );
   const [metadata, setMetadata] = useState<ThreadMetadata | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,7 +54,7 @@ export function useTerminalState({ thread }: UseTerminalStateOptions) {
   const closeViewingImage = useCallback(() => setViewingImage(null), []);
 
   const addSessionImage = useCallback((image: { data: string; mediaType: string }) => {
-    setSessionImages(prev => [...prev, image]);
+    setSessionImages((prev) => [...prev, image]);
   }, []);
 
   const clearInput = useCallback(() => {
@@ -54,23 +62,26 @@ export function useTerminalState({ thread }: UseTerminalStateOptions) {
     setPendingImage(null);
   }, []);
 
-  const scrollToMessage = useCallback((
-    id: string,
-    messageRefs: React.MutableRefObject<Map<string, HTMLDivElement>>
-  ) => {
-    const el = messageRefs.current.get(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setActiveMinimapId(id);
-    }
-  }, []);
+  const scrollToMessage = useCallback(
+    (id: string, messageRefs: React.MutableRefObject<Map<string, HTMLDivElement>>) => {
+      const el = messageRefs.current.get(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setActiveMinimapId(id);
+      }
+    },
+    [],
+  );
 
-  const checkContextWarning = useCallback((messages: Message[]) => {
-    const hasContextLimitError = messages.some(m => m.type === 'error' && m.isContextLimit);
-    return !contextWarningDismissed && (
-      (usage && usage.contextPercent >= 95) || hasContextLimitError
-    );
-  }, [contextWarningDismissed, usage]);
+  const checkContextWarning = useCallback(
+    (messages: Message[]) => {
+      const hasContextLimitError = messages.some((m) => m.type === 'error' && m.isContextLimit);
+      return (
+        !contextWarningDismissed && ((usage && usage.contextPercent >= 95) || hasContextLimitError)
+      );
+    },
+    [contextWarningDismissed, usage],
+  );
 
   return {
     // State

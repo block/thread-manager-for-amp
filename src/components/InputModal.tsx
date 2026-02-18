@@ -47,12 +47,15 @@ function InputModalContent({
     onConfirm(trimmed);
   }, [value, validate, onConfirm]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSubmit();
-    }
-  }, [handleSubmit]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit();
+      }
+    },
+    [handleSubmit],
+  );
 
   return (
     <>
@@ -69,14 +72,21 @@ function InputModalContent({
             ref={inputRef}
             type="text"
             value={value}
-            onChange={(e) => { setValue(e.target.value); setError(null); }}
+            onChange={(e) => {
+              setValue(e.target.value);
+              setError(null);
+            }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="input-modal-input"
             aria-label={label}
           />
         </label>
-        {error && <p className="input-modal-error" role="alert">{error}</p>}
+        {error && (
+          <p className="input-modal-error" role="alert">
+            {error}
+          </p>
+        )}
       </div>
       <div className="modal-footer">
         <button className="modal-btn cancel" onClick={onCancel}>

@@ -41,7 +41,9 @@ export const ToolbarContentSearch = memo(function ToolbarContentSearch({
       setSearchResults([]);
       setShowResults(false);
     }
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [fullTextQuery, performSearch]);
 
   useEffect(() => {
@@ -72,9 +74,13 @@ export const ToolbarContentSearch = memo(function ToolbarContentSearch({
     if (!query) return text;
     const parts = text.split(new RegExp(`(${query})`, 'gi'));
     return parts.map((part, i) =>
-      part.toLowerCase() === query.toLowerCase()
-        ? <mark key={i} className={styles.searchHighlight}>{part}</mark>
-        : part
+      part.toLowerCase() === query.toLowerCase() ? (
+        <mark key={i} className={styles.searchHighlight}>
+          {part}
+        </mark>
+      ) : (
+        part
+      ),
     );
   };
 
@@ -102,13 +108,19 @@ export const ToolbarContentSearch = memo(function ToolbarContentSearch({
         </button>
       )}
       {isSearching && <span className={styles.searchSpinner} />}
-      
+
       {showResults && searchResults.length > 0 && (
         <div className={styles.searchResults}>
           {searchResults.map((result) => (
-            <button key={result.threadId} className={styles.searchResult} onClick={() => handleResultClick(result)}>
+            <button
+              key={result.threadId}
+              className={styles.searchResult}
+              onClick={() => handleResultClick(result)}
+            >
               <div className={styles.searchResultHeader}>
-                <span className={styles.searchResultTitle}>{highlightMatch(result.title, fullTextQuery)}</span>
+                <span className={styles.searchResultTitle}>
+                  {highlightMatch(result.title, fullTextQuery)}
+                </span>
                 <Timestamp date={result.lastUpdated} className={styles.searchResultTime} />
               </div>
               {result.matches.length > 0 ? (
@@ -116,14 +128,18 @@ export const ToolbarContentSearch = memo(function ToolbarContentSearch({
                   {result.matches.map((match, i) => (
                     <div key={i} className={styles.searchResultMatch}>
                       <span className={styles.matchRole}>{match.role}:</span>
-                      <span className={styles.matchSnippet}>{highlightMatch(match.snippet, fullTextQuery)}</span>
+                      <span className={styles.matchSnippet}>
+                        {highlightMatch(match.snippet, fullTextQuery)}
+                      </span>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className={styles.searchResultMatches}>
                   <div className={styles.searchResultMatch}>
-                    <span className={styles.matchSnippet}>{highlightMatch(result.threadId, fullTextQuery)}</span>
+                    <span className={styles.matchSnippet}>
+                      {highlightMatch(result.threadId, fullTextQuery)}
+                    </span>
                   </div>
                 </div>
               )}
@@ -131,7 +147,7 @@ export const ToolbarContentSearch = memo(function ToolbarContentSearch({
           ))}
         </div>
       )}
-      
+
       {showResults && fullTextQuery.length >= 2 && searchResults.length === 0 && !isSearching && (
         <div className={styles.searchResults}>
           <div className={styles.searchNoResults}>No matches found</div>

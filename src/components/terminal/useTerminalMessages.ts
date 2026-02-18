@@ -40,24 +40,33 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
     async function loadHistory() {
       try {
         const [markdown, threadImages] = await Promise.all([
-          apiGetText(`/api/thread-history?threadId=${encodeURIComponent(threadId)}`, controller.signal),
-          apiGet<ThreadImage[]>(`/api/thread-images?threadId=${encodeURIComponent(threadId)}`, controller.signal).catch((e: unknown) => {
+          apiGetText(
+            `/api/thread-history?threadId=${encodeURIComponent(threadId)}`,
+            controller.signal,
+          ),
+          apiGet<ThreadImage[]>(
+            `/api/thread-images?threadId=${encodeURIComponent(threadId)}`,
+            controller.signal,
+          ).catch((e: unknown) => {
             if (e instanceof DOMException && e.name === 'AbortError') return [];
-            console.debug('thread-images:', e instanceof Error ? e.message : String(e)); return [];
+            console.debug('thread-images:', e instanceof Error ? e.message : String(e));
+            return [];
           }),
         ]);
-        
+
         const totalMatch = markdown.match(/totalMessages:\s*(\d+)/);
         const totalMessages = totalMatch?.[1] ? parseInt(totalMatch[1], 10) : 0;
-        
+
         const historyMessages = parseMarkdownHistory(markdown);
         if (historyMessages.length > 0) {
           for (const msg of historyMessages) {
             if (msg.type === 'user' && !msg.image) {
-              const pathMatch = msg.content.match(/artifacts\/[^/]+\/\d+\.(png|jpg|jpeg|gif|webp)/i);
+              const pathMatch = msg.content.match(
+                /artifacts\/[^/]+\/\d+\.(png|jpg|jpeg|gif|webp)/i,
+              );
               if (pathMatch) {
-                const matchedImage = threadImages.find(img => 
-                  img.sourcePath?.includes(pathMatch[0])
+                const matchedImage = threadImages.find((img) =>
+                  img.sourcePath?.includes(pathMatch[0]),
                 );
                 if (matchedImage) {
                   msg.image = { data: matchedImage.data, mediaType: matchedImage.mediaType };
@@ -68,7 +77,7 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
               }
             }
           }
-          
+
           setMessages(historyMessages);
           setCurrentOffset(historyMessages.length);
           setHasMoreMessages(historyMessages.length < totalMessages);
@@ -80,25 +89,27 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
       if (!controller.signal.aborted) setIsLoading(false);
     }
     void loadHistory();
-    return () => { controller.abort(); };
+    return () => {
+      controller.abort();
+    };
   }, [threadId]);
 
   const loadMoreMessages = useCallback(async () => {
     if (loadingMore || !hasMoreMessages) return;
-    
+
     setLoadingMore(true);
     try {
       const markdown = await apiGetText(
-        `/api/thread-history?threadId=${encodeURIComponent(threadId)}&limit=50&offset=${currentOffset}`
+        `/api/thread-history?threadId=${encodeURIComponent(threadId)}&limit=50&offset=${currentOffset}`,
       );
-      
+
       const totalMatch = markdown.match(/totalMessages:\s*(\d+)/);
       const totalMessages = totalMatch?.[1] ? parseInt(totalMatch[1], 10) : 0;
-      
+
       const olderMessages = parseMarkdownHistory(markdown);
       if (olderMessages.length > 0) {
-        setMessages(prev => [...olderMessages, ...prev]);
-        setCurrentOffset(prev => prev + olderMessages.length);
+        setMessages((prev) => [...olderMessages, ...prev]);
+        setCurrentOffset((prev) => prev + olderMessages.length);
         setHasMoreMessages(currentOffset + olderMessages.length < totalMessages);
       } else {
         setHasMoreMessages(false);
@@ -112,13 +123,13 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    
+
     const handleScroll = () => {
       if (container.scrollTop < 100 && hasMoreMessages && !loadingMore) {
         void loadMoreMessages();
       }
     };
-    
+
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
   }, [hasMoreMessages, loadingMore, loadMoreMessages]);
@@ -131,10 +142,12 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
     const pollForNewMessages = async () => {
       try {
         const currentMessages = messagesRef.current;
-        const markdown = await apiGetText(`/api/thread-history?threadId=${encodeURIComponent(threadId)}`);
+        const markdown = await apiGetText(
+          `/api/thread-history?threadId=${encodeURIComponent(threadId)}`,
+        );
         const totalMatch = markdown.match(/totalMessages:\s*(\d+)/);
         const totalMessages = totalMatch?.[1] ? parseInt(totalMatch[1], 10) : 0;
-        
+
         // If there are more messages than we have, reload
         if (totalMessages > currentMessages.length) {
           const newMessages = parseMarkdownHistory(markdown);

@@ -23,15 +23,10 @@ export function ThreadChainContent({ chain, onOpenThread }: ThreadChainContentPr
       <div className="thread-chain-list">
         {chain.ancestors.map((t, i) => (
           <div key={t.id} className="chain-item ancestor">
-            <button
-              className="chain-thread-btn"
-              onClick={() => handleClick(t)}
-            >
+            <button className="chain-thread-btn" onClick={() => handleClick(t)}>
               <span className="chain-label">↑ From</span>
               <span className="chain-title">{t.title}</span>
-              {t.comment && (
-                <span className="chain-comment">"{t.comment}"</span>
-              )}
+              {t.comment && <span className="chain-comment">"{t.comment}"</span>}
             </button>
             {(i < chain.ancestors.length - 1 || chain.current) && (
               <div className="chain-connector">
@@ -40,7 +35,7 @@ export function ThreadChainContent({ chain, onOpenThread }: ThreadChainContentPr
             )}
           </div>
         ))}
-        
+
         {chain.current && (
           <div className="chain-item current">
             <div className="chain-current-marker">
@@ -54,18 +49,13 @@ export function ThreadChainContent({ chain, onOpenThread }: ThreadChainContentPr
             )}
           </div>
         )}
-        
+
         {chain.descendants.map((t, i) => (
           <div key={t.id} className="chain-item descendant">
-            <button
-              className="chain-thread-btn"
-              onClick={() => handleClick(t)}
-            >
+            <button className="chain-thread-btn" onClick={() => handleClick(t)}>
               <span className="chain-label">↓ To</span>
               <span className="chain-title">{t.title}</span>
-              {t.comment && (
-                <span className="chain-comment">"{t.comment}"</span>
-              )}
+              {t.comment && <span className="chain-comment">"{t.comment}"</span>}
             </button>
             {i < chain.descendants.length - 1 && (
               <div className="chain-connector">
