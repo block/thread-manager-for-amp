@@ -253,7 +253,9 @@ export function ToolResult({ content, success, onRef }: ToolResultProps) {
   return (
     <div
       ref={onRef}
-      className={`tool-result ${success ? 'success' : 'error'} ${isExpanded ? 'expanded' : 'collapsed'} ${contentType.type === 'markdown' ? 'markdown' : ''}`}
+      className={`tool-result ${success ? 'success' : 'error'} ${
+        isExpanded ? 'expanded' : 'collapsed'
+      } ${contentType.type === 'markdown' ? 'markdown' : ''}`}
     >
       <div className="tool-result-content">
         {contentType.type === 'diff' || contentType.type === 'json' ? (

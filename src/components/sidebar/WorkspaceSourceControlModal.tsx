@@ -81,7 +81,9 @@ export function WorkspaceSourceControlModal({
 
       const fullPath = `${workspacePath}/${selectedFile}`;
       void apiGet<FileDiff>(
-        `/api/file-diff?path=${encodeURIComponent(fullPath)}&workspace=${encodeURIComponent(workspacePath)}`,
+        `/api/file-diff?path=${encodeURIComponent(fullPath)}&workspace=${encodeURIComponent(
+          workspacePath,
+        )}`,
       )
         .then((diff) => {
           setFileDiff(diff);
@@ -248,7 +250,9 @@ export function WorkspaceSourceControlModal({
                         {oldLines.map((line, i) => (
                           <div
                             key={i}
-                            className={`diff-line ${line === '' && newLines[i] !== '' ? 'empty' : ''} ${line !== '' && newLines[i] === '' ? 'removed' : ''}`}
+                            className={`diff-line ${
+                              line === '' && newLines[i] !== '' ? 'empty' : ''
+                            } ${line !== '' && newLines[i] === '' ? 'removed' : ''}`}
                           >
                             <span className="line-number">{line === '...' ? '' : i + 1}</span>
                             <span className="line-content">{line}</span>
@@ -262,7 +266,9 @@ export function WorkspaceSourceControlModal({
                         {newLines.map((line, i) => (
                           <div
                             key={i}
-                            className={`diff-line ${line === '' && oldLines[i] !== '' ? 'empty' : ''} ${line !== '' && oldLines[i] === '' ? 'added' : ''}`}
+                            className={`diff-line ${
+                              line === '' && oldLines[i] !== '' ? 'empty' : ''
+                            } ${line !== '' && oldLines[i] === '' ? 'added' : ''}`}
                           >
                             <span className="line-number">{line === '...' ? '' : i + 1}</span>
                             <span className="line-content">{line}</span>

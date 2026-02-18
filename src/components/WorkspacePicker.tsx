@@ -119,7 +119,9 @@ export function WorkspacePicker({ isOpen, onClose, onSelect }: WorkspacePickerPr
             {filteredWorkspaces.map((ws) => (
               <button
                 key={ws.path}
-                className={`workspace-option ${ws.source === 'thread' ? 'from-thread' : 'from-scan'}`}
+                className={`workspace-option ${
+                  ws.source === 'thread' ? 'from-thread' : 'from-scan'
+                }`}
                 onClick={() => handleSelect(ws.path)}
               >
                 <Folder size={18} />

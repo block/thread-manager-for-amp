@@ -100,7 +100,9 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
     setLoadingMore(true);
     try {
       const markdown = await apiGetText(
-        `/api/thread-history?threadId=${encodeURIComponent(threadId)}&limit=50&offset=${currentOffset}`,
+        `/api/thread-history?threadId=${encodeURIComponent(
+          threadId,
+        )}&limit=50&offset=${currentOffset}`,
       );
 
       const totalMatch = markdown.match(/totalMessages:\s*(\d+)/);

@@ -36,7 +36,13 @@ function formatTimeRange(startMs: number, endMs: number): string {
   const sameDay = start.toDateString() === end.toDateString();
 
   if (sameDay) {
-    return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} ${start.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} – ${end.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+    return `${start.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+    })} ${start.toLocaleTimeString(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+    })} – ${end.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
   }
 
   return `${formatTime(startMs)} – ${formatTime(endMs)}`;

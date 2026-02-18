@@ -513,7 +513,9 @@ function startGracePeriod(session: ThreadSession, reason: string): void {
   if (session.killTimeout) return; // already ticking
 
   console.warn(
-    `[WS] ${reason} for thread ${session.threadId}, starting ${DISCONNECT_GRACE_PERIOD_MS / 1000}s grace period`,
+    `[WS] ${reason} for thread ${session.threadId}, starting ${
+      DISCONNECT_GRACE_PERIOD_MS / 1000
+    }s grace period`,
   );
   session.currentWs = null;
 

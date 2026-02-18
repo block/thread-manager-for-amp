@@ -35,7 +35,9 @@ export const ThreadRow = memo(function ThreadRow({
 
   return (
     <tr
-      className={`clickable-row ${selected ? 'selected' : ''} ${focused ? 'focused' : ''} ${isStackChild ? 'stack-child' : ''}`}
+      className={`clickable-row ${selected ? 'selected' : ''} ${focused ? 'focused' : ''} ${
+        isStackChild ? 'stack-child' : ''
+      }`}
       onClick={() => onContinue(thread)}
     >
       <td className="checkbox-cell" onClick={(e) => e.stopPropagation()}>

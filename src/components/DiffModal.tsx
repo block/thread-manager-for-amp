@@ -111,7 +111,9 @@ export function DiffModal({
                 {oldLines.map((line, i) => (
                   <div
                     key={i}
-                    className={`diff-line ${line === '' && newLines[i] !== '' ? 'empty' : ''} ${line !== '' && newLines[i] === '' ? 'removed' : ''}`}
+                    className={`diff-line ${line === '' && newLines[i] !== '' ? 'empty' : ''} ${
+                      line !== '' && newLines[i] === '' ? 'removed' : ''
+                    }`}
                   >
                     <span className="line-number">{line === '...' ? '' : i + 1}</span>
                     <span className="line-content">{line}</span>
@@ -125,7 +127,9 @@ export function DiffModal({
                 {newLines.map((line, i) => (
                   <div
                     key={i}
-                    className={`diff-line ${line === '' && oldLines[i] !== '' ? 'empty' : ''} ${line !== '' && oldLines[i] === '' ? 'added' : ''}`}
+                    className={`diff-line ${line === '' && oldLines[i] !== '' ? 'empty' : ''} ${
+                      line !== '' && oldLines[i] === '' ? 'added' : ''
+                    }`}
                   >
                     <span className="line-number">{line === '...' ? '' : i + 1}</span>
                     <span className="line-content">{line}</span>

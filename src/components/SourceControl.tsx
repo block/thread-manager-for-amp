@@ -43,7 +43,9 @@ export function SourceControl({ threadId, onClose }: SourceControlProps) {
 
       try {
         const diff = await apiGet<FileDiff>(
-          `/api/file-diff?path=${encodeURIComponent(file.path)}&workspace=${encodeURIComponent(gitStatus.workspacePath)}`,
+          `/api/file-diff?path=${encodeURIComponent(file.path)}&workspace=${encodeURIComponent(
+            gitStatus.workspacePath,
+          )}`,
         );
         setFileDiff(diff);
       } catch (err) {
@@ -154,7 +156,9 @@ export function SourceControl({ threadId, onClose }: SourceControlProps) {
               filteredFiles.map((file) => (
                 <button
                   key={file.path}
-                  className={`source-control-file ${selectedFile?.path === file.path ? 'selected' : ''} ${file.touchedByThread ? 'thread-touched' : ''}`}
+                  className={`source-control-file ${
+                    selectedFile?.path === file.path ? 'selected' : ''
+                  } ${file.touchedByThread ? 'thread-touched' : ''}`}
                   onClick={() => loadFileDiff(file)}
                 >
                   <span className={`file-status-icon ${file.status}`}>
@@ -207,7 +211,9 @@ export function SourceControl({ threadId, onClose }: SourceControlProps) {
                         {oldLines.map((line, i) => (
                           <div
                             key={i}
-                            className={`diff-line ${line === '' && newLines[i] !== '' ? 'empty' : ''} ${line !== '' && newLines[i] === '' ? 'removed' : ''}`}
+                            className={`diff-line ${
+                              line === '' && newLines[i] !== '' ? 'empty' : ''
+                            } ${line !== '' && newLines[i] === '' ? 'removed' : ''}`}
                           >
                             <span className="line-number">{line === '...' ? '' : i + 1}</span>
                             <span className="line-content">{line}</span>
@@ -221,7 +227,9 @@ export function SourceControl({ threadId, onClose }: SourceControlProps) {
                         {newLines.map((line, i) => (
                           <div
                             key={i}
-                            className={`diff-line ${line === '' && oldLines[i] !== '' ? 'empty' : ''} ${line !== '' && oldLines[i] === '' ? 'added' : ''}`}
+                            className={`diff-line ${
+                              line === '' && oldLines[i] !== '' ? 'empty' : ''
+                            } ${line !== '' && oldLines[i] === '' ? 'added' : ''}`}
                           >
                             <span className="line-number">{line === '...' ? '' : i + 1}</span>
                             <span className="line-content">{line}</span>

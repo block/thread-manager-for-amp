@@ -71,10 +71,14 @@ export function ThreadCard({
 
   return (
     <div
-      className={`detail-card-wrapper ${hasStack ? 'has-stack' : ''} ${isExpanded ? 'expanded' : ''}`}
+      className={`detail-card-wrapper ${hasStack ? 'has-stack' : ''} ${
+        isExpanded ? 'expanded' : ''
+      }`}
     >
       <div
-        className={`detail-card ${focusedId === thread.id ? 'focused' : ''} status-${status} ${isStackChild ? 'stack-child' : ''}`}
+        className={`detail-card ${focusedId === thread.id ? 'focused' : ''} status-${status} ${
+          isStackChild ? 'stack-child' : ''
+        }`}
         onClick={() => onContinue(thread)}
       >
         <div className="detail-card-header">
