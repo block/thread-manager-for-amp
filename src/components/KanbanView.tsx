@@ -33,7 +33,9 @@ const KanbanCard = memo(function KanbanCard({
 
   return (
     <div
-      className={`kanban-card-wrapper ${hasStack ? 'has-stack' : ''} ${isExpanded ? 'expanded' : ''}`}
+      className={`kanban-card-wrapper ${hasStack ? 'has-stack' : ''} ${
+        isExpanded ? 'expanded' : ''
+      }`}
     >
       <div
         className={`kanban-card ${isFocused ? 'focused' : ''}`}

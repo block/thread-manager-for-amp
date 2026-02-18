@@ -52,7 +52,9 @@ export const TerminalTabs = memo(function TerminalTabs({
         return (
           <div
             key={thread.id}
-            className={`terminal-tab ${isActive ? 'active' : ''} ${isVisible && layout !== 'tabs' ? 'in-view' : ''} ${draggedTab === thread.id ? 'dragging' : ''} ${unreadCount > 0 ? 'has-unread' : ''}`}
+            className={`terminal-tab ${isActive ? 'active' : ''} ${
+              isVisible && layout !== 'tabs' ? 'in-view' : ''
+            } ${draggedTab === thread.id ? 'dragging' : ''} ${unreadCount > 0 ? 'has-unread' : ''}`}
             onClick={() => handleTabClick(thread.id)}
             onDoubleClick={() => layout !== 'tabs' && onTabDoubleClick(thread.id)}
             draggable

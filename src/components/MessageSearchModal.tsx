@@ -196,7 +196,9 @@ export function MessageSearchModal({
           {results.map((result, index) => (
             <div
               key={result.message.id}
-              className={`message-search-result ${index === clampedSelectedIndex ? 'selected' : ''}`}
+              className={`message-search-result ${
+                index === clampedSelectedIndex ? 'selected' : ''
+              }`}
               role="option"
               aria-selected={index === clampedSelectedIndex}
               onClick={() => handleResultClick(result)}

@@ -90,7 +90,9 @@ function formatFullCommand(name: string, input: ToolInput): string | null {
       return input.query || null;
     case 'oracle':
       return input.task
-        ? `Task: ${input.task}${input.context ? `\n\nContext: ${input.context}` : ''}${input.files ? `\n\nFiles: ${JSON.stringify(input.files)}` : ''}`
+        ? `Task: ${input.task}${input.context ? `\n\nContext: ${input.context}` : ''}${
+            input.files ? `\n\nFiles: ${JSON.stringify(input.files)}` : ''
+          }`
         : null;
     case 'librarian':
       return input.query

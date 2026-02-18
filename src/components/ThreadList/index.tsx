@@ -324,7 +324,9 @@ export const ThreadList = memo(function ThreadList({
       {bulkAction === 'archive' && (
         <ConfirmModal
           title="Archive Threads"
-          message={`Archive ${selectedIds.size} thread${selectedIds.size === 1 ? '' : 's'}? They will be hidden from the list but can be restored later.`}
+          message={`Archive ${selectedIds.size} thread${
+            selectedIds.size === 1 ? '' : 's'
+          }? They will be hidden from the list but can be restored later.`}
           confirmText={`Archive ${selectedIds.size}`}
           cancelText="Cancel"
           isDestructive={false}
@@ -336,7 +338,9 @@ export const ThreadList = memo(function ThreadList({
       {bulkAction === 'delete' && (
         <ConfirmModal
           title="Delete Threads Permanently"
-          message={`Are you sure you want to permanently delete ${selectedIds.size} thread${selectedIds.size === 1 ? '' : 's'}? This action cannot be undone.`}
+          message={`Are you sure you want to permanently delete ${selectedIds.size} thread${
+            selectedIds.size === 1 ? '' : 's'
+          }? This action cannot be undone.`}
           confirmText={`Delete ${selectedIds.size} Forever`}
           cancelText="Cancel"
           isDestructive

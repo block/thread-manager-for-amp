@@ -167,7 +167,9 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
               return (
                 <div
                   key={cmd.id}
-                  className={`command-item ${isSelected ? 'selected' : ''} ${cmd.disabled ? 'disabled' : ''}`}
+                  className={`command-item ${isSelected ? 'selected' : ''} ${
+                    cmd.disabled ? 'disabled' : ''
+                  }`}
                   role="option"
                   aria-selected={isSelected}
                   aria-disabled={cmd.disabled}

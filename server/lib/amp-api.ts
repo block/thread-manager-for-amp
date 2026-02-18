@@ -115,7 +115,9 @@ export async function callAmpInternalAPI<T = unknown>(
       if (attempt < MAX_RETRIES - 1 && isRetryableError(err)) {
         const delay = RETRY_BASE_MS * Math.pow(2, attempt) + Math.random() * 200;
         console.warn(
-          `Amp API call "${method}" failed (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${Math.round(delay)}ms:`,
+          `Amp API call "${method}" failed (attempt ${
+            attempt + 1
+          }/${MAX_RETRIES}), retrying in ${Math.round(delay)}ms:`,
           lastError.message,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));

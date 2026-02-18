@@ -36,7 +36,9 @@ export function useTerminalWebSocket({
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws?threadId=${encodeURIComponent(threadId)}`;
+    const wsUrl = `${protocol}//${window.location.host}/ws?threadId=${encodeURIComponent(
+      threadId,
+    )}`;
     let isCleanedUp = false;
     let reconnectAttempt = 0;
     let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;

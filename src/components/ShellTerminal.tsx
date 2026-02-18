@@ -167,7 +167,9 @@ export function ShellTerminal({ cwd, onClose, onMinimize, minimized }: ShellTerm
 
   return (
     <div
-      className={`shell-terminal-overlay ${isMaximized ? 'maximized' : ''} ${minimized ? 'minimized' : ''}`}
+      className={`shell-terminal-overlay ${isMaximized ? 'maximized' : ''} ${
+        minimized ? 'minimized' : ''
+      }`}
     >
       <div className="shell-terminal-container">
         <div className="shell-terminal-header">
