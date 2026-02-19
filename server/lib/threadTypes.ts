@@ -89,3 +89,34 @@ export interface FileStat {
   file: string;
   mtime: number;
 }
+
+// ── Type guards for parsed JSON content blocks ──────────────────────────
+// These accept `unknown` because thread JSON is external data that may not
+// conform to the TypeScript types at runtime.
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+export function isTextContent(value: unknown): value is TextContent {
+  return isObject(value) && value.type === 'text';
+}
+
+export function isToolUseContent(value: unknown): value is ToolUseContent {
+  return isObject(value) && value.type === 'tool_use';
+}
+
+export function isImageContent(value: unknown): value is ImageContent {
+  return isObject(value) && value.type === 'image';
+}
+
+export function isHandoffRelationship(
+  value: unknown,
+): value is { type: 'handoff'; role: 'parent' | 'child'; threadID: string; comment?: string } {
+  return (
+    isObject(value) &&
+    value.type === 'handoff' &&
+    (value.role === 'parent' || value.role === 'child') &&
+    typeof value.threadID === 'string'
+  );
+}

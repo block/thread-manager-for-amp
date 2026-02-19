@@ -1,6 +1,7 @@
 import type { Thread, ThreadChain, ChainThread, ThreadRelationship } from '../../shared/types.js';
 import { runAmp, stripAnsi } from './utils.js';
 import { getThreads } from './threadCrud.js';
+import { isHandoffRelationship } from './threadTypes.js';
 
 export async function getThreadChain(threadId: string): Promise<ThreadChain> {
   const { threads } = await getThreads({ limit: 1000 });
@@ -18,8 +19,7 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     if (!thread?.relationships) return;
 
     for (const rel of thread.relationships) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-      if (rel.type === 'handoff' && rel.role === 'parent' && !visited.has(rel.threadID)) {
+      if (isHandoffRelationship(rel) && rel.role === 'parent' && !visited.has(rel.threadID)) {
         visited.add(rel.threadID);
         const parentThread = threadMap.get(rel.threadID);
         if (parentThread) {
@@ -43,8 +43,7 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     if (!thread?.relationships) return;
 
     for (const rel of thread.relationships) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-      if (rel.type === 'handoff' && rel.role === 'child' && !visited.has(rel.threadID)) {
+      if (isHandoffRelationship(rel) && rel.role === 'child' && !visited.has(rel.threadID)) {
         visited.add(rel.threadID);
         const childThread = threadMap.get(rel.threadID);
         if (childThread) {

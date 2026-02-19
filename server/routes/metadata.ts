@@ -72,9 +72,7 @@ export async function handleMetadataRoutes(
           });
           return { threadId, labels };
         } catch (err) {
-          const error = err as Error;
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-          if (error.message?.includes('Permission denied')) {
+          if (err instanceof Error && err.message.includes('Permission denied')) {
             return { threadId, labels: [] as { name: string }[] };
           }
           throw err;
@@ -103,14 +101,13 @@ export async function handleMetadataRoutes(
       const result = await callAmpInternalAPI('getThreadLabels', { thread: threadId });
       return jsonResponse(res, result);
     } catch (err) {
-      const error = err as Error;
       // Silently return empty for permission errors - API may not be available
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-      if (error.message?.includes('Permission denied')) {
+      if (err instanceof Error && err.message.includes('Permission denied')) {
         return jsonResponse(res, []);
       }
-      console.error('Failed to get thread labels:', error);
-      return jsonResponse(res, { error: error.message, labels: [] }, 500);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Failed to get thread labels:', err);
+      return jsonResponse(res, { error: message, labels: [] }, 500);
     }
   }
 
@@ -130,13 +127,12 @@ export async function handleMetadataRoutes(
       const result = await callAmpInternalAPI('setThreadLabels', { thread: threadId, labels });
       return jsonResponse(res, result);
     } catch (err) {
-      const error = err as Error;
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-      if (error.message?.includes('Permission denied')) {
+      if (err instanceof Error && err.message.includes('Permission denied')) {
         return jsonResponse(res, { error: 'Labels API not available' }, 403);
       }
-      console.error('Failed to set thread labels:', error);
-      return jsonResponse(res, { error: error.message }, 500);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Failed to set thread labels:', err);
+      return jsonResponse(res, { error: message }, 500);
     }
   }
 
@@ -148,13 +144,12 @@ export async function handleMetadataRoutes(
       const result = await callAmpInternalAPI('getUserLabels', { query });
       return jsonResponse(res, result);
     } catch (err) {
-      const error = err as Error;
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-      if (error.message?.includes('Permission denied')) {
+      if (err instanceof Error && err.message.includes('Permission denied')) {
         return jsonResponse(res, []);
       }
-      console.error('Failed to get user labels:', error);
-      return jsonResponse(res, { error: error.message, labels: [] }, 500);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Failed to get user labels:', err);
+      return jsonResponse(res, { error: message, labels: [] }, 500);
     }
   }
   // GET /api/thread-status - Get our custom metadata (status, goal, blockers)
