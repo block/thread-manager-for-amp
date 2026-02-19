@@ -105,7 +105,7 @@ interface AmpStreamEvent {
   };
   tool_use_id?: string;
   is_error?: boolean;
-  result?: string | Record<string, unknown>;
+  result?: string | Record<string, unknown> | null;
 }
 
 // ── Safe WS send ────────────────────────────────────────────────────────
@@ -239,7 +239,6 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
 
         if (typeof event.result === 'string') {
           resultStr = event.result.slice(0, 10000);
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
         } else if (typeof event.result === 'object' && event.result !== null) {
           const resultObj = event.result as { result?: unknown; status?: string };
           if (resultObj.result !== undefined) {

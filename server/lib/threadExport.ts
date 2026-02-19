@@ -3,7 +3,7 @@ import { join } from 'path';
 import { getArtifacts } from './database.js';
 import { formatMessageContent } from './threadParsing.js';
 import type { ThreadImage, Artifact } from '../../shared/types.js';
-import { THREADS_DIR, type ImageContent, type ThreadFile } from './threadTypes.js';
+import { THREADS_DIR, isImageContent, type ThreadFile } from './threadTypes.js';
 
 export async function getThreadMarkdown(
   threadId: string,
@@ -97,14 +97,12 @@ export async function getThreadImages(threadId: string): Promise<ThreadImage[]> 
     for (const msg of messages) {
       if (msg.role === 'user' && Array.isArray(msg.content)) {
         for (const block of msg.content) {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-          if (typeof block === 'object' && block !== null && block.type === 'image') {
-            const imgBlock = block as ImageContent;
-            if (imgBlock.source?.data) {
+          if (isImageContent(block)) {
+            if (block.source?.data) {
               images.push({
-                mediaType: imgBlock.mediaType || imgBlock.source.mediaType || 'image/png',
-                data: imgBlock.source.data,
-                sourcePath: imgBlock.sourcePath || null,
+                mediaType: block.mediaType || block.source.mediaType || 'image/png',
+                data: block.source.data,
+                sourcePath: block.sourcePath || null,
               });
             }
           }

@@ -18,8 +18,9 @@ import type {
 import {
   ARTIFACTS_DIR,
   THREADS_DIR,
-  type TextContent,
-  type ToolUseContent,
+  isTextContent,
+  isToolUseContent,
+  isHandoffRelationship,
   type ThreadFile,
   type FileStat,
 } from './threadTypes.js';
@@ -84,10 +85,7 @@ export async function getThreads({
               if (typeof firstUser.content === 'string') {
                 textContent = firstUser.content;
               } else if (Array.isArray(firstUser.content)) {
-                const textBlock = firstUser.content.find(
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-                  (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text',
-                );
+                const textBlock = firstUser.content.find(isTextContent);
                 textContent = textBlock?.text || '';
               }
               title = textContent.slice(0, 60).replace(/\n/g, ' ').trim();
@@ -136,14 +134,12 @@ export async function getThreads({
             }
             if (Array.isArray(msg.content)) {
               for (const block of msg.content) {
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-                if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
-                  const toolBlock = block as ToolUseContent;
-                  const name = toolBlock.name;
+                if (isToolUseContent(block)) {
+                  const name = block.name;
                   if (name && isHiddenCostTool(name)) {
                     hiddenToolCounts[name] = (hiddenToolCounts[name] || 0) + 1;
                     if (name === 'Task') {
-                      const prompt = (toolBlock.input?.prompt as string) || '';
+                      const prompt = (block.input?.prompt as string) || '';
                       taskPromptLengths.push(prompt.length);
                     }
                   }
@@ -181,14 +177,11 @@ export async function getThreads({
           let handoffParentId: string | null = null;
           let handoffChildId: string | null = null;
           for (const rel of relationships) {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-            if (rel.type === 'handoff') {
-              /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard */
+            if (isHandoffRelationship(rel)) {
               if (rel.role === 'child') {
                 // "I am the child" → threadID is my parent
                 handoffParentId = rel.threadID;
-              } else if (rel.role === 'parent') {
-                /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+              } else {
                 // "I am the parent" → threadID is my child (use last one seen)
                 handoffChildId = rel.threadID;
               }
@@ -200,12 +193,8 @@ export async function getThreads({
           for (const msg of messages) {
             if (msg.role === 'assistant' && Array.isArray(msg.content)) {
               for (const block of msg.content) {
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-                if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
-                  const toolBlock = block as ToolUseContent;
-                  if (toolBlock.input?.path) {
-                    touchedFiles.add(toolBlock.input.path);
-                  }
+                if (isToolUseContent(block) && block.input?.path) {
+                  touchedFiles.add(block.input.path);
                 }
               }
             }
@@ -270,10 +259,8 @@ export async function getThreadChanges(threadId: string): Promise<FileChange[]> 
     for (const msg of messages) {
       if (msg.role === 'assistant' && Array.isArray(msg.content)) {
         for (const block of msg.content) {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-          if (typeof block === 'object' && block !== null && block.type === 'tool_use') {
-            const toolBlock = block as ToolUseContent;
-            const { name, input } = toolBlock as { name?: string; input?: ToolUseContent['input'] };
+          if (isToolUseContent(block)) {
+            const { name, input } = block;
 
             if (name === 'create_file' && input?.path) {
               const path = input.path;

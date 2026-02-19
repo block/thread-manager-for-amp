@@ -79,10 +79,9 @@ export async function handleArtifactRoutes(
   }
 
   if (pathname === '/api/artifacts' && req.method === 'POST') {
-    const body = await parseBody<CreateArtifactBody>(req);
+    const body = await parseBody<Partial<CreateArtifactBody>>(req);
     const { threadId, type, title, content, mediaType } = body;
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
     if (!threadId || !type || !title) {
       return jsonResponse(res, { error: 'threadId, type, and title required' }, 400);
     }

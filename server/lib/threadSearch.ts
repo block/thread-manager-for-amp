@@ -1,7 +1,7 @@
 import { readFile, readdir, stat } from 'fs/promises';
 import { join } from 'path';
 import type { SearchResult, SearchMatch, RelatedThread } from '../../shared/types.js';
-import { THREADS_DIR, type TextContent, type ThreadFile } from './threadTypes.js';
+import { THREADS_DIR, isTextContent, type ThreadFile } from './threadTypes.js';
 import { getThreads } from './threadCrud.js';
 
 export async function searchThreads(query: string): Promise<SearchResult[]> {
@@ -31,11 +31,7 @@ export async function searchThreads(query: string): Promise<SearchResult[]> {
             textContent = msg.content;
           } else if (Array.isArray(msg.content)) {
             textContent = msg.content
-              /* eslint-disable @typescript-eslint/no-unnecessary-condition -- runtime guard */
-              .filter(
-                (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text',
-              )
-              /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+              .filter(isTextContent)
               .map((c) => c.text || '')
               .join('\n');
           }
@@ -64,10 +60,7 @@ export async function searchThreads(query: string): Promise<SearchResult[]> {
             if (typeof firstUser.content === 'string') {
               tc = firstUser.content;
             } else if (Array.isArray(firstUser.content)) {
-              const textBlock = firstUser.content.find(
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
-                (c): c is TextContent => typeof c === 'object' && c !== null && c.type === 'text',
-              );
+              const textBlock = firstUser.content.find(isTextContent);
               tc = textBlock?.text || '';
             }
             title = tc.slice(0, 60).replace(/\n/g, ' ').trim();
