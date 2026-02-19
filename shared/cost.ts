@@ -1,3 +1,5 @@
+import { DEFAULT_MAX_CONTEXT_TOKENS } from './constants.js';
+
 // Cost calculation for Amp thread token usage.
 // Centralises pricing logic that was previously duplicated in 3 places.
 //
@@ -91,6 +93,37 @@ export interface ToolCostCounts {
   [toolName: string]: number;
 }
 
+// Minimal message shape accepted by calculateThreadCost.
+// Compatible with ThreadMessage from server/lib/threadTypes.ts without
+// importing server-only types into the shared layer.
+export interface CostMessageUsage {
+  inputTokens?: number;
+  outputTokens?: number;
+  cacheCreationInputTokens?: number;
+  cacheReadInputTokens?: number;
+  totalInputTokens?: number;
+  maxInputTokens?: number;
+}
+
+export interface CostMessageContentBlock {
+  type: string;
+  name?: string;
+  input?: { prompt?: unknown; [key: string]: unknown };
+}
+
+export interface CostMessage {
+  usage?: CostMessageUsage;
+  content?: string | (string | CostMessageContentBlock)[];
+}
+
+export interface ThreadCostResult {
+  cost: number;
+  outputTokens: number;
+  contextTokens: number;
+  maxContextTokens: number;
+  contextPercent: number;
+}
+
 // ── Public API ──────────────────────────────────────────────────────────
 
 export function calculateCost(tokens: CostInput): number {
@@ -146,4 +179,65 @@ export function estimateToolCosts(
 
 export function isHiddenCostTool(toolName: string): boolean {
   return toolName in TOOL_COST_ESTIMATES;
+}
+
+export function calculateThreadCost(
+  messages: CostMessage[],
+  isOpus: boolean,
+  defaultMaxContextTokens: number = DEFAULT_MAX_CONTEXT_TOKENS,
+): ThreadCostResult {
+  let freshInputTokens = 0;
+  let totalOutputTokens = 0;
+  let cacheCreation = 0;
+  let cacheRead = 0;
+  let contextTokens = 0;
+  let maxContextTokens = defaultMaxContextTokens;
+  let turns = 0;
+  const hiddenToolCounts: ToolCostCounts = {};
+  const taskPromptLengths: number[] = [];
+
+  for (const msg of messages) {
+    if (msg.usage) {
+      freshInputTokens += msg.usage.inputTokens || 0;
+      totalOutputTokens += msg.usage.outputTokens || 0;
+      cacheCreation += msg.usage.cacheCreationInputTokens || 0;
+      cacheRead += msg.usage.cacheReadInputTokens || 0;
+      contextTokens = msg.usage.totalInputTokens || contextTokens;
+      maxContextTokens = msg.usage.maxInputTokens || maxContextTokens;
+      turns++;
+    }
+    if (Array.isArray(msg.content)) {
+      for (const block of msg.content) {
+        if (typeof block === 'string' || block.type !== 'tool_use') continue;
+        if (block.name && isHiddenCostTool(block.name)) {
+          hiddenToolCounts[block.name] = (hiddenToolCounts[block.name] || 0) + 1;
+          if (block.name === 'Task') {
+            const prompt = typeof block.input?.prompt === 'string' ? block.input.prompt : '';
+            taskPromptLengths.push(prompt.length);
+          }
+        }
+      }
+    }
+  }
+
+  const tokenCost = calculateCost({
+    inputTokens: freshInputTokens,
+    cacheCreationTokens: cacheCreation,
+    cacheReadTokens: cacheRead,
+    outputTokens: totalOutputTokens,
+    isOpus,
+    turns,
+  });
+  const cost = tokenCost + estimateToolCosts(hiddenToolCounts, taskPromptLengths);
+
+  const contextPercent =
+    maxContextTokens > 0 ? Math.round((contextTokens / maxContextTokens) * 100) : 0;
+
+  return {
+    cost,
+    outputTokens: totalOutputTokens,
+    contextTokens,
+    maxContextTokens,
+    contextPercent,
+  };
 }

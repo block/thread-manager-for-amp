@@ -1,10 +1,8 @@
 import { readFile, readdir, stat, unlink, rm } from 'fs/promises';
 import type { Stats } from 'fs';
 import { join } from 'path';
-import { DEFAULT_MAX_CONTEXT_TOKENS } from './constants.js';
 import { AMP_HOME } from './constants.js';
-import { calculateCost, estimateToolCosts, isHiddenCostTool } from '../../shared/cost.js';
-import type { ToolCostCounts } from '../../shared/cost.js';
+import { calculateThreadCost } from '../../shared/cost.js';
 import { formatRelativeTime, runAmp } from './utils.js';
 import { deleteThreadData } from './database.js';
 import { getKnownWorkspaces as getKnownWorkspacesImpl } from './workspaces.js';
@@ -112,53 +110,7 @@ export async function getThreads({
           }
 
           // Calculate token usage and cost
-          let freshInputTokens = 0; // Non-cached input tokens
-          let totalOutputTokens = 0;
-          let cacheCreation = 0;
-          let cacheRead = 0;
-          let contextTokens = 0;
-          let maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS;
-          let turns = 0;
-          const hiddenToolCounts: ToolCostCounts = {};
-          const taskPromptLengths: number[] = [];
-
-          for (const msg of messages) {
-            if (msg.usage) {
-              freshInputTokens += msg.usage.inputTokens || 0;
-              totalOutputTokens += msg.usage.outputTokens || 0;
-              cacheCreation += msg.usage.cacheCreationInputTokens || 0;
-              cacheRead += msg.usage.cacheReadInputTokens || 0;
-              contextTokens = msg.usage.totalInputTokens || contextTokens;
-              maxContextTokens = msg.usage.maxInputTokens || maxContextTokens;
-              turns++;
-            }
-            if (Array.isArray(msg.content)) {
-              for (const block of msg.content) {
-                if (isToolUseContent(block)) {
-                  const name = block.name;
-                  if (name && isHiddenCostTool(name)) {
-                    hiddenToolCounts[name] = (hiddenToolCounts[name] || 0) + 1;
-                    if (name === 'Task') {
-                      const prompt = (block.input?.prompt as string) || '';
-                      taskPromptLengths.push(prompt.length);
-                    }
-                  }
-                }
-              }
-            }
-          }
-          const tokenCost = calculateCost({
-            inputTokens: freshInputTokens,
-            cacheCreationTokens: cacheCreation,
-            cacheReadTokens: cacheRead,
-            outputTokens: totalOutputTokens,
-            isOpus,
-            turns,
-          });
-          const cost = tokenCost + estimateToolCosts(hiddenToolCounts, taskPromptLengths);
-
-          const contextPercent =
-            maxContextTokens > 0 ? Math.round((contextTokens / maxContextTokens) * 100) : 0;
+          const { cost, contextPercent, maxContextTokens } = calculateThreadCost(messages, isOpus);
 
           // Extract workspace/repo info
           const trees = data.env?.initial?.trees || [];

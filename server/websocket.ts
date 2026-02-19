@@ -9,18 +9,14 @@ import type { WsServerMessage } from '../shared/websocket.js';
 import { isWsClientMessage } from '../shared/validation.js';
 import {
   calculateCost,
+  calculateThreadCost,
   isHiddenCostTool,
   TOOL_COST_ESTIMATES,
   estimateTaskCost,
 } from '../shared/cost.js';
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS, isAllowedOrigin } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
-import {
-  THREADS_DIR,
-  ARTIFACTS_DIR,
-  type ThreadFile,
-  type ToolUseContent,
-} from './lib/threadTypes.js';
+import { THREADS_DIR, ARTIFACTS_DIR, type ThreadFile } from './lib/threadTypes.js';
 
 // Grace period before killing child process on disconnect (30 seconds)
 const DISCONNECT_GRACE_PERIOD_MS = 30_000;
@@ -444,61 +440,15 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
     }
 
     const messages = data.messages || [];
-    let freshInputTokens = 0;
-    let totalOutputTokens = 0;
-    let cacheCreation = 0;
-    let cacheRead = 0;
-    let contextTokens = 0;
-    let maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS;
-    let hiddenToolCost = 0;
-    let turns = 0;
-
-    for (const msg of messages) {
-      if (msg.usage) {
-        freshInputTokens += msg.usage.inputTokens || 0;
-        totalOutputTokens += msg.usage.outputTokens || 0;
-        cacheCreation += msg.usage.cacheCreationInputTokens || 0;
-        cacheRead += msg.usage.cacheReadInputTokens || 0;
-        contextTokens = msg.usage.totalInputTokens || contextTokens;
-        maxContextTokens = msg.usage.maxInputTokens || maxContextTokens;
-        turns++;
-      }
-      if (msg.content && Array.isArray(msg.content)) {
-        for (const block of msg.content) {
-          if (typeof block === 'string' || block.type !== 'tool_use') continue;
-          const tool = block as ToolUseContent;
-          if (tool.name && isHiddenCostTool(tool.name)) {
-            if (tool.name === 'Task') {
-              const rawPrompt = tool.input?.prompt;
-              const prompt = typeof rawPrompt === 'string' ? rawPrompt : '';
-              hiddenToolCost += estimateTaskCost(prompt.length);
-            } else {
-              hiddenToolCost += TOOL_COST_ESTIMATES[tool.name] || 0;
-            }
-          }
-        }
-      }
-    }
-
-    session.cumulativeCost =
-      calculateCost({
-        inputTokens: freshInputTokens,
-        cacheCreationTokens: cacheCreation,
-        cacheReadTokens: cacheRead,
-        outputTokens: totalOutputTokens,
-        isOpus: session.isOpus,
-        turns,
-      }) + hiddenToolCost;
-
-    const contextPercent =
-      maxContextTokens > 0 ? Math.round((contextTokens / maxContextTokens) * 100) : 0;
+    const result = calculateThreadCost(messages, session.isOpus);
+    session.cumulativeCost = result.cost;
 
     sendToSession(session, {
       type: 'usage',
-      contextPercent,
-      inputTokens: contextTokens,
-      outputTokens: totalOutputTokens,
-      maxTokens: maxContextTokens,
+      contextPercent: result.contextPercent,
+      inputTokens: result.contextTokens,
+      outputTokens: result.outputTokens,
+      maxTokens: result.maxContextTokens,
       estimatedCost: session.cumulativeCost.toFixed(4),
     });
   } catch {
