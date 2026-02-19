@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   calculateCost,
+  calculateThreadCost,
   estimateToolCosts,
   estimateTaskCost,
   isHiddenCostTool,
   TOOL_COST_ESTIMATES,
   type CostInput,
+  type CostMessage,
 } from './cost.js';
 
 describe('calculateCost', () => {
@@ -258,5 +260,166 @@ describe('isHiddenCostTool', () => {
     expect(isHiddenCostTool('edit_file')).toBe(false);
     expect(isHiddenCostTool('Grep')).toBe(false);
     expect(isHiddenCostTool('glob')).toBe(false);
+  });
+});
+
+describe('calculateThreadCost', () => {
+  it('returns zeroes for empty messages', () => {
+    const result = calculateThreadCost([], true);
+    expect(result.cost).toBe(0);
+    expect(result.outputTokens).toBe(0);
+    expect(result.contextTokens).toBe(0);
+    expect(result.contextPercent).toBe(0);
+  });
+
+  it('accumulates token usage across messages', () => {
+    const messages: CostMessage[] = [
+      {
+        usage: {
+          inputTokens: 100,
+          outputTokens: 50,
+          cacheCreationInputTokens: 200,
+          cacheReadInputTokens: 300,
+        },
+      },
+      {
+        usage: {
+          inputTokens: 400,
+          outputTokens: 150,
+          cacheCreationInputTokens: 100,
+          cacheReadInputTokens: 500,
+        },
+      },
+    ];
+    const result = calculateThreadCost(messages, true);
+    // 2 messages with usage → 2 turns
+    // input: 500, output: 200, cacheCreation: 300, cacheRead: 800
+    const expected = calculateCost({
+      inputTokens: 500,
+      cacheCreationTokens: 300,
+      cacheReadTokens: 800,
+      outputTokens: 200,
+      isOpus: true,
+      turns: 2,
+    });
+    expect(result.cost).toBeCloseTo(expected, 6);
+    expect(result.outputTokens).toBe(200);
+  });
+
+  it('tracks contextTokens from totalInputTokens (last wins)', () => {
+    const messages: CostMessage[] = [
+      { usage: { totalInputTokens: 50000, maxInputTokens: 168000 } },
+      { usage: { totalInputTokens: 80000, maxInputTokens: 168000 } },
+    ];
+    const result = calculateThreadCost(messages, false);
+    expect(result.contextTokens).toBe(80000);
+    expect(result.maxContextTokens).toBe(168000);
+    expect(result.contextPercent).toBe(Math.round((80000 / 168000) * 100));
+  });
+
+  it('uses default maxContextTokens when not in usage', () => {
+    const messages: CostMessage[] = [{ usage: { inputTokens: 100 } }];
+    const result = calculateThreadCost(messages, true);
+    expect(result.maxContextTokens).toBe(168000);
+  });
+
+  it('accepts custom defaultMaxContextTokens', () => {
+    const messages: CostMessage[] = [{ usage: { inputTokens: 100 } }];
+    const result = calculateThreadCost(messages, true, 200000);
+    expect(result.maxContextTokens).toBe(200000);
+  });
+
+  it('includes hidden tool costs for oracle and finder', () => {
+    const messages: CostMessage[] = [
+      {
+        content: [
+          { type: 'tool_use', name: 'oracle', input: {} },
+          { type: 'tool_use', name: 'finder', input: {} },
+          { type: 'tool_use', name: 'finder', input: {} },
+        ],
+      },
+    ];
+    const result = calculateThreadCost(messages, true);
+    const expectedToolCost =
+      (TOOL_COST_ESTIMATES.oracle ?? 0) + 2 * (TOOL_COST_ESTIMATES.finder ?? 0);
+    expect(result.cost).toBeCloseTo(expectedToolCost, 6);
+  });
+
+  it('uses prompt-length scaling for Task tool', () => {
+    const messages: CostMessage[] = [
+      {
+        content: [
+          { type: 'tool_use', name: 'Task', input: { prompt: 'x'.repeat(300) } },
+          { type: 'tool_use', name: 'Task', input: { prompt: 'y'.repeat(3000) } },
+        ],
+      },
+    ];
+    const result = calculateThreadCost(messages, true);
+    // 300 chars → $0.75, 3000 chars → $4.00
+    expect(result.cost).toBeCloseTo(4.75, 6);
+  });
+
+  it('skips string content blocks and non-tool_use blocks', () => {
+    const messages: CostMessage[] = [
+      {
+        content: [
+          'plain string block',
+          { type: 'text', name: undefined },
+          { type: 'tool_use', name: 'Bash', input: {} },
+        ],
+      },
+    ];
+    const result = calculateThreadCost(messages, true);
+    expect(result.cost).toBe(0);
+  });
+
+  it('skips messages with string content (not array)', () => {
+    const messages: CostMessage[] = [{ content: 'just a string' }];
+    const result = calculateThreadCost(messages, false);
+    expect(result.cost).toBe(0);
+  });
+
+  it('matches manual calculation for realistic thread', () => {
+    const messages: CostMessage[] = [
+      {
+        usage: {
+          inputTokens: 10,
+          outputTokens: 57,
+          cacheCreationInputTokens: 9708,
+          cacheReadInputTokens: 14974,
+          totalInputTokens: 24692,
+          maxInputTokens: 168000,
+        },
+        content: [
+          { type: 'tool_use', name: 'oracle', input: {} },
+          { type: 'tool_use', name: 'Task', input: { prompt: 'x'.repeat(5000) } },
+        ],
+      },
+    ];
+    const result = calculateThreadCost(messages, true);
+
+    const tokenCost = calculateCost({
+      inputTokens: 10,
+      cacheCreationTokens: 9708,
+      cacheReadTokens: 14974,
+      outputTokens: 57,
+      isOpus: true,
+      turns: 1,
+    });
+    const toolCost = (TOOL_COST_ESTIMATES.oracle ?? 0) + 7.0; // 5000 chars → $7.00
+    expect(result.cost).toBeCloseTo(tokenCost + toolCost, 6);
+    expect(result.contextTokens).toBe(24692);
+    expect(result.contextPercent).toBe(Math.round((24692 / 168000) * 100));
+  });
+
+  it('handles Task with non-string prompt gracefully', () => {
+    const messages: CostMessage[] = [
+      {
+        content: [{ type: 'tool_use', name: 'Task', input: { prompt: 12345 } }],
+      },
+    ];
+    const result = calculateThreadCost(messages, true);
+    // Non-string prompt → treated as 0-length → $0.75
+    expect(result.cost).toBeCloseTo(0.75, 6);
   });
 });
