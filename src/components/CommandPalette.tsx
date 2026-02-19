@@ -17,9 +17,15 @@ interface CommandPaletteProps {
   commands: Command[];
   isOpen: boolean;
   onClose: () => void;
+  activeThreadTitle?: string;
 }
 
-export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProps) {
+export function CommandPalette({
+  commands,
+  isOpen,
+  onClose,
+  activeThreadTitle,
+}: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isKeyboardNav, setIsKeyboardNav] = useState(false);
@@ -129,7 +135,10 @@ export function CommandPalette({ commands, isOpen, onClose }: CommandPaletteProp
       trapFocus={false}
     >
       <div className="command-palette-header">
-        <span className="command-palette-title">Command Palette</span>
+        <div className="command-palette-header-text">
+          <span className="command-palette-title">Command Palette</span>
+          {activeThreadTitle && <span className="command-palette-thread">{activeThreadTitle}</span>}
+        </div>
         <button className="command-palette-close" onClick={onClose}>
           <X size={16} />
         </button>

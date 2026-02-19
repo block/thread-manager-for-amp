@@ -341,6 +341,16 @@
 .terminal-pane {
   display: flex;
   overflow: hidden;
+  position: relative;
+}
+
+.terminal-pane.pane-inactive::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .terminal-pane .terminal-container {

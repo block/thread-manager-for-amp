@@ -142,11 +142,18 @@ export const TerminalManager = memo(function TerminalManager({
         <div className={`terminal-panes layout-${layout}`}>
           {orderedThreads.map((thread) => {
             const isVisible = visibleIds.has(thread.id);
+            const isActivePane = layout !== 'tabs' && thread.id === activeId;
+            const isInactivePane = layout !== 'tabs' && isVisible && thread.id !== activeId;
             return (
               <div
                 key={thread.id}
-                className="terminal-pane"
+                className={`terminal-pane${isActivePane ? ' pane-active' : ''}${isInactivePane ? ' pane-inactive' : ''}`}
                 style={{ display: isVisible ? undefined : 'none' }}
+                onMouseDown={() => {
+                  if (layout !== 'tabs' && isVisible) {
+                    setActiveId(thread.id);
+                  }
+                }}
               >
                 <ErrorBoundary>
                   <Terminal

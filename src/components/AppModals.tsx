@@ -37,7 +37,8 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
     handleRemoveBlocker,
   } = useAppModalHandlers({ onRefresh, onNewThread, setThreadLabels });
 
-  const { threads, metadata } = threadActions;
+  const { threads, metadata, activeThreadId } = threadActions;
+  const activeThreadTitle = threads.find((t) => t.id === activeThreadId)?.title;
 
   return (
     <>
@@ -46,6 +47,7 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
           commands={commands}
           isOpen={modals.commandPaletteOpen}
           onClose={() => modals.setCommandPaletteOpen(false)}
+          activeThreadTitle={activeThreadTitle}
         />
 
         <OutputModal

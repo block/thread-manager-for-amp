@@ -115,8 +115,27 @@ export function useTerminalManager({
       if (isMinimized) {
         setIsMinimized(false);
       }
+
+      // In split/grid mode, if clicking a tab not currently visible,
+      // swap it into the position of the currently active tab
+      if (layout !== 'tabs') {
+        const maxVisible = layout === 'split' ? 2 : 4;
+        setThreadOrder((prev) => {
+          const clickedIndex = prev.indexOf(id);
+          if (clickedIndex === -1 || clickedIndex < maxVisible) return prev;
+
+          const activeIndex = prev.indexOf(activeId);
+          const swapIndex =
+            activeIndex !== -1 && activeIndex < maxVisible ? activeIndex : maxVisible - 1;
+
+          const newOrder = [...prev];
+          newOrder[swapIndex] = id;
+          newOrder[clickedIndex] = prev[swapIndex];
+          return newOrder;
+        });
+      }
     },
-    [isMinimized],
+    [isMinimized, layout, activeId],
   );
 
   const handleTabDragStart = useCallback((e: React.DragEvent, threadId: string) => {
