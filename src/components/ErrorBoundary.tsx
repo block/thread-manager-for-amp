@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import './ErrorBoundary.css';
 
 interface Props {
   children: ReactNode;
@@ -29,23 +30,12 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         this.props.fallback || (
-          <div
-            role="alert"
-            style={{
-              padding: '20px',
-              background: '#1a0a0a',
-              color: '#ff6b6b',
-              borderRadius: '8px',
-              margin: '10px',
-            }}
-          >
+          <div role="alert" className="error-boundary">
             <h3>Something went wrong</h3>
-            <pre style={{ fontSize: '12px', whiteSpace: 'pre-wrap' }}>
-              {this.state.error?.message}
-            </pre>
+            <pre className="error-boundary-message">{this.state.error?.message}</pre>
             <button
+              className="error-boundary-retry"
               onClick={() => this.setState({ hasError: false, error: null })}
-              style={{ marginTop: '10px', padding: '8px 16px' }}
             >
               Try again
             </button>
