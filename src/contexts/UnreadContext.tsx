@@ -70,8 +70,7 @@ export function UnreadProvider({ children }: { children: ReactNode }) {
   const clearThread = useCallback((threadId: string) => {
     setState((prev) => {
       if (!prev[threadId]) return prev;
-      const { [threadId]: _removed, ...rest } = prev;
-      void _removed;
+      const { [threadId]: _, ...rest } = prev;
       return rest;
     });
   }, []);
