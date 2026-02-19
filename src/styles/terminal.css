@@ -16,7 +16,7 @@
 .terminal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(3, 13, 34, 0.9);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -172,7 +172,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: #0d0936;
+  background: var(--bg-tertiary);
 }
 
 .terminal-loading,
@@ -1196,7 +1196,7 @@
 .message-search-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(3, 13, 34, 0.85);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: flex-start;

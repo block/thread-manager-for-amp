@@ -341,6 +341,61 @@ export function applyTheme(theme: Theme): void {
   root.classList.toggle('theme-cyberpunk', theme.isCyberpunk);
 }
 
+/**
+ * Generate xterm.js theme from app theme
+ */
+export function getXtermTheme(theme: Theme): Record<string, string> {
+  if (theme.isDark) {
+    return {
+      background: theme.bg.tertiary,
+      foreground: theme.text.primary,
+      cursor: theme.accent.primary,
+      cursorAccent: theme.bg.tertiary,
+      selectionBackground: theme.bg.selection,
+      black: theme.bg.primary,
+      red: theme.accent.pink,
+      green: theme.status.success,
+      yellow: theme.accent.yellow,
+      blue: theme.accent.blue,
+      magenta: theme.accent.pink,
+      cyan: theme.accent.cyan,
+      white: theme.text.primary,
+      brightBlack: theme.text.secondary,
+      brightRed: theme.accent.pink,
+      brightGreen: theme.status.success,
+      brightYellow: theme.accent.yellow,
+      brightBlue: theme.accent.blue,
+      brightMagenta: theme.accent.pink,
+      brightCyan: theme.accent.cyan,
+      brightWhite: '#ffffff',
+    };
+  }
+
+  return {
+    background: theme.bg.primary,
+    foreground: theme.text.primary,
+    cursor: theme.accent.primary,
+    cursorAccent: theme.bg.primary,
+    selectionBackground: theme.bg.selection,
+    black: theme.text.primary,
+    red: theme.status.error,
+    green: theme.status.success,
+    yellow: theme.accent.yellow,
+    blue: theme.accent.blue,
+    magenta: theme.accent.pink,
+    cyan: theme.accent.cyan,
+    white: theme.bg.secondary,
+    brightBlack: theme.text.secondary,
+    brightRed: theme.status.error,
+    brightGreen: theme.status.success,
+    brightYellow: theme.accent.yellow,
+    brightBlue: theme.accent.blue,
+    brightMagenta: theme.accent.pink,
+    brightCyan: theme.accent.cyan,
+    brightWhite: theme.bg.primary,
+  };
+}
+
 const STORAGE_KEY = 'amp-theme';
 const DEFAULT_THEME = 'Cyberpunk 2077';
 

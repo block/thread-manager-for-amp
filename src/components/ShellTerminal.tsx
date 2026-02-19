@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { X, Square, TerminalSquare, Minus, Maximize } from 'lucide-react';
 import type { ShellServerMessage } from '../../shared/websocket.js';
+import { useSettingsContext } from '../contexts/SettingsContext';
+import { getPresetByName, getThemeForPreset, getXtermTheme } from '../lib/theme';
 import '@xterm/xterm/css/xterm.css';
 
 interface ShellTerminalProps {
@@ -20,6 +22,13 @@ export function ShellTerminal({ cwd, onClose, onMinimize, minimized }: ShellTerm
   const [isConnected, setIsConnected] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<{ shell: string; cwd: string } | null>(null);
+
+  const { currentTheme } = useSettingsContext();
+  const xtermTheme = useMemo(() => {
+    const preset = getPresetByName(currentTheme);
+    if (!preset) return undefined;
+    return getXtermTheme(getThemeForPreset(preset));
+  }, [currentTheme]);
 
   const connect = useCallback(() => {
     // Don't connect if already connected
@@ -71,29 +80,7 @@ export function ShellTerminal({ cwd, onClose, onMinimize, minimized }: ShellTerm
       cursorBlink: true,
       fontSize: 13,
       fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
-      theme: {
-        background: '#0d0936',
-        foreground: '#fdfeff',
-        cursor: '#0ef3ff',
-        cursorAccent: '#0d0936',
-        selectionBackground: '#073170',
-        black: '#030d22',
-        red: '#ff2592',
-        green: '#4ade80',
-        yellow: '#ffd400',
-        blue: '#47a1fa',
-        magenta: '#ff2592',
-        cyan: '#0ef3ff',
-        white: '#fdfeff',
-        brightBlack: '#4a7bd4',
-        brightRed: '#ff2592',
-        brightGreen: '#4ade80',
-        brightYellow: '#ffd400',
-        brightBlue: '#47a1fa',
-        brightMagenta: '#ff2592',
-        brightCyan: '#0ef3ff',
-        brightWhite: '#ffffff',
-      },
+      theme: xtermTheme,
     });
 
     const fitAddon = new FitAddon();
@@ -145,7 +132,15 @@ export function ShellTerminal({ cwd, onClose, onMinimize, minimized }: ShellTerm
         wsRef.current.close();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- xtermTheme updates handled by separate effect
   }, [connect]);
+
+  // Update terminal theme when app theme changes
+  useEffect(() => {
+    if (termRef.current && xtermTheme) {
+      termRef.current.options.theme = xtermTheme;
+    }
+  }, [xtermTheme]);
 
   // Refit when maximized or minimized changes
   useEffect(() => {
