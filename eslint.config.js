@@ -9,6 +9,10 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 const sharedStrictOverrides = {
   // TODO: Re-enable when typescript-eslint supports ESLint 10 (https://github.com/typescript-eslint/typescript-eslint/issues/11952)
   '@typescript-eslint/no-deprecated': 'off',
+  '@typescript-eslint/no-unused-vars': [
+    'error',
+    { argsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_', ignoreRestSiblings: true },
+  ],
   '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
   '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
   '@typescript-eslint/no-misused-promises': [
