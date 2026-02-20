@@ -130,7 +130,7 @@ export function useTerminalManager({
 
           const newOrder = [...prev];
           newOrder[swapIndex] = id;
-          newOrder[clickedIndex] = prev[swapIndex];
+          newOrder[clickedIndex] = prev[swapIndex] ?? id;
           return newOrder;
         });
       }
