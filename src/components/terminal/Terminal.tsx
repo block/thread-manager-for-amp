@@ -84,10 +84,15 @@ export function Terminal({
     isRunning,
     agentStatus,
     connectionError,
+    threadMode,
     sendMessage: wsSendMessage,
     cancelOperation,
     reconnect,
   } = useTerminalWebSocket({ threadId, setMessages, setUsage, setIsLoading });
+
+  // Effective mode: locked thread mode takes priority over global setting
+  const effectiveMode = threadMode ?? agentMode;
+  const isModeLocked = threadMode !== null;
 
   // Sync WS connection state to control message polling
   useEffect(() => {
@@ -325,8 +330,9 @@ export function Terminal({
         onPendingImageSet={setPendingImage}
         searchOpen={searchOpen}
         workspacePath={thread.workspacePath ?? null}
-        agentMode={agentMode}
+        agentMode={effectiveMode}
         onCycleMode={cycleAgentMode}
+        isModeLocked={isModeLocked}
       />
       <MessageSearchModal
         isOpen={searchOpen}

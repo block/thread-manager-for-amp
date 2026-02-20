@@ -1164,6 +1164,16 @@
   color: var(--accent-orange, #f97316);
 }
 
+.terminal-mode-badge.mode-locked {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.terminal-mode-badge.mode-locked:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border);
+}
+
 /* Terminal with minimap layout */
 .terminal-container.with-minimap {
   max-width: 1400px;

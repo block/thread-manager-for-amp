@@ -37,6 +37,7 @@ export function TerminalInput({
   workspacePath,
   agentMode,
   onCycleMode,
+  isModeLocked,
 }: TerminalInputProps) {
   void _onCancel;
   const autocompleteRef = useRef<MentionAutocompleteHandle>(null);
@@ -193,10 +194,15 @@ export function TerminalInput({
         aria-label="Message input"
       />
       <button
-        className={`terminal-mode-badge mode-${agentMode}`}
-        onClick={onCycleMode}
-        title={`Mode: ${agentMode} (click to change)`}
-        aria-label={`Agent mode: ${agentMode}`}
+        className={`terminal-mode-badge mode-${agentMode} ${isModeLocked ? 'mode-locked' : ''}`}
+        onClick={isModeLocked ? undefined : onCycleMode}
+        disabled={isModeLocked}
+        title={
+          isModeLocked
+            ? `Mode: ${agentMode} (locked for this thread)`
+            : `Mode: ${agentMode} (click to change)`
+        }
+        aria-label={`Agent mode: ${agentMode}${isModeLocked ? ' (locked)' : ''}`}
       >
         <span className="mode-icon">
           {agentMode === 'deep' ? '🧠' : agentMode === 'rush' ? '🚀' : '⚡'}

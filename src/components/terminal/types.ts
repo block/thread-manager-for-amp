@@ -59,6 +59,7 @@ export interface TerminalInputProps {
   workspacePath: string | null;
   agentMode: AgentMode;
   onCycleMode: () => void;
+  isModeLocked: boolean;
 }
 
 export interface TerminalStatusBarProps {

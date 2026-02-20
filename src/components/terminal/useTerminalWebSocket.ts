@@ -29,6 +29,7 @@ export function useTerminalWebSocket({
   const [isRunning, setIsRunning] = useState(false);
   const [agentStatus, setAgentStatus] = useState<AgentStatus>('idle');
   const [connectionError, setConnectionError] = useState(false);
+  const [threadMode, setThreadMode] = useState<AgentMode | null>(null);
   const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const [, setNoResponseDetected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
@@ -69,6 +70,9 @@ export function useTerminalWebSocket({
             case 'ready':
               wasConnected = true;
               setIsConnected(true);
+              if (data.mode) {
+                setThreadMode(data.mode);
+              }
               break;
             case 'usage':
               setUsage({
@@ -292,6 +296,9 @@ export function useTerminalWebSocket({
       wasCancelledRef.current = false;
       setNoResponseDetected(false);
 
+      // Use the locked thread mode if set, otherwise use the provided mode
+      const effectiveMode = threadMode ?? mode;
+
       // Always send the message — if the agent is already running, the server
       // will interrupt the current operation (SIGINT) and queue this message
       // to be processed after the child exits. No client-side cancel needed.
@@ -300,15 +307,20 @@ export function useTerminalWebSocket({
           type: 'message',
           content,
           image: image || undefined,
-          mode: mode || undefined,
+          mode: effectiveMode || undefined,
         }),
       );
+
+      // Lock the mode after the first send on a new thread
+      if (!threadMode && effectiveMode) {
+        setThreadMode(effectiveMode);
+      }
 
       setIsSending(true);
       setAgentStatus('waiting');
       return true;
     },
-    [isConnected],
+    [isConnected, threadMode],
   );
 
   const cancelOperation = useCallback(() => {
@@ -328,6 +340,7 @@ export function useTerminalWebSocket({
     isRunning,
     agentStatus,
     connectionError,
+    threadMode,
     setIsSending,
     sendMessage,
     cancelOperation,
