@@ -293,8 +293,18 @@ async function spawnAmpOnSession(
 
   session.processing = true;
   try {
-    // Resolve @file and @@thread references in the message
-    const resolved = await resolveMessageReferences(message);
+    // Resolve @file and @T-thread references in the message
+    let workspacePath: string | null = null;
+    try {
+      const threadData = JSON.parse(
+        await readFile(join(THREADS_DIR, `${session.threadId}.json`), 'utf-8'),
+      ) as ThreadFile;
+      const uri = threadData.env?.initial?.trees?.[0]?.uri;
+      workspacePath = uri ? uri.replace('file://', '') : null;
+    } catch {
+      // No workspace info available
+    }
+    const resolved = await resolveMessageReferences(message, workspacePath);
     let finalMessage = resolved.message;
 
     if (image) {

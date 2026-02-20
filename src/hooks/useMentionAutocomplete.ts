@@ -91,11 +91,12 @@ export function useMentionAutocomplete(
     (value: string, onInputChange: (v: string) => void) => {
       if (!mentionState.active) return;
 
-      const prefix = mentionState.type === 'thread' ? '@@' : '@';
+      // Both file and thread refs use single @ in the resolved message.
+      // @@ is only the trigger to open the thread picker; the inserted text is @T-<id>
       const cursorPos = inputRef.current?.selectionStart ?? input.length;
       const before = input.slice(0, mentionState.startIndex);
       const afterCursor = input.slice(cursorPos);
-      const replacement = `${prefix}${value} `;
+      const replacement = `@${value} `;
       const newInput = before + replacement + afterCursor;
 
       onInputChange(newInput);
