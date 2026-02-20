@@ -14,7 +14,7 @@ interface UseTerminalWebSocketOptions {
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export type AgentStatus = 'idle' | 'waiting' | 'streaming' | 'running_tools';
+export type AgentStatus = 'idle' | 'waiting' | 'streaming' | 'running_tools' | 'queued';
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 
@@ -193,6 +193,8 @@ export function useTerminalWebSocket({
                   }
                   return updated;
                 });
+              } else if (data.subtype === 'message_queued') {
+                setAgentStatus('queued');
               }
               break;
             case 'cancelled':

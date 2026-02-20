@@ -296,6 +296,7 @@ async function spawnAmpOnSession(
   // both pass the session.child check before either spawns.
   if (session.processing) {
     session.pendingMessage = { content: message, image, mode };
+    sendToSession(session, { type: 'system', subtype: 'message_queued' });
     return;
   }
 

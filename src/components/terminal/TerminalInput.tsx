@@ -12,6 +12,8 @@ function getStatusMessage(agentStatus: string): string {
       return 'Streaming response...';
     case 'running_tools':
       return 'Running tools...';
+    case 'queued':
+      return 'Message queued — will send after current operation';
     default:
       return '';
   }
