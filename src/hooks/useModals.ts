@@ -27,6 +27,14 @@ export interface ConfirmModalState {
   onConfirm: () => void;
 }
 
+export interface TasksModalState {
+  tab: 'list' | 'import';
+}
+
+export interface CodeReviewModalState {
+  workspace?: string;
+}
+
 export interface UseModalsReturn {
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
@@ -52,6 +60,15 @@ export interface UseModalsReturn {
   closeShellTerminal: () => void;
   minimizeShellTerminal: () => void;
   restoreShellTerminal: () => void;
+
+  tasksModal: TasksModalState | null;
+  setTasksModal: (state: TasksModalState | null) => void;
+
+  replayThreadId: string | null;
+  setReplayThreadId: (id: string | null) => void;
+
+  codeReviewModal: CodeReviewModalState | null;
+  setCodeReviewModal: (state: CodeReviewModalState | null) => void;
 }
 
 export function useModals(): UseModalsReturn {
@@ -62,6 +79,9 @@ export function useModals(): UseModalsReturn {
   const [workspacePickerOpen, setWorkspacePickerOpen] = useState(false);
   const [blockerThreadId, setBlockerThreadId] = useState<string | null>(null);
   const [shellTerminal, setShellTerminal] = useState<ShellTerminalState | null>(null);
+  const [tasksModal, setTasksModal] = useState<TasksModalState | null>(null);
+  const [replayThreadId, setReplayThreadId] = useState<string | null>(null);
+  const [codeReviewModal, setCodeReviewModal] = useState<CodeReviewModalState | null>(null);
 
   const openShellTerminal = useCallback((cwd?: string) => {
     setShellTerminal((prev) => (prev ? { ...prev, minimized: false } : { cwd }));
@@ -98,5 +118,11 @@ export function useModals(): UseModalsReturn {
     closeShellTerminal,
     minimizeShellTerminal,
     restoreShellTerminal,
+    tasksModal,
+    setTasksModal,
+    replayThreadId,
+    setReplayThreadId,
+    codeReviewModal,
+    setCodeReviewModal,
   };
 }

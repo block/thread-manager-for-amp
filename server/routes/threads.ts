@@ -8,6 +8,7 @@ import {
   getRelatedThreads,
   getThreadMarkdown,
   getThreadImages,
+  getThreadMessages,
   archiveThread,
   deleteThread,
   createThread,
@@ -203,6 +204,17 @@ export async function handleThreadRoutes(
       if (!name) throw new Error('name required');
       await renameThread(threadId, name);
       return jsonResponse(res, { success: true });
+    } catch (err) {
+      const status = (err as Error).message.includes('required') ? 400 : 500;
+      return sendError(res, status, (err as Error).message);
+    }
+  }
+
+  if (pathname === '/api/thread-messages') {
+    try {
+      const threadId = getParam(url, 'threadId');
+      const result = await getThreadMessages(threadId);
+      return jsonResponse(res, result);
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
       return sendError(res, status, (err as Error).message);

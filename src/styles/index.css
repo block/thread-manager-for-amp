@@ -23,5 +23,8 @@
 @import './shell-terminal.css';
 @import './input-modal.css';
 @import './error-toast.css';
+@import './tasks-modal.css';
+@import './code-review-modal.css';
+@import './replay-controls.css';
 
 @import './responsive.css';

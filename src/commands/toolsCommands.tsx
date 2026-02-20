@@ -1,4 +1,16 @@
-import { List, Plus, Trash2, Wrench, Eye, Box, Plug, TerminalSquare } from 'lucide-react';
+import {
+  List,
+  Plus,
+  Trash2,
+  Wrench,
+  Eye,
+  Box,
+  Plug,
+  TerminalSquare,
+  ClipboardList,
+  Import,
+  FileSearch,
+} from 'lucide-react';
 import { CATEGORIES } from './categories';
 import type { Command, CommandFactoryContext, CommandHandlers } from './types';
 
@@ -80,6 +92,27 @@ export function createToolsCommands(
       icon: <TerminalSquare size={14} />,
       shortcut: '⌃T',
       action: () => handlers.onOpenShellTerminal?.(),
+    },
+    {
+      id: 'tasks-list',
+      category: CATEGORIES.TASKS,
+      label: 'list',
+      icon: <ClipboardList size={14} />,
+      action: () => handlers.onShowTasks?.(),
+    },
+    {
+      id: 'tasks-import',
+      category: CATEGORIES.TASKS,
+      label: 'import',
+      icon: <Import size={14} />,
+      action: () => handlers.onImportTasks?.(),
+    },
+    {
+      id: 'tools-code-review',
+      category: CATEGORIES.TOOLS,
+      label: 'code review',
+      icon: <FileSearch size={14} />,
+      action: () => handlers.onCodeReview?.(),
     },
   ];
 }

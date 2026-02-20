@@ -54,6 +54,31 @@
   color: var(--accent-cyan);
 }
 
+.source-control-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-control-review-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+
+.source-control-review-btn:hover {
+  color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
 .source-control-close {
   display: flex;
   align-items: center;

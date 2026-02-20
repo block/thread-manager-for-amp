@@ -14,6 +14,6 @@ export {
   shareThread,
 } from './threadCrud.js';
 export { searchThreads, getRelatedThreads } from './threadSearch.js';
-export { getThreadMarkdown, getThreadImages } from './threadExport.js';
+export { getThreadMarkdown, getThreadImages, getThreadMessages } from './threadExport.js';
 export { getThreadChain, handoffThread } from './threadChain.js';
 export { listWorkspaceFiles } from './files.js';

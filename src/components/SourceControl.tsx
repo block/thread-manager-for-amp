@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GitBranch, Plus, Pencil, Trash2, X, ExternalLink, ChevronRight } from 'lucide-react';
+import {
+  GitBranch,
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+  ExternalLink,
+  ChevronRight,
+  FileSearch,
+} from 'lucide-react';
 import { apiGet } from '../api/client';
 import { parseDiffToLines } from '../utils/git';
 import type { GitStatus, GitFileStatus, FileDiff } from '../types';
@@ -7,9 +16,10 @@ import type { GitStatus, GitFileStatus, FileDiff } from '../types';
 interface SourceControlProps {
   threadId: string;
   onClose: () => void;
+  onCodeReview?: (workspace: string) => void;
 }
 
-export function SourceControl({ threadId, onClose }: SourceControlProps) {
+export function SourceControl({ threadId, onClose, onCodeReview }: SourceControlProps) {
   const [gitStatus, setGitStatus] = useState<GitStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<GitFileStatus | null>(null);
@@ -111,9 +121,22 @@ export function SourceControl({ threadId, onClose }: SourceControlProps) {
             <h2>Source Control</h2>
             <span className="source-control-workspace">{gitStatus.workspaceName}</span>
           </div>
-          <button className="source-control-close" onClick={onClose}>
-            <X size={18} />
-          </button>
+          <div className="source-control-header-actions">
+            {onCodeReview && gitStatus.workspacePath && (
+              <button
+                className="source-control-review-btn"
+                onClick={() => onCodeReview(gitStatus.workspacePath)}
+                title="Run code review"
+                aria-label="Run code review"
+              >
+                <FileSearch size={14} />
+                Review
+              </button>
+            )}
+            <button className="source-control-close" onClick={onClose}>
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         <div className="source-control-toolbar">

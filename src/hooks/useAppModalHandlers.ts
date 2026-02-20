@@ -273,6 +273,10 @@ export function useAppModalHandlers({
     onManageBlockers: handleManageBlockers,
     onToggleSidebar: settings.handleToggleSidebar,
     onOpenShellTerminal: modals.openShellTerminal,
+    onShowTasks: modalActions.handleShowTasks,
+    onImportTasks: modalActions.handleImportTasks,
+    onReplayThread: modalActions.handleReplayThread,
+    onCodeReview: modalActions.handleCodeReview,
   });
 
   return {
