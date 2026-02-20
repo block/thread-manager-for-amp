@@ -69,6 +69,12 @@ export interface UseModalsReturn {
 
   codeReviewModal: CodeReviewModalState | null;
   setCodeReviewModal: (state: CodeReviewModalState | null) => void;
+
+  promptHistoryOpen: boolean;
+  setPromptHistoryOpen: (open: boolean) => void;
+
+  pendingPromptInsert: string | null;
+  setPendingPromptInsert: (text: string | null) => void;
 }
 
 export function useModals(): UseModalsReturn {
@@ -82,6 +88,8 @@ export function useModals(): UseModalsReturn {
   const [tasksModal, setTasksModal] = useState<TasksModalState | null>(null);
   const [replayThreadId, setReplayThreadId] = useState<string | null>(null);
   const [codeReviewModal, setCodeReviewModal] = useState<CodeReviewModalState | null>(null);
+  const [promptHistoryOpen, setPromptHistoryOpen] = useState(false);
+  const [pendingPromptInsert, setPendingPromptInsert] = useState<string | null>(null);
 
   const openShellTerminal = useCallback((cwd?: string) => {
     setShellTerminal((prev) => (prev ? { ...prev, minimized: false } : { cwd }));
@@ -124,5 +132,9 @@ export function useModals(): UseModalsReturn {
     setReplayThreadId,
     codeReviewModal,
     setCodeReviewModal,
+    promptHistoryOpen,
+    setPromptHistoryOpen,
+    pendingPromptInsert,
+    setPendingPromptInsert,
   };
 }

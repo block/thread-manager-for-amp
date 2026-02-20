@@ -1,4 +1,4 @@
-import { readFile, readdir, stat, unlink, rm } from 'fs/promises';
+import { readFile, writeFile, readdir, stat, unlink, rm } from 'fs/promises';
 import type { Stats } from 'fs';
 import { join } from 'path';
 import { AMP_HOME } from './constants.js';
@@ -386,4 +386,88 @@ interface ShareResult {
 export async function shareThread(threadId: string): Promise<ShareResult> {
   const stdout = await runAmp(['threads', 'share', threadId]);
   return { output: stdout.trim() };
+}
+
+// ── Thread mutation functions ──────────────────────────────────────────
+
+interface TruncateResult {
+  truncatedMessage: string;
+  messagesRemoved: number;
+}
+
+/**
+ * Truncate thread to keep only messages[0..messageIndex-1].
+ * Returns the text of the removed message at messageIndex and count of removed messages.
+ */
+export async function truncateThreadAtMessage(
+  threadId: string,
+  messageIndex: number,
+): Promise<TruncateResult> {
+  const threadPath = join(THREADS_DIR, `${threadId}.json`);
+  const content = await readFile(threadPath, 'utf-8');
+  const data = JSON.parse(content) as ThreadFile;
+  const messages = data.messages || [];
+
+  if (messageIndex < 0 || messageIndex >= messages.length) {
+    throw new Error('Invalid message index');
+  }
+
+  const msg = messages[messageIndex];
+  let truncatedText = '';
+  if (msg) {
+    if (typeof msg.content === 'string') {
+      truncatedText = msg.content;
+    } else if (Array.isArray(msg.content)) {
+      const textBlock = msg.content.find(isTextContent);
+      truncatedText = textBlock?.text || '';
+    }
+  }
+
+  const removed = messages.length - messageIndex;
+  data.messages = messages.slice(0, messageIndex);
+
+  await writeFile(threadPath, JSON.stringify(data, null, 2));
+  return { truncatedMessage: truncatedText, messagesRemoved: removed };
+}
+
+interface UndoResult {
+  messagesRemoved: number;
+}
+
+/**
+ * Remove the last user message and all subsequent messages (the last "turn").
+ */
+export async function undoLastTurn(threadId: string): Promise<UndoResult> {
+  const threadPath = join(THREADS_DIR, `${threadId}.json`);
+  const content = await readFile(threadPath, 'utf-8');
+  const data = JSON.parse(content) as ThreadFile;
+  const messages = data.messages || [];
+
+  // Find the last user message
+  let lastUserIdx = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i]?.role === 'user') {
+      lastUserIdx = i;
+      break;
+    }
+  }
+
+  if (lastUserIdx === -1) {
+    throw new Error('No user message to undo');
+  }
+
+  const removed = messages.length - lastUserIdx;
+  data.messages = messages.slice(0, lastUserIdx);
+  await writeFile(threadPath, JSON.stringify(data, null, 2));
+  return { messagesRemoved: removed };
+}
+
+/**
+ * Read raw messages from a thread file for counting/inspection.
+ */
+export async function getThreadMessageCount(threadId: string): Promise<number> {
+  const threadPath = join(THREADS_DIR, `${threadId}.json`);
+  const content = await readFile(threadPath, 'utf-8');
+  const data = JSON.parse(content) as ThreadFile;
+  return (data.messages || []).length;
 }

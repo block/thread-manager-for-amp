@@ -34,6 +34,7 @@ export interface TerminalMessagesProps {
   isLoading: boolean;
   hasMoreMessages: boolean;
   loadingMore: boolean;
+  isRunning?: boolean;
   activeMinimapId?: string;
   messagesContainerRef: React.RefObject<HTMLDivElement | null>;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
@@ -41,6 +42,8 @@ export interface TerminalMessagesProps {
   onLoadMore: () => void;
   onViewImage: (image: { data: string; mediaType: string }) => void;
   showThinkingBlocks: boolean;
+  onEditMessage?: (messageIndex: number, currentText: string) => void;
+  onUndoLastTurn?: () => void;
 }
 
 export interface TerminalInputProps {

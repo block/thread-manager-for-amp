@@ -1585,3 +1585,36 @@
 .mention-item.mention-empty:hover {
   background: transparent;
 }
+
+/* ── Message action buttons ─────────────────────────────────────────── */
+
+.chat-message-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.chat-bubble:hover .chat-message-actions {
+  opacity: 1;
+}
+
+.chat-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.chat-action-btn:hover {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  background: rgba(14, 243, 255, 0.1);
+}

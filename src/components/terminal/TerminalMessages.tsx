@@ -1,5 +1,5 @@
 import { memo, useMemo, useCallback, useState } from 'react';
-import { Loader2, ChevronRight, ChevronDown, Brain } from 'lucide-react';
+import { Loader2, ChevronRight, ChevronDown, Brain, Pencil, Undo2 } from 'lucide-react';
 import { ToolBlock, type ToolStatus } from '../ToolBlock';
 import { ToolResult } from '../ToolResult';
 import { MarkdownContent } from '../MarkdownContent';
@@ -129,6 +129,10 @@ interface MessageItemProps {
   showThinkingBlocks: boolean;
   registerRef: (id: string, el: HTMLDivElement | null) => void;
   onViewImage: (image: AttachedImage) => void;
+  showEditAction?: boolean;
+  showUndoAction?: boolean;
+  onEdit?: () => void;
+  onUndo?: () => void;
 }
 
 const MessageItem = memo(function MessageItem({
@@ -141,6 +145,10 @@ const MessageItem = memo(function MessageItem({
   showThinkingBlocks,
   registerRef,
   onViewImage,
+  showEditAction,
+  showUndoAction,
+  onEdit,
+  onUndo,
 }: MessageItemProps) {
   if (msg.type === 'thinking') {
     if (!showThinkingBlocks) return null;
@@ -220,6 +228,30 @@ const MessageItem = memo(function MessageItem({
         <div className="chat-content">
           <MarkdownContent content={msg.content} />
         </div>
+        {msg.type === 'user' && (showEditAction || showUndoAction) && (
+          <div className="chat-message-actions">
+            {showEditAction && (
+              <button
+                className="chat-action-btn"
+                onClick={onEdit}
+                title="Edit message"
+                aria-label="Edit message"
+              >
+                <Pencil size={12} />
+              </button>
+            )}
+            {showUndoAction && (
+              <button
+                className="chat-action-btn"
+                onClick={onUndo}
+                title="Undo this turn"
+                aria-label="Undo this turn"
+              >
+                <Undo2 size={12} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -230,6 +262,7 @@ export const TerminalMessages = memo(function TerminalMessages({
   isLoading,
   hasMoreMessages,
   loadingMore,
+  isRunning,
   activeMinimapId,
   messagesContainerRef,
   messagesEndRef,
@@ -237,8 +270,32 @@ export const TerminalMessages = memo(function TerminalMessages({
   onLoadMore,
   onViewImage,
   showThinkingBlocks,
+  onEditMessage,
+  onUndoLastTurn,
 }: TerminalMessagesProps) {
   const precomputed = useMemo(() => buildPrecomputedData(messages), [messages]);
+
+  // Find the index of the last user message for undo button placement
+  const lastUserMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i]?.type === 'user') return messages[i]?.id;
+    }
+    return undefined;
+  }, [messages]);
+
+  // Build a map of message ID → original message index (for user messages only)
+  const userMessageIndices = useMemo(() => {
+    const map = new Map<string, number>();
+    // Track the user message index in the original thread file ordering
+    let userIdx = 0;
+    for (const msg of messages) {
+      if (msg.type === 'user') {
+        map.set(msg.id, userIdx);
+        userIdx++;
+      }
+    }
+    return map;
+  }, [messages]);
 
   const registerRef = useCallback(
     (id: string, el: HTMLDivElement | null) => {
@@ -247,6 +304,9 @@ export const TerminalMessages = memo(function TerminalMessages({
     },
     [messageRefs],
   );
+
+  const canEdit = !isRunning && !!onEditMessage;
+  const canUndo = !isRunning && !!onUndoLastTurn;
 
   return (
     <div className="terminal-messages" ref={messagesContainerRef}>
@@ -274,24 +334,36 @@ export const TerminalMessages = memo(function TerminalMessages({
         <div className="terminal-empty">No messages yet. Start the conversation below.</div>
       )}
 
-      {messages.map((msg) => (
-        <MessageItem
-          key={msg.id}
-          msg={msg}
-          highlighted={msg.id === activeMinimapId}
-          toolStatus={precomputed.toolStatusMap.get(msg.id)}
-          toolResultContent={precomputed.subagentResultMap.get(msg.id)}
-          toolName={msg.toolId ? precomputed.toolIdToToolName.get(msg.toolId) : undefined}
-          toolInputPath={
-            msg.toolId
-              ? (precomputed.toolIdToToolInput.get(msg.toolId)?.path as string | undefined)
-              : undefined
-          }
-          showThinkingBlocks={showThinkingBlocks}
-          registerRef={registerRef}
-          onViewImage={onViewImage}
-        />
-      ))}
+      {messages.map((msg) => {
+        const isLastUser = msg.id === lastUserMessageId;
+        const userIdx = userMessageIndices.get(msg.id);
+        return (
+          <MessageItem
+            key={msg.id}
+            msg={msg}
+            highlighted={msg.id === activeMinimapId}
+            toolStatus={precomputed.toolStatusMap.get(msg.id)}
+            toolResultContent={precomputed.subagentResultMap.get(msg.id)}
+            toolName={msg.toolId ? precomputed.toolIdToToolName.get(msg.toolId) : undefined}
+            toolInputPath={
+              msg.toolId
+                ? (precomputed.toolIdToToolInput.get(msg.toolId)?.path as string | undefined)
+                : undefined
+            }
+            showThinkingBlocks={showThinkingBlocks}
+            registerRef={registerRef}
+            onViewImage={onViewImage}
+            showEditAction={msg.type === 'user' && canEdit}
+            showUndoAction={isLastUser && canUndo}
+            onEdit={
+              msg.type === 'user' && userIdx !== undefined
+                ? () => onEditMessage?.(userIdx, msg.content)
+                : undefined
+            }
+            onUndo={isLastUser ? onUndoLastTurn : undefined}
+          />
+        );
+      })}
 
       <div ref={messagesEndRef} style={{ height: 1, flexShrink: 0 }} />
     </div>

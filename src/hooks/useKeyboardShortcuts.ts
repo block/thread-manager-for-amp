@@ -11,6 +11,8 @@ export interface KeyboardShortcutHandlers {
   onOpenShellTerminal: () => void;
   onToggleDeepMode: () => void;
   onToggleThinkingBlocks: () => void;
+  onOpenPromptHistory?: () => void;
+  onUndoLastTurn?: () => void;
 }
 
 export interface UseKeyboardShortcutsOptions {
@@ -55,10 +57,14 @@ export function useKeyboardShortcuts({
         e.preventDefault();
         h.onNewThread();
       }
-      // Ctrl+R for refresh
+      // Ctrl+R: prompt history when thread is active, otherwise refresh
       if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
         e.preventDefault();
-        h.onRefresh();
+        if (threadId && h.onOpenPromptHistory) {
+          h.onOpenPromptHistory();
+        } else {
+          h.onRefresh();
+        }
       }
       // Ctrl+W to close current thread
       if ((e.ctrlKey || e.metaKey) && e.key === 'w') {
@@ -100,6 +106,22 @@ export function useKeyboardShortcuts({
       if (e.altKey && e.key === 't') {
         e.preventDefault();
         h.onToggleThinkingBlocks();
+      }
+      // Ctrl+Z when not in a text input — undo last turn
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === 'z' &&
+        !e.shiftKey &&
+        threadId &&
+        h.onUndoLastTurn
+      ) {
+        const target = e.target as HTMLElement;
+        const isTextInput =
+          target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+        if (!isTextInput) {
+          e.preventDefault();
+          h.onUndoLastTurn();
+        }
       }
     };
 

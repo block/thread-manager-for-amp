@@ -3,7 +3,7 @@ import { Minimap, type MinimapItem } from '../Minimap';
 import { ThreadDiscovery } from '../ThreadDiscovery/index';
 import { MessageSearchModal } from '../MessageSearchModal';
 import { ImageViewer } from '../ImageViewer';
-import { apiGet, apiPatch } from '../../api/client';
+import { apiGet, apiPatch, apiPost } from '../../api/client';
 import type { ThreadMetadata } from '../../types';
 import { extractIssueUrl } from '../../utils/issueTracker';
 import type { AgentMode } from '../../../shared/websocket.js';
@@ -22,6 +22,7 @@ import { useUnread } from '../../contexts/UnreadContext';
 import { useThreadStatus } from '../../contexts/ThreadStatusContext';
 import { useSettingsContext } from '../../contexts/SettingsContext';
 import { useReplayMode } from '../../hooks/useReplayMode';
+import { useModalContext } from '../../contexts/ModalContext';
 
 export function Terminal({
   thread,
@@ -39,6 +40,7 @@ export function Terminal({
   const { setStatus: setThreadStatus, clearStatus: clearThreadStatus } = useThreadStatus();
   const { agentMode, cycleAgentMode, showThinkingBlocks, setActiveThreadModeLocked } =
     useSettingsContext();
+  const { pendingPromptInsert, setPendingPromptInsert, setConfirmModal } = useModalContext();
 
   const replay = useReplayMode();
 
@@ -170,6 +172,15 @@ export function Terminal({
     },
     [scrollToMessage, messageRefs],
   );
+
+  // Consume pending prompt insert from prompt history modal
+  useEffect(() => {
+    if (pendingPromptInsert && autoFocus) {
+      setInput(pendingPromptInsert);
+      setPendingPromptInsert(null);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [pendingPromptInsert, autoFocus, setInput, setPendingPromptInsert, inputRef]);
 
   useEffect(() => {
     if (autoFocus && inputRef.current) {
@@ -311,6 +322,9 @@ export function Terminal({
     if (pendingImage) addSessionImage(pendingImage);
     clearInput();
 
+    // Record prompt in history (fire-and-forget)
+    apiPost('/api/prompt-record', { text: messageText, threadId }).catch(() => {});
+
     if (!metadata?.linked_issue_url) {
       const issueUrl = extractIssueUrl(messageText);
       if (issueUrl) {
@@ -337,6 +351,76 @@ export function Terminal({
     setMetadata,
     agentMode,
   ]);
+
+  const handleEditMessage = useCallback(
+    (messageIndex: number, currentText: string) => {
+      setConfirmModal({
+        title: 'Edit Message',
+        message:
+          'This will remove this message and all subsequent messages from the thread. ' +
+          'The edited text will be placed in your input for resending.',
+        confirmText: 'Edit',
+        isDestructive: true,
+        onConfirm: () => {
+          setConfirmModal(null);
+          apiPost<{ success: boolean }>('/api/thread-edit', {
+            threadId,
+            messageIndex,
+          })
+            .then(() => {
+              // Place original text in input for editing and resending
+              setInput(currentText);
+              inputRef.current?.focus();
+              // Clear messages from the edit point onward in the UI
+              setMessages((prev) => {
+                // Find user messages and determine which frontend messages to keep
+                let userCount = 0;
+                const cutoff = prev.findIndex((msg) => {
+                  if (msg.type === 'user') {
+                    if (userCount === messageIndex) return true;
+                    userCount++;
+                  }
+                  return false;
+                });
+                return cutoff >= 0 ? prev.slice(0, cutoff) : prev;
+              });
+            })
+            .catch((err: unknown) => console.error('Failed to edit message:', err));
+        },
+      });
+    },
+    [threadId, setConfirmModal, setInput, inputRef, setMessages],
+  );
+
+  const handleUndoLastTurn = useCallback(() => {
+    setConfirmModal({
+      title: 'Undo Last Turn',
+      message:
+        'This will remove the last user message and all subsequent assistant responses. This cannot be undone.',
+      confirmText: 'Undo',
+      isDestructive: true,
+      onConfirm: () => {
+        setConfirmModal(null);
+        apiPost<{ success: boolean; messagesRemoved: number }>('/api/thread-undo', {
+          threadId,
+        })
+          .then(() => {
+            // Remove the last user message and everything after it from the UI
+            setMessages((prev) => {
+              let lastUserIdx = -1;
+              for (let i = prev.length - 1; i >= 0; i--) {
+                if (prev[i]?.type === 'user') {
+                  lastUserIdx = i;
+                  break;
+                }
+              }
+              return lastUserIdx >= 0 ? prev.slice(0, lastUserIdx) : prev;
+            });
+          })
+          .catch((err: unknown) => console.error('Failed to undo last turn:', err));
+      },
+    });
+  }, [threadId, setConfirmModal, setMessages]);
 
   const content = (
     <div
@@ -375,6 +459,7 @@ export function Terminal({
           isLoading={isLoading}
           hasMoreMessages={hasMoreMessages}
           loadingMore={loadingMore}
+          isRunning={isRunning || isSending}
           activeMinimapId={activeMinimapId}
           messagesContainerRef={messagesContainerRef}
           messagesEndRef={messagesEndRef}
@@ -382,6 +467,8 @@ export function Terminal({
           onLoadMore={loadMoreMessages}
           onViewImage={setViewingImage}
           showThinkingBlocks={showThinkingBlocks}
+          onEditMessage={handleEditMessage}
+          onUndoLastTurn={handleUndoLastTurn}
         />
         <Minimap
           items={minimapItems}
