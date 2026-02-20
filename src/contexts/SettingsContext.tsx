@@ -24,6 +24,8 @@ interface SettingsContextValue {
   handleSetAgentMode: (mode: AgentMode) => void;
   toggleDeepMode: () => void;
   cycleAgentMode: () => void;
+  showThinkingBlocks: boolean;
+  toggleThinkingBlocks: () => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);

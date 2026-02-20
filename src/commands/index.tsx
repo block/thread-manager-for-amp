@@ -22,7 +22,13 @@ export function useCommands(options: UseCommandsOptions): Command[] {
   } = options;
 
   const hasActiveThread = !!activeThreadId;
-  const { agentMode, handleSetAgentMode, toggleDeepMode } = useSettingsContext();
+  const {
+    agentMode,
+    handleSetAgentMode,
+    toggleDeepMode,
+    showThinkingBlocks,
+    toggleThinkingBlocks,
+  } = useSettingsContext();
   const [soundEnabled, setSoundEnabledState] = useState(isSoundEnabled);
 
   const toggleSound = useCallback(() => {
@@ -59,6 +65,8 @@ export function useCommands(options: UseCommandsOptions): Command[] {
       agentMode,
       onSetAgentMode: handleSetAgentMode,
       onToggleDeepMode: toggleDeepMode,
+      showThinkingBlocks,
+      onToggleThinkingBlocks: toggleThinkingBlocks,
     };
 
     return [
@@ -76,5 +84,7 @@ export function useCommands(options: UseCommandsOptions): Command[] {
     agentMode,
     handleSetAgentMode,
     toggleDeepMode,
+    showThinkingBlocks,
+    toggleThinkingBlocks,
   ]);
 }

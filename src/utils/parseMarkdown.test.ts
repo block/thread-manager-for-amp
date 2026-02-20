@@ -180,7 +180,7 @@ Hello with timestamp`;
     expectMessage(at(messages, 0), { type: 'user', timestamp: '2025-01-15T10:30:00Z' });
   });
 
-  it('strips thinking JSON blocks from assistant messages', () => {
+  it('parses thinking JSON blocks as thinking messages', () => {
     const md = `# Thread
 
 ## Assistant
@@ -189,8 +189,9 @@ Hello with timestamp`;
 
 Here is my actual response.`;
     const messages = parseMarkdownHistory(md);
-    expect(messages).toHaveLength(1);
-    expectMessage(at(messages, 0), { type: 'assistant', content: 'Here is my actual response.' });
+    expect(messages).toHaveLength(2);
+    expectMessage(at(messages, 0), { type: 'thinking', content: 'Let me think...' });
+    expectMessage(at(messages, 1), { type: 'assistant', content: 'Here is my actual response.' });
   });
 
   it('handles multiple tool uses in one assistant section', () => {

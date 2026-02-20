@@ -7,7 +7,7 @@ export interface AttachedImage {
 
 export interface Message {
   id: string;
-  type: 'user' | 'assistant' | 'system' | 'tool_use' | 'tool_result' | 'error';
+  type: 'user' | 'assistant' | 'system' | 'tool_use' | 'tool_result' | 'error' | 'thinking';
   content: string;
   toolName?: string;
   toolId?: string;
@@ -25,8 +25,24 @@ function parseSection(text: string, role: 'user' | 'assistant', sectionIndex: nu
   let localIndex = 0;
 
   if (role === 'assistant') {
-    // Remove thinking JSON blocks (can be multi-line with nested content)
-    const cleanText = text.replace(/\{"type":"thinking"[\s\S]*?"provider":"anthropic"\}\s*/g, '');
+    // Extract thinking JSON blocks as thinking messages instead of stripping them
+    const thinkingRegex = /\{"type":"thinking"[\s\S]*?"provider":"anthropic"\}\s*/g;
+    let thinkingMatch;
+    while ((thinkingMatch = thinkingRegex.exec(text)) !== null) {
+      try {
+        const parsed = JSON.parse(thinkingMatch[0].trim()) as { content?: string };
+        if (parsed.content) {
+          messages.push({
+            id: `msg-s${sectionIndex}-${localIndex++}`,
+            type: 'thinking',
+            content: parsed.content,
+          });
+        }
+      } catch {
+        // Skip unparseable thinking blocks
+      }
+    }
+    const cleanText = text.replace(thinkingRegex, '');
 
     // Find all tool uses
     const toolUseRegex = /\*\*Tool Use:\*\*\s*`(\w+)`\s*```json\s*([\s\S]*?)```/g;

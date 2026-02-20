@@ -1,5 +1,5 @@
-import { memo, useMemo, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { memo, useMemo, useCallback, useState } from 'react';
+import { Loader2, ChevronRight, ChevronDown, Brain } from 'lucide-react';
 import { ToolBlock, type ToolStatus } from '../ToolBlock';
 import { ToolResult } from '../ToolResult';
 import { MarkdownContent } from '../MarkdownContent';
@@ -87,6 +87,38 @@ function buildPrecomputedData(messages: Message[]): PrecomputedData {
   return { toolStatusMap, subagentResultMap, toolIdToToolName, toolIdToToolInput };
 }
 
+const ThinkingBlock = memo(function ThinkingBlock({
+  content,
+  expanded,
+  onRef,
+}: {
+  content: string;
+  expanded: boolean;
+  onRef: (el: HTMLDivElement | null) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(expanded);
+
+  return (
+    <div ref={onRef} className={`chat-thinking-block ${isOpen ? 'expanded' : ''}`}>
+      <button
+        className="chat-thinking-toggle"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        aria-label={isOpen ? 'Collapse thinking' : 'Expand thinking'}
+      >
+        {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <Brain size={14} />
+        <span className="chat-thinking-label">Thinking</span>
+      </button>
+      {isOpen && (
+        <div className="chat-thinking-content">
+          <MarkdownContent content={content} />
+        </div>
+      )}
+    </div>
+  );
+});
+
 interface MessageItemProps {
   msg: Message;
   highlighted: boolean;
@@ -94,6 +126,7 @@ interface MessageItemProps {
   toolResultContent?: string;
   toolName?: string;
   toolInputPath?: string;
+  showThinkingBlocks: boolean;
   registerRef: (id: string, el: HTMLDivElement | null) => void;
   onViewImage: (image: AttachedImage) => void;
 }
@@ -105,9 +138,21 @@ const MessageItem = memo(function MessageItem({
   toolResultContent,
   toolName,
   toolInputPath,
+  showThinkingBlocks,
   registerRef,
   onViewImage,
 }: MessageItemProps) {
+  if (msg.type === 'thinking') {
+    if (!showThinkingBlocks) return null;
+    return (
+      <ThinkingBlock
+        content={msg.content}
+        expanded={false}
+        onRef={(el) => registerRef(msg.id, el)}
+      />
+    );
+  }
+
   if (msg.type === 'tool_use') {
     return (
       <ToolBlock
@@ -190,6 +235,7 @@ export const TerminalMessages = memo(function TerminalMessages({
   messageRefs,
   onLoadMore,
   onViewImage,
+  showThinkingBlocks,
 }: TerminalMessagesProps) {
   const precomputed = useMemo(() => buildPrecomputedData(messages), [messages]);
 
@@ -240,6 +286,7 @@ export const TerminalMessages = memo(function TerminalMessages({
               ? (precomputed.toolIdToToolInput.get(msg.toolId)?.path as string | undefined)
               : undefined
           }
+          showThinkingBlocks={showThinkingBlocks}
           registerRef={registerRef}
           onViewImage={onViewImage}
         />

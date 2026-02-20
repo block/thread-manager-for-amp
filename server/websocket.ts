@@ -82,8 +82,9 @@ interface AmpUsage {
 }
 
 interface AmpContentBlock {
-  type: 'text' | 'tool_use' | 'tool_result';
+  type: 'text' | 'thinking' | 'tool_use' | 'tool_result';
   text?: string;
+  thinking?: string;
   id?: string;
   name?: string;
   input?: Record<string, unknown>;
@@ -164,7 +165,12 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
 
       if (content) {
         for (const block of content) {
-          if (block.type === 'text' && block.text) {
+          if (block.type === 'thinking' && (block.thinking || block.text)) {
+            sendToSession(session, {
+              type: 'thinking',
+              content: block.thinking || block.text || '',
+            });
+          } else if (block.type === 'text' && block.text) {
             sendToSession(session, { type: 'text', content: block.text });
           } else if (block.type === 'tool_use' && block.id && block.name) {
             if (isHiddenCostTool(block.name)) {
@@ -344,6 +350,7 @@ async function spawnAmpOnSession(
       '--execute',
       finalMessage,
       '--stream-json',
+      '--stream-json-thinking',
     ];
     if (mode) {
       args.splice(args.indexOf('--stream-json'), 0, '--mode', mode);

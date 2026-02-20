@@ -32,7 +32,7 @@ export function Terminal({
   const { id: threadId, title: threadTitle } = thread;
   const { markAsSeen } = useUnread();
   const { setStatus: setThreadStatus, clearStatus: clearThreadStatus } = useThreadStatus();
-  const { agentMode, cycleAgentMode } = useSettingsContext();
+  const { agentMode, cycleAgentMode, showThinkingBlocks } = useSettingsContext();
 
   const state = useTerminalState({ thread });
   const {
@@ -277,6 +277,7 @@ export function Terminal({
           messageRefs={messageRefs}
           onLoadMore={loadMoreMessages}
           onViewImage={setViewingImage}
+          showThinkingBlocks={showThinkingBlocks}
         />
         <Minimap
           items={minimapItems}

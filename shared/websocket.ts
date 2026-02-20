@@ -49,6 +49,7 @@ export type WsServerMessage =
       estimatedCost: string;
     }
   | { type: 'text'; content: string }
+  | { type: 'thinking'; content: string }
   | { type: 'tool_use'; id: string; name: string; input: ToolInput }
   | { type: 'tool_result'; id: string; success: boolean; result: string }
   | { type: 'error'; content: string }

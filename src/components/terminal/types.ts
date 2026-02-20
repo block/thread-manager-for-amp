@@ -38,6 +38,7 @@ export interface TerminalMessagesProps {
   messageRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
   onLoadMore: () => void;
   onViewImage: (image: { data: string; mediaType: string }) => void;
+  showThinkingBlocks: boolean;
 }
 
 export interface TerminalInputProps {

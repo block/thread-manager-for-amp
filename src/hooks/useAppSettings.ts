@@ -36,6 +36,9 @@ interface UseAppSettingsReturn {
   handleSetAgentMode: (mode: AgentMode) => void;
   toggleDeepMode: () => void;
   cycleAgentMode: () => void;
+
+  showThinkingBlocks: boolean;
+  toggleThinkingBlocks: () => void;
 }
 
 export function useAppSettings(): UseAppSettingsReturn {
@@ -67,6 +70,11 @@ export function useAppSettings(): UseAppSettingsReturn {
   const [agentMode, setAgentMode] = useState<AgentMode>(() => {
     const saved = localStorage.getItem('agentMode');
     return AGENT_MODES.includes(saved as AgentMode) ? (saved as AgentMode) : 'smart';
+  });
+
+  const [showThinkingBlocks, setShowThinkingBlocks] = useState<boolean>(() => {
+    const saved = localStorage.getItem('showThinkingBlocks');
+    return saved === 'true';
   });
 
   useEffect(() => {
@@ -120,6 +128,14 @@ export function useAppSettings(): UseAppSettingsReturn {
     });
   }, []);
 
+  const toggleThinkingBlocks = useCallback(() => {
+    setShowThinkingBlocks((prev) => {
+      const next = !prev;
+      localStorage.setItem('showThinkingBlocks', String(next));
+      return next;
+    });
+  }, []);
+
   const cycleAgentMode = useCallback(() => {
     setAgentMode((prev) => {
       const idx = AGENT_MODES.indexOf(prev);
@@ -148,5 +164,7 @@ export function useAppSettings(): UseAppSettingsReturn {
     handleSetAgentMode,
     toggleDeepMode,
     cycleAgentMode,
+    showThinkingBlocks,
+    toggleThinkingBlocks,
   };
 }

@@ -880,11 +880,41 @@
   color: var(--error);
 }
 
-.chat-thinking {
+.chat-thinking-block {
+  margin: 4px 0;
+  border-left: 2px solid var(--accent-purple, #a855f7);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+}
+
+.chat-thinking-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  background: none;
+  border: none;
   color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  transition: color 0.15s;
+}
+
+.chat-thinking-toggle:hover {
+  color: var(--text-secondary);
+}
+
+.chat-thinking-label {
+  font-style: italic;
+}
+
+.chat-thinking-content {
+  padding: 0 12px 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  opacity: 0.85;
 }
 
 /* Terminal status bar */

@@ -226,6 +226,7 @@ export function useAppModalHandlers({
       onToggleSidebar: settings.handleToggleSidebar,
       onOpenShellTerminal: modals.openShellTerminal,
       onToggleDeepMode: settings.toggleDeepMode,
+      onToggleThinkingBlocks: settings.toggleThinkingBlocks,
     },
     activeThreadId,
   });

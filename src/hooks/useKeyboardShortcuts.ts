@@ -10,6 +10,7 @@ export interface KeyboardShortcutHandlers {
   onToggleSidebar: () => void;
   onOpenShellTerminal: () => void;
   onToggleDeepMode: () => void;
+  onToggleThinkingBlocks: () => void;
 }
 
 export interface UseKeyboardShortcutsOptions {
@@ -85,6 +86,11 @@ export function useKeyboardShortcuts({
       if (e.altKey && e.key === 'd') {
         e.preventDefault();
         h.onToggleDeepMode();
+      }
+      // Alt+T to toggle thinking blocks visibility
+      if (e.altKey && e.key === 't') {
+        e.preventDefault();
+        h.onToggleThinkingBlocks();
       }
     };
 

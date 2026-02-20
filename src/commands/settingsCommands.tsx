@@ -6,7 +6,15 @@ export function createSettingsCommands(
   handlers: CommandHandlers,
   context: CommandFactoryContext,
 ): Command[] {
-  const { soundEnabled, toggleSound, agentMode, onSetAgentMode, onToggleDeepMode } = context;
+  const {
+    soundEnabled,
+    toggleSound,
+    agentMode,
+    onSetAgentMode,
+    onToggleDeepMode,
+    showThinkingBlocks,
+    onToggleThinkingBlocks,
+  } = context;
 
   return [
     {
@@ -73,6 +81,14 @@ export function createSettingsCommands(
       shortcut: 'Alt+D',
       icon: <Brain size={14} />,
       action: () => onToggleDeepMode?.(),
+    },
+    {
+      id: 'settings-toggle-thinking',
+      category: CATEGORIES.SETTINGS,
+      label: showThinkingBlocks ? 'hide thinking blocks' : 'show thinking blocks',
+      shortcut: 'Alt+T',
+      icon: <Brain size={14} />,
+      action: () => onToggleThinkingBlocks?.(),
     },
   ];
 }

@@ -89,6 +89,15 @@ export function useTerminalWebSocket({
                 { id: generateId(), type: 'assistant', content: data.content },
               ]);
               break;
+            case 'thinking':
+              setIsSending(false);
+              setIsRunning(true);
+              gotResponseRef.current = true;
+              setMessages((prev) => [
+                ...prev,
+                { id: generateId(), type: 'thinking', content: data.content },
+              ]);
+              break;
             case 'tool_use':
               setIsRunning(true);
               setAgentStatus('running_tools');
