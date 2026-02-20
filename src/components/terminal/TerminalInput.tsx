@@ -1,5 +1,8 @@
+import { useRef, useState, useCallback } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import type { TerminalInputProps } from './types';
+import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
+import { MentionAutocomplete, type MentionAutocompleteHandle } from './MentionAutocomplete';
 
 function getStatusMessage(agentStatus: string): string {
   switch (agentStatus) {
@@ -29,8 +32,22 @@ export function TerminalInput({
   onPendingImageRemove,
   onPendingImageSet,
   searchOpen,
+  workspacePath,
 }: TerminalInputProps) {
   void _onCancel;
+  const autocompleteRef = useRef<MentionAutocompleteHandle>(null);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const { mentionState, closeMention, selectMention } = useMentionAutocomplete(
+    input,
+    cursorPosition,
+    inputRef,
+  );
+
+  const trackCursor = useCallback(() => {
+    const pos = inputRef.current?.selectionStart ?? 0;
+    setCursorPosition(pos);
+  }, [inputRef]);
+
   const handlePaste = (e: React.ClipboardEvent) => {
     const items = e.clipboardData.items;
     for (const item of items) {
@@ -53,6 +70,12 @@ export function TerminalInput({
   };
 
   const handleKeyDown = async (e: React.KeyboardEvent) => {
+    // When autocomplete is active, delegate navigation keys
+    if (mentionState.active && autocompleteRef.current) {
+      const handled = autocompleteRef.current.handleKeyDown(e);
+      if (handled) return;
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onSend();
@@ -100,11 +123,25 @@ export function TerminalInput({
     }
   };
 
+  const handleMentionSelect = (value: string) => {
+    selectMention(value, onInputChange);
+  };
+
   const isActive = isSending || isRunning;
   const statusMessage = getStatusMessage(agentStatus);
 
   return (
     <div className="terminal-input-area">
+      {mentionState.active && (
+        <MentionAutocomplete
+          ref={autocompleteRef}
+          type={mentionState.type}
+          query={mentionState.query}
+          workspacePath={workspacePath}
+          onSelect={handleMentionSelect}
+          onClose={closeMention}
+        />
+      )}
       {isActive && statusMessage && (
         <div className="terminal-status-indicator" aria-live="polite" role="status">
           <Loader2 size={12} className="spinning" />
@@ -130,15 +167,21 @@ export function TerminalInput({
       <textarea
         ref={inputRef}
         value={input}
-        onChange={(e) => onInputChange(e.target.value)}
+        onChange={(e) => {
+          onInputChange(e.target.value);
+          trackCursor();
+        }}
         onKeyDown={handleKeyDown}
+        onKeyUp={trackCursor}
+        onClick={trackCursor}
+        onSelect={trackCursor}
         onPaste={handlePaste}
         placeholder={
           !isConnected
             ? 'Connecting...'
             : pendingImage
               ? 'Add a message or press Enter to send...'
-              : 'Continue the conversation...'
+              : 'Type @ for files, @@ for threads...'
         }
         disabled={!isConnected}
         className="terminal-input"

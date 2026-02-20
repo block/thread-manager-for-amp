@@ -8,7 +8,7 @@ import { THREADS_DIR } from './threadTypes.js';
  * Validates and sanitizes a workspace path to prevent path traversal attacks.
  * Returns a resolved absolute path or throws if invalid.
  */
-async function validateWorkspacePath(inputPath: string): Promise<string> {
+export async function validateWorkspacePath(inputPath: string): Promise<string> {
   if (!inputPath || typeof inputPath !== 'string') {
     throw new Error('Invalid workspace path: path must be a non-empty string');
   }
