@@ -28,3 +28,4 @@ coverage
 thoughts/
 .server-port
 .hermit/
+.amp-snapshots/
