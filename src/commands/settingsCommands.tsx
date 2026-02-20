@@ -1,4 +1,4 @@
-import { Shield, Settings, Volume2, VolumeX } from 'lucide-react';
+import { Shield, Settings, Volume2, VolumeX, Zap, Rocket, Brain } from 'lucide-react';
 import { CATEGORIES } from './categories';
 import type { Command, CommandFactoryContext, CommandHandlers } from './types';
 
@@ -6,7 +6,7 @@ export function createSettingsCommands(
   handlers: CommandHandlers,
   context: CommandFactoryContext,
 ): Command[] {
-  const { soundEnabled, toggleSound } = context;
+  const { soundEnabled, toggleSound, agentMode, onSetAgentMode, onToggleDeepMode } = context;
 
   return [
     {
@@ -44,6 +44,35 @@ export function createSettingsCommands(
       label: soundEnabled ? 'disable notification sound' : 'enable notification sound',
       icon: soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />,
       action: toggleSound,
+    },
+    {
+      id: 'settings-mode-smart',
+      category: CATEGORIES.SETTINGS,
+      label: `set mode: smart${agentMode === 'smart' ? ' (active)' : ''}`,
+      icon: <Zap size={14} />,
+      action: () => onSetAgentMode?.('smart'),
+    },
+    {
+      id: 'settings-mode-rush',
+      category: CATEGORIES.SETTINGS,
+      label: `set mode: rush${agentMode === 'rush' ? ' (active)' : ''}`,
+      icon: <Rocket size={14} />,
+      action: () => onSetAgentMode?.('rush'),
+    },
+    {
+      id: 'settings-mode-deep',
+      category: CATEGORIES.SETTINGS,
+      label: `set mode: deep${agentMode === 'deep' ? ' (active)' : ''}`,
+      icon: <Brain size={14} />,
+      action: () => onSetAgentMode?.('deep'),
+    },
+    {
+      id: 'settings-toggle-deep',
+      category: CATEGORIES.SETTINGS,
+      label: agentMode === 'deep' ? 'disable deep mode' : 'enable deep mode',
+      shortcut: 'Alt+D',
+      icon: <Brain size={14} />,
+      action: () => onToggleDeepMode?.(),
     },
   ];
 }

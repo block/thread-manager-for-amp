@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { AgentMode } from '../../shared/websocket.js';
 
 export interface Command {
   id: string;
@@ -59,6 +60,9 @@ export interface CommandFactoryContext {
   openThreadsCount: number;
   soundEnabled: boolean;
   toggleSound: () => void;
+  agentMode: AgentMode;
+  onSetAgentMode?: (mode: AgentMode) => void;
+  onToggleDeepMode?: () => void;
 }
 
 export type CommandHandlers = Omit<UseCommandsOptions, 'openThreads' | 'activeThreadId'>;

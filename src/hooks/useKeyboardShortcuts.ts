@@ -9,6 +9,7 @@ export interface KeyboardShortcutHandlers {
   onHandoff: () => void;
   onToggleSidebar: () => void;
   onOpenShellTerminal: () => void;
+  onToggleDeepMode: () => void;
 }
 
 export interface UseKeyboardShortcutsOptions {
@@ -79,6 +80,11 @@ export function useKeyboardShortcuts({
       if (e.ctrlKey && !e.metaKey && e.key === 't') {
         e.preventDefault();
         h.onOpenShellTerminal();
+      }
+      // Alt+D to toggle deep mode
+      if (e.altKey && e.key === 'd') {
+        e.preventDefault();
+        h.onToggleDeepMode();
       }
     };
 

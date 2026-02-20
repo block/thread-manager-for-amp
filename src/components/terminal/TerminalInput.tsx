@@ -33,6 +33,8 @@ export function TerminalInput({
   onPendingImageSet,
   searchOpen,
   workspacePath,
+  agentMode,
+  onCycleMode,
 }: TerminalInputProps) {
   void _onCancel;
   const autocompleteRef = useRef<MentionAutocompleteHandle>(null);
@@ -188,6 +190,17 @@ export function TerminalInput({
         rows={1}
         aria-label="Message input"
       />
+      <button
+        className={`terminal-mode-badge mode-${agentMode}`}
+        onClick={onCycleMode}
+        title={`Mode: ${agentMode} (click to change)`}
+        aria-label={`Agent mode: ${agentMode}`}
+      >
+        <span className="mode-icon">
+          {agentMode === 'deep' ? '🧠' : agentMode === 'rush' ? '🚀' : '⚡'}
+        </span>
+        <span className="mode-label">{agentMode}</span>
+      </button>
       <button
         onClick={onSend}
         disabled={!isConnected || (!input.trim() && !pendingImage)}

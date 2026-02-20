@@ -18,6 +18,7 @@ import { ContextWarning } from './ContextWarning';
 import { useScrollBehavior } from './useScrollBehavior';
 import { useUnread } from '../../contexts/UnreadContext';
 import { useThreadStatus } from '../../contexts/ThreadStatusContext';
+import { useSettingsContext } from '../../contexts/SettingsContext';
 
 export function Terminal({
   thread,
@@ -31,6 +32,7 @@ export function Terminal({
   const { id: threadId, title: threadTitle } = thread;
   const { markAsSeen } = useUnread();
   const { setStatus: setThreadStatus, clearStatus: clearThreadStatus } = useThreadStatus();
+  const { agentMode, cycleAgentMode } = useSettingsContext();
 
   const state = useTerminalState({ thread });
   const {
@@ -218,7 +220,7 @@ export function Terminal({
       ...prev,
       { id: generateId(), type: 'user', content: messageText, image: pendingImage || undefined },
     ]);
-    wsSendMessage(messageText, pendingImage || undefined);
+    wsSendMessage(messageText, pendingImage || undefined, agentMode);
     if (pendingImage) addSessionImage(pendingImage);
     clearInput();
 
@@ -243,6 +245,7 @@ export function Terminal({
     metadata,
     threadId,
     setMetadata,
+    agentMode,
   ]);
 
   const content = (
@@ -321,6 +324,8 @@ export function Terminal({
         onPendingImageSet={setPendingImage}
         searchOpen={searchOpen}
         workspacePath={thread.workspacePath ?? null}
+        agentMode={agentMode}
+        onCycleMode={cycleAgentMode}
       />
       <MessageSearchModal
         isOpen={searchOpen}

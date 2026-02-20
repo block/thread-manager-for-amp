@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { isSoundEnabled, setSoundEnabled } from '../utils/sounds';
+import { useSettingsContext } from '../contexts/SettingsContext';
 import { createThreadCommands } from './threadCommands.js';
 import { createNavigationCommands } from './navigationCommands.js';
 import { createToolsCommands } from './toolsCommands.js';
@@ -21,6 +22,7 @@ export function useCommands(options: UseCommandsOptions): Command[] {
   } = options;
 
   const hasActiveThread = !!activeThreadId;
+  const { agentMode, handleSetAgentMode, toggleDeepMode } = useSettingsContext();
   const [soundEnabled, setSoundEnabledState] = useState(isSoundEnabled);
 
   const toggleSound = useCallback(() => {
@@ -54,6 +56,9 @@ export function useCommands(options: UseCommandsOptions): Command[] {
       openThreadsCount: openThreads.length,
       soundEnabled,
       toggleSound,
+      agentMode,
+      onSetAgentMode: handleSetAgentMode,
+      onToggleDeepMode: toggleDeepMode,
     };
 
     return [
@@ -62,5 +67,14 @@ export function useCommands(options: UseCommandsOptions): Command[] {
       ...createToolsCommands(handlers, context),
       ...createSettingsCommands(handlers, context),
     ];
-  }, [openThreads.length, activeThreadId, hasActiveThread, soundEnabled, toggleSound]);
+  }, [
+    openThreads.length,
+    activeThreadId,
+    hasActiveThread,
+    soundEnabled,
+    toggleSound,
+    agentMode,
+    handleSetAgentMode,
+    toggleDeepMode,
+  ]);
 }

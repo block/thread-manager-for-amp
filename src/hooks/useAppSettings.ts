@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { ViewMode } from '../types';
+import type { AgentMode } from '../../shared/websocket.js';
+import { AGENT_MODES } from '../../shared/websocket.js';
 import {
   applyTheme,
   loadSavedTheme,
@@ -29,6 +31,11 @@ interface UseAppSettingsReturn {
 
   scmRefreshKey: number;
   triggerScmRefresh: () => void;
+
+  agentMode: AgentMode;
+  handleSetAgentMode: (mode: AgentMode) => void;
+  toggleDeepMode: () => void;
+  cycleAgentMode: () => void;
 }
 
 export function useAppSettings(): UseAppSettingsReturn {
@@ -56,6 +63,11 @@ export function useAppSettings(): UseAppSettingsReturn {
   });
 
   const [scmRefreshKey, setScmRefreshKey] = useState(0);
+
+  const [agentMode, setAgentMode] = useState<AgentMode>(() => {
+    const saved = localStorage.getItem('agentMode');
+    return AGENT_MODES.includes(saved as AgentMode) ? (saved as AgentMode) : 'smart';
+  });
 
   useEffect(() => {
     const themeName = loadSavedTheme();
@@ -95,6 +107,29 @@ export function useAppSettings(): UseAppSettingsReturn {
     setScmRefreshKey((prev) => prev + 1);
   }, []);
 
+  const handleSetAgentMode = useCallback((mode: AgentMode) => {
+    setAgentMode(mode);
+    localStorage.setItem('agentMode', mode);
+  }, []);
+
+  const toggleDeepMode = useCallback(() => {
+    setAgentMode((prev) => {
+      const next = prev === 'deep' ? 'smart' : 'deep';
+      localStorage.setItem('agentMode', next);
+      return next;
+    });
+  }, []);
+
+  const cycleAgentMode = useCallback(() => {
+    setAgentMode((prev) => {
+      const idx = AGENT_MODES.indexOf(prev);
+      const nextIdx = (idx + 1) % AGENT_MODES.length;
+      const next = AGENT_MODES[nextIdx] ?? 'smart';
+      localStorage.setItem('agentMode', next);
+      return next;
+    });
+  }, []);
+
   return {
     terminalLayout,
     setTerminalLayout,
@@ -109,5 +144,9 @@ export function useAppSettings(): UseAppSettingsReturn {
     handleToggleSidebar,
     scmRefreshKey,
     triggerScmRefresh,
+    agentMode,
+    handleSetAgentMode,
+    toggleDeepMode,
+    cycleAgentMode,
   };
 }

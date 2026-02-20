@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Message } from '../../utils/parseMarkdown';
 import type { WsEvent } from '../../types';
+import type { AgentMode } from '../../../shared/websocket.js';
 import type { UsageInfo } from './types';
 import { formatToolUse } from '../../utils/format';
 import { playNotificationSound, isSoundEnabled } from '../../utils/sounds';
@@ -272,7 +273,7 @@ export function useTerminalWebSocket({
   }, [threadId, reconnectTrigger, setMessages, setUsage, setIsLoading]);
 
   const sendMessage = useCallback(
-    (content: string, image?: { data: string; mediaType: string }) => {
+    (content: string, image?: { data: string; mediaType: string }, mode?: AgentMode) => {
       if (!wsRef.current || !isConnected) return false;
 
       // Reset response tracking
@@ -288,6 +289,7 @@ export function useTerminalWebSocket({
           type: 'message',
           content,
           image: image || undefined,
+          mode: mode || undefined,
         }),
       );
 

@@ -22,9 +22,19 @@ export interface ToolInput {
   [key: string]: unknown;
 }
 
+// Agent mode passed with messages to control CLI --mode flag
+export type AgentMode = 'smart' | 'rush' | 'deep';
+
+export const AGENT_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep'] as const;
+
 // Client -> Server messages
 export type WsClientMessage =
-  | { type: 'message'; content: string; image?: { data: string; mediaType: string } }
+  | {
+      type: 'message';
+      content: string;
+      image?: { data: string; mediaType: string };
+      mode?: AgentMode;
+    }
   | { type: 'cancel' };
 
 // Server -> Client messages

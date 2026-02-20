@@ -51,6 +51,22 @@ describe('isWsClientMessage', () => {
   it('rejects array', () => {
     expect(isWsClientMessage([{ type: 'cancel' }])).toBe(false);
   });
+
+  it('accepts a message with valid mode', () => {
+    expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'smart' })).toBe(true);
+    expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'rush' })).toBe(true);
+    expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'deep' })).toBe(true);
+  });
+
+  it('accepts a message without mode (optional)', () => {
+    expect(isWsClientMessage({ type: 'message', content: 'hello' })).toBe(true);
+  });
+
+  it('rejects a message with invalid mode', () => {
+    expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'turbo' })).toBe(false);
+    expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 123 })).toBe(false);
+    expect(isWsClientMessage({ type: 'message', content: 'hello', mode: '' })).toBe(false);
+  });
 });
 
 describe('isShellClientMessage', () => {

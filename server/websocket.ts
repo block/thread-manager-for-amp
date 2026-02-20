@@ -32,6 +32,7 @@ const PING_INTERVAL_MS = 25_000;
 interface PendingMessage {
   content: string;
   image: ThreadImage | null;
+  mode?: string;
 }
 
 interface ThreadSession {
@@ -268,6 +269,7 @@ async function spawnAmpOnSession(
   session: ThreadSession,
   message: string,
   image: ThreadImage | null = null,
+  mode?: string,
 ): Promise<void> {
   // If a child is already running, interrupt it and queue this message.
   // The SIGINT kills the child before amp persists the user's message to the
@@ -278,7 +280,7 @@ async function spawnAmpOnSession(
     const composed = interruptedMsg
       ? `[The user sent this message but interrupted before you could respond:]\n${interruptedMsg}\n\n[The user then sent this follow-up message:]\n${message}`
       : message;
-    session.pendingMessage = { content: composed, image };
+    session.pendingMessage = { content: composed, image, mode };
     session.child.kill('SIGINT');
     sendToSession(session, { type: 'system', subtype: 'interrupting' });
     return;
@@ -287,7 +289,7 @@ async function spawnAmpOnSession(
   // Serialization guard: prevent the async gap race where two rapid messages
   // both pass the session.child check before either spawns.
   if (session.processing) {
-    session.pendingMessage = { content: message, image };
+    session.pendingMessage = { content: message, image, mode };
     return;
   }
 
@@ -334,23 +336,24 @@ async function spawnAmpOnSession(
       }
     }
 
-    const child = spawn(
-      AMP_BIN,
-      [
-        'threads',
-        'continue',
-        session.threadId,
-        '--no-ide',
-        '--execute',
-        finalMessage,
-        '--stream-json',
-      ],
-      {
-        cwd: AMP_HOME,
-        env: { ...process.env, CI: '1', TERM: 'dumb' },
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
-    );
+    const args = [
+      'threads',
+      'continue',
+      session.threadId,
+      '--no-ide',
+      '--execute',
+      finalMessage,
+      '--stream-json',
+    ];
+    if (mode) {
+      args.splice(args.indexOf('--stream-json'), 0, '--mode', mode);
+    }
+
+    const child = spawn(AMP_BIN, args, {
+      cwd: AMP_HOME,
+      env: { ...process.env, CI: '1', TERM: 'dumb' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
 
     session.child = child;
     session.startedAt = Date.now();
@@ -425,13 +428,15 @@ async function spawnAmpOnSession(
 
       if (pending) {
         session.pendingMessage = null;
-        void spawnAmpOnSession(session, pending.content, pending.image).catch((err: unknown) => {
-          console.error(
-            `[WS] spawnAmp error for queued message on thread ${session.threadId}:`,
-            err,
-          );
-          sendToSession(session, { type: 'error', content: 'Failed to process queued message' });
-        });
+        void spawnAmpOnSession(session, pending.content, pending.image, pending.mode).catch(
+          (err: unknown) => {
+            console.error(
+              `[WS] spawnAmp error for queued message on thread ${session.threadId}:`,
+              err,
+            );
+            sendToSession(session, { type: 'error', content: 'Failed to process queued message' });
+          },
+        );
       }
     });
   } finally {
@@ -606,10 +611,12 @@ export function setupWebSocket(server: Server): WebSocketServer {
         const image = parsed.image
           ? ({ data: parsed.image.data, mediaType: parsed.image.mediaType } as ThreadImage)
           : null;
-        void spawnAmpOnSession(session, parsed.content, image).catch((err: unknown) => {
-          console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
-          sendToSession(session, { type: 'error', content: 'Failed to process message' });
-        });
+        void spawnAmpOnSession(session, parsed.content, image, parsed.mode).catch(
+          (err: unknown) => {
+            console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
+            sendToSession(session, { type: 'error', content: 'Failed to process message' });
+          },
+        );
       } else if (parsed.type === 'cancel') {
         if (session.child) {
           session.child.kill('SIGINT');

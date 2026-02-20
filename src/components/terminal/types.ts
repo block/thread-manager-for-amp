@@ -1,6 +1,7 @@
 import type { Message } from '../../utils/parseMarkdown';
 import type { Thread } from '../../types';
 import type { AgentStatus } from './useTerminalWebSocket';
+import type { AgentMode } from '../../../shared/websocket.js';
 
 export interface UsageInfo {
   contextPercent: number;
@@ -55,6 +56,8 @@ export interface TerminalInputProps {
   onPendingImageSet: (image: { data: string; mediaType: string }) => void;
   searchOpen: boolean;
   workspacePath: string | null;
+  agentMode: AgentMode;
+  onCycleMode: () => void;
 }
 
 export interface TerminalStatusBarProps {

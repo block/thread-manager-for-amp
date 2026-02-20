@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { useAppSettings } from '../hooks/useAppSettings';
 import type { ViewMode } from '../types';
+import type { AgentMode } from '../../shared/websocket.js';
 
 type TerminalLayout = 'tabs' | 'split' | 'grid';
 
@@ -11,6 +12,7 @@ interface SettingsContextValue {
   groupByDate: boolean;
   currentTheme: string;
   scmRefreshKey: number;
+  agentMode: AgentMode;
 
   handleViewModeChange: (mode: ViewMode) => void;
   handleToggleLayout: () => void;
@@ -19,6 +21,9 @@ interface SettingsContextValue {
   setTerminalLayout: (layout: TerminalLayout) => void;
   setCurrentTheme: (theme: string) => void;
   triggerScmRefresh: () => void;
+  handleSetAgentMode: (mode: AgentMode) => void;
+  toggleDeepMode: () => void;
+  cycleAgentMode: () => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);

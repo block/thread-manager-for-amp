@@ -225,6 +225,7 @@ export function useAppModalHandlers({
       onHandoff: () => activeThreadId && handleHandoff(activeThreadId),
       onToggleSidebar: settings.handleToggleSidebar,
       onOpenShellTerminal: modals.openShellTerminal,
+      onToggleDeepMode: settings.toggleDeepMode,
     },
     activeThreadId,
   });
