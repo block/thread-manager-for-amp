@@ -174,13 +174,26 @@ function overlay(hex: string, alpha: number): string {
 // Derive accent colors from a single accent
 function deriveAccents(accent: string, isDark: boolean) {
   const hsl = hexToHsl(accent);
+  const sat = Math.min(hsl.s + 10, 100);
 
+  if (isDark) {
+    return {
+      primary: accent,
+      cyan: hslToHex({ h: 185, s: sat, l: 55 }),
+      pink: hslToHex({ h: 330, s: sat, l: 55 }),
+      yellow: hslToHex({ h: 50, s: sat, l: 55 }),
+      blue: hslToHex({ h: 210, s: sat, l: 55 }),
+    };
+  }
+
+  // Light themes: each hue needs a different lightness for WCAG 4.5:1 on white
+  // Yellow/green hues have higher luminance and need to go darker
   return {
     primary: accent,
-    cyan: hslToHex({ h: 185, s: Math.min(hsl.s + 10, 100), l: isDark ? 55 : 45 }),
-    pink: hslToHex({ h: 330, s: Math.min(hsl.s + 10, 100), l: isDark ? 55 : 45 }),
-    yellow: hslToHex({ h: 50, s: Math.min(hsl.s + 10, 100), l: isDark ? 55 : 45 }),
-    blue: hslToHex({ h: 210, s: Math.min(hsl.s + 10, 100), l: isDark ? 55 : 45 }),
+    cyan: hslToHex({ h: 185, s: sat, l: 28 }),
+    pink: hslToHex({ h: 330, s: sat, l: 38 }),
+    yellow: hslToHex({ h: 50, s: sat, l: 28 }),
+    blue: hslToHex({ h: 210, s: sat, l: 35 }),
   };
 }
 
@@ -260,7 +273,7 @@ function createTheme(bg: string, fg: string, accent: string): Theme {
 
   const elevate = (amount: number) => adjust(bg, dir * amount);
   const mutedText = ensureContrast(bg, fg, isDark ? 0.55 : 0.5, 4.5);
-  const secondaryText = mix(bg, fg, isDark ? 0.7 : 0.6);
+  const secondaryText = isDark ? mix(bg, fg, 0.7) : ensureContrast(bg, fg, 0.6, 4.5);
 
   return {
     isDark,
@@ -281,9 +294,9 @@ function createTheme(bg: string, fg: string, accent: string): Theme {
       muted: mutedText,
     },
     border: {
-      default: mix(bg, fg, isDark ? 0.12 : 0.15),
-      subtle: mix(bg, fg, isDark ? 0.06 : 0.08),
-      input: mix(bg, fg, isDark ? 0.15 : 0.18),
+      default: mix(bg, fg, isDark ? 0.12 : 0.2),
+      subtle: mix(bg, fg, isDark ? 0.06 : 0.12),
+      input: mix(bg, fg, isDark ? 0.15 : 0.25),
     },
     status: {
       error: isDark ? '#f87171' : '#dc2626',

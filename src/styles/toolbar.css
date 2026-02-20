@@ -551,6 +551,24 @@
   font-size: 12px;
 }
 
+/* Light theme overrides for searchable select */
+.light .searchable-select-trigger:hover {
+  background: rgba(71, 161, 250, 0.12);
+  border-color: rgba(71, 161, 250, 0.35);
+}
+
+.light .searchable-select-trigger.open {
+  background: rgba(71, 161, 250, 0.15);
+}
+
+.light .searchable-select-dropdown {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.light .searchable-select-option.selected {
+  background: rgba(9, 105, 218, 0.1);
+}
+
 /* Clear filters button */
 .toolbar-clear-filters {
   display: flex;

@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Plus, X } from 'lucide-react';
 import { apiGet, apiPut } from '../api/client';
+import { useSettingsContext } from '../contexts';
+import { getPresetByName, getThemeForPreset, THEME_PRESETS } from '../lib/theme';
 
 interface ThreadLabel {
   id: string;
@@ -17,12 +19,15 @@ function hashStringToHue(str: string): number {
   return Math.abs(hash) % 360;
 }
 
-function getLabelColor(labelName: string): { bg: string; text: string; border: string } {
+function getLabelColor(
+  labelName: string,
+  isDark: boolean,
+): { bg: string; text: string; border: string } {
   const hue = hashStringToHue(labelName);
   return {
-    bg: `hsla(${hue}, 70%, 50%, 0.15)`,
-    text: `hsl(${hue}, 80%, 65%)`,
-    border: `hsla(${hue}, 70%, 50%, 0.3)`,
+    bg: `hsla(${hue}, 70%, ${isDark ? 50 : 45}%, ${isDark ? 0.15 : 0.1})`,
+    text: `hsl(${hue}, ${isDark ? 80 : 60}%, ${isDark ? 65 : 35}%)`,
+    border: `hsla(${hue}, 70%, 50%, ${isDark ? 0.3 : 0.25})`,
   };
 }
 
@@ -39,6 +44,10 @@ export function ThreadLabelEditor({
   onLabelsChange,
   compact = false,
 }: ThreadLabelEditorProps) {
+  const { currentTheme } = useSettingsContext();
+  const preset = getPresetByName(currentTheme) ?? THEME_PRESETS[0];
+  const isDark = preset ? getThemeForPreset(preset).isDark : true;
+
   const [labels, setLabels] = useState<ThreadLabel[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [newLabel, setNewLabel] = useState('');
@@ -142,7 +151,7 @@ export function ThreadLabelEditor({
       onClick={(e) => e.stopPropagation()}
     >
       {labels.map((label) => {
-        const colors = getLabelColor(label.name);
+        const colors = getLabelColor(label.name, isDark);
         return (
           <button
             key={label.id}
