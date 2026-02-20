@@ -343,18 +343,15 @@ async function spawnAmpOnSession(
       }
     }
 
-    const args = [
-      'threads',
-      'continue',
-      session.threadId,
-      '--no-ide',
-      '--execute',
-      finalMessage,
-      '--stream-json',
-      '--stream-json-thinking',
-    ];
+    // deep and rush modes do not support --stream-json; fall back to plain text
+    const useStreamJson = mode !== 'deep' && mode !== 'rush';
+
+    const args = ['threads', 'continue', session.threadId, '--no-ide', '--execute', finalMessage];
     if (mode) {
-      args.splice(args.indexOf('--stream-json'), 0, '--mode', mode);
+      args.push('--mode', mode);
+    }
+    if (useStreamJson) {
+      args.push('--stream-json', '--stream-json-thinking');
     }
 
     const child = spawn(AMP_BIN, args, {
@@ -376,21 +373,32 @@ async function spawnAmpOnSession(
       session.activeMessage = null;
     });
 
-    child.stdout.on('data', (data: Buffer) => {
-      session.buffer += data.toString();
-      const lines = session.buffer.split('\n');
-      session.buffer = lines.pop() || '';
+    if (useStreamJson) {
+      // Structured JSON streaming for smart mode
+      child.stdout.on('data', (data: Buffer) => {
+        session.buffer += data.toString();
+        const lines = session.buffer.split('\n');
+        session.buffer = lines.pop() || '';
 
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const json = JSON.parse(line) as AmpStreamEvent;
-          handleStreamEvent(session, json);
-        } catch {
-          // Skip non-JSON lines
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const json = JSON.parse(line) as AmpStreamEvent;
+            handleStreamEvent(session, json);
+          } catch {
+            // Skip non-JSON lines
+          }
         }
-      }
-    });
+      });
+    } else {
+      // Plain text streaming for deep/rush modes (no --stream-json support)
+      child.stdout.on('data', (data: Buffer) => {
+        const text = data.toString();
+        if (text) {
+          sendToSession(session, { type: 'text', content: text });
+        }
+      });
+    }
 
     child.stderr.on('data', (data: Buffer) => {
       session.stderrBuffer += data.toString();
