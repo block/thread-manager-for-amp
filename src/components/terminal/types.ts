@@ -54,6 +54,7 @@ export interface TerminalInputProps {
   onPendingImageRemove: () => void;
   onPendingImageSet: (image: { data: string; mediaType: string }) => void;
   searchOpen: boolean;
+  workspacePath: string | null;
 }
 
 export interface TerminalStatusBarProps {

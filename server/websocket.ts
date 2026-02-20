@@ -17,6 +17,7 @@ import {
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS, isAllowedOrigin } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
 import { THREADS_DIR, ARTIFACTS_DIR, type ThreadFile } from './lib/threadTypes.js';
+import { resolveMessageReferences } from './lib/mentionResolver.js';
 
 // Grace period before killing child process on disconnect (30 seconds)
 const DISCONNECT_GRACE_PERIOD_MS = 30_000;
@@ -292,7 +293,19 @@ async function spawnAmpOnSession(
 
   session.processing = true;
   try {
-    let finalMessage = message;
+    // Resolve @file and @T-thread references in the message
+    let workspacePath: string | null = null;
+    try {
+      const threadData = JSON.parse(
+        await readFile(join(THREADS_DIR, `${session.threadId}.json`), 'utf-8'),
+      ) as ThreadFile;
+      const uri = threadData.env?.initial?.trees?.[0]?.uri;
+      workspacePath = uri ? uri.replace('file://', '') : null;
+    } catch {
+      // No workspace info available
+    }
+    const resolved = await resolveMessageReferences(message, workspacePath);
+    let finalMessage = resolved.message;
 
     if (image) {
       try {

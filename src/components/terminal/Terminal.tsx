@@ -320,6 +320,7 @@ export function Terminal({
         onPendingImageRemove={clearPendingImage}
         onPendingImageSet={setPendingImage}
         searchOpen={searchOpen}
+        workspacePath={thread.workspacePath ?? null}
       />
       <MessageSearchModal
         isOpen={searchOpen}

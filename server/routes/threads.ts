@@ -15,6 +15,7 @@ import {
   handoffThread,
   renameThread,
   shareThread,
+  listWorkspaceFiles,
 } from '../lib/threads.js';
 
 export async function handleThreadRoutes(
@@ -149,6 +150,18 @@ export async function handleThreadRoutes(
       return jsonResponse(res, result);
     } catch (err) {
       return sendError(res, 500, (err as Error).message);
+    }
+  }
+
+  if (pathname === '/api/files') {
+    try {
+      const workspace = getParam(url, 'workspace');
+      const query = url.searchParams.get('q') || '';
+      const files = await listWorkspaceFiles(workspace, query);
+      return jsonResponse(res, files);
+    } catch (err) {
+      const status = (err as Error).message.includes('Invalid workspace') ? 400 : 500;
+      return sendError(res, status, (err as Error).message);
     }
   }
 
