@@ -205,6 +205,7 @@ const MessageItem = memo(function MessageItem({
             {msg.type === 'user' ? 'You' : msg.type === 'error' ? 'Error' : 'Amp'}
           </span>
           {msg.interrupted && <span className="chat-interrupted-badge">interrupted</span>}
+          {msg.queued && <span className="chat-queued-badge">queued</span>}
           {msg.timestamp && <Timestamp date={msg.timestamp} className="chat-timestamp" />}
         </div>
         {msg.image && (

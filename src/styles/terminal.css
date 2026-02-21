@@ -295,6 +295,26 @@
   font-style: italic;
 }
 
+.chat-queued-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+  font-weight: 500;
+  animation: queued-pulse 2s ease-in-out infinite;
+}
+
+@keyframes queued-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 .chat-message-user .chat-header {
   justify-content: flex-end;
 }

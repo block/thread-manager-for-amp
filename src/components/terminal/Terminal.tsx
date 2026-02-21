@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo, useState } from 'react';
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { Minimap, type MinimapItem } from '../Minimap';
 import { ThreadDiscovery } from '../ThreadDiscovery/index';
 import { MessageSearchModal } from '../MessageSearchModal';
@@ -6,6 +6,7 @@ import { ImageViewer } from '../ImageViewer';
 import { apiGet, apiPatch } from '../../api/client';
 import type { ThreadMetadata } from '../../types';
 import { extractIssueUrl } from '../../utils/issueTracker';
+import type { AgentMode } from '../../../shared/websocket.js';
 import type { TerminalProps } from './types';
 import { useTerminalWebSocket } from './useTerminalWebSocket';
 import { useTerminalMessages } from './useTerminalMessages';
@@ -65,6 +66,11 @@ export function Terminal({
   } = state;
 
   const [wsConnected, setWsConnected] = useState(false);
+  const [queuedMsg, setQueuedMsg] = useState<{
+    content: string;
+    image?: { data: string; mediaType: string };
+    mode: AgentMode;
+  } | null>(null);
 
   const {
     messages,
@@ -106,6 +112,19 @@ export function Terminal({
   useEffect(() => {
     setWsConnected(isConnected);
   }, [isConnected]);
+
+  // Auto-send queued message when agent finishes
+  const prevRunningRef = useRef(false);
+  useEffect(() => {
+    const wasRunning = prevRunningRef.current;
+    prevRunningRef.current = isRunning || isSending;
+
+    if (wasRunning && !isRunning && !isSending && queuedMsg) {
+      wsSendMessage(queuedMsg.content, queuedMsg.image, queuedMsg.mode);
+      setQueuedMsg(null);
+      setMessages((prev) => prev.map((m) => (m.queued ? { ...m, queued: false } : m)));
+    }
+  }, [isRunning, isSending, queuedMsg, wsSendMessage, setMessages]);
 
   useScrollBehavior({ messages, loadingMore, messagesContainerRef });
 
@@ -227,8 +246,41 @@ export function Terminal({
   const showContextWarning = checkContextWarning(messages);
 
   const handleSendMessage = useCallback(() => {
+    const isActive = isSending || isRunning;
+
+    // Force-send: empty input + queued message → interrupt and send now
+    if (!input.trim() && !pendingImage && queuedMsg && isActive) {
+      wsSendMessage(queuedMsg.content, queuedMsg.image, queuedMsg.mode);
+      setQueuedMsg(null);
+      setMessages((prev) => prev.map((m) => (m.queued ? { ...m, queued: false } : m)));
+      return;
+    }
+
     if ((!input.trim() && !pendingImage) || !isConnected) return;
     const messageText = input.trim() || 'Analyze this image';
+
+    // Queue client-side if agent is busy
+    if (isActive) {
+      // Remove any previously queued message
+      setMessages((prev) => {
+        const withoutQueued = prev.filter((m) => !m.queued);
+        return [
+          ...withoutQueued,
+          {
+            id: generateId(),
+            type: 'user' as const,
+            content: messageText,
+            image: pendingImage || undefined,
+            queued: true,
+          },
+        ];
+      });
+      setQueuedMsg({ content: messageText, image: pendingImage || undefined, mode: agentMode });
+      if (pendingImage) addSessionImage(pendingImage);
+      clearInput();
+      return;
+    }
+
     setMessages((prev) => [
       ...prev,
       { id: generateId(), type: 'user', content: messageText, image: pendingImage || undefined },
@@ -251,6 +303,9 @@ export function Terminal({
     input,
     pendingImage,
     isConnected,
+    isSending,
+    isRunning,
+    queuedMsg,
     setMessages,
     wsSendMessage,
     addSessionImage,
@@ -327,7 +382,7 @@ export function Terminal({
         isConnected={isConnected}
         isSending={isSending}
         isRunning={isRunning}
-        agentStatus={agentStatus}
+        agentStatus={queuedMsg ? 'queued' : agentStatus}
         pendingImage={pendingImage}
         inputRef={inputRef}
         onInputChange={setInput}
@@ -341,6 +396,7 @@ export function Terminal({
         agentMode={effectiveMode}
         onCycleMode={cycleAgentMode}
         isModeLocked={isModeLocked}
+        hasQueuedMessage={!!queuedMsg}
       />
       <MessageSearchModal
         isOpen={searchOpen}

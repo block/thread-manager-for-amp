@@ -60,6 +60,7 @@ export interface TerminalInputProps {
   agentMode: AgentMode;
   onCycleMode: () => void;
   isModeLocked: boolean;
+  hasQueuedMessage: boolean;
 }
 
 export interface TerminalStatusBarProps {

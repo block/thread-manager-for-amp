@@ -17,6 +17,7 @@ export interface Message {
   isContextLimit?: boolean;
   timestamp?: string; // ISO date string
   interrupted?: boolean;
+  queued?: boolean;
 }
 
 // Parse a section into individual message blocks
