@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { useAppSettings } from '../hooks/useAppSettings';
 import type { ViewMode } from '../types';
 import type { AgentMode } from '../../shared/websocket.js';
@@ -26,6 +26,9 @@ interface SettingsContextValue {
   cycleAgentMode: () => void;
   showThinkingBlocks: boolean;
   toggleThinkingBlocks: () => void;
+
+  activeThreadModeLocked: boolean;
+  setActiveThreadModeLocked: (locked: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -36,8 +39,19 @@ interface SettingsProviderProps {
 
 export function SettingsProvider({ children }: SettingsProviderProps) {
   const settings = useAppSettings();
+  const [activeThreadModeLocked, setLocked] = useState(false);
 
-  return <SettingsContext.Provider value={settings}>{children}</SettingsContext.Provider>;
+  const setActiveThreadModeLocked = useCallback((locked: boolean) => {
+    setLocked(locked);
+  }, []);
+
+  const value: SettingsContextValue = {
+    ...settings,
+    activeThreadModeLocked,
+    setActiveThreadModeLocked,
+  };
+
+  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }
 
 export function useSettingsContext(): SettingsContextValue {

@@ -32,7 +32,8 @@ export function Terminal({
   const { id: threadId, title: threadTitle } = thread;
   const { markAsSeen } = useUnread();
   const { setStatus: setThreadStatus, clearStatus: clearThreadStatus } = useThreadStatus();
-  const { agentMode, cycleAgentMode, showThinkingBlocks } = useSettingsContext();
+  const { agentMode, cycleAgentMode, showThinkingBlocks, setActiveThreadModeLocked } =
+    useSettingsContext();
 
   const state = useTerminalState({ thread });
   const {
@@ -93,6 +94,13 @@ export function Terminal({
   // Effective mode: locked thread mode takes priority over global setting
   const effectiveMode = threadMode ?? agentMode;
   const isModeLocked = threadMode !== null;
+
+  // Publish mode lock state so command palette and shortcuts can respect it
+  useEffect(() => {
+    if (autoFocus) {
+      setActiveThreadModeLocked(isModeLocked);
+    }
+  }, [autoFocus, isModeLocked, setActiveThreadModeLocked]);
 
   // Sync WS connection state to control message polling
   useEffect(() => {

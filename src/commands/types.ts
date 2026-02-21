@@ -63,6 +63,7 @@ export interface CommandFactoryContext {
   agentMode: AgentMode;
   onSetAgentMode?: (mode: AgentMode) => void;
   onToggleDeepMode?: () => void;
+  activeThreadModeLocked: boolean;
   showThinkingBlocks: boolean;
   onToggleThinkingBlocks?: () => void;
 }

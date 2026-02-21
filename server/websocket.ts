@@ -49,6 +49,7 @@ interface ThreadSession {
   processing: boolean;
   pendingMessage: PendingMessage | null;
   activeMessage: string | null;
+  hasExistingMode: boolean;
 }
 
 const sessions = new Map<string, ThreadSession>();
@@ -347,7 +348,8 @@ async function spawnAmpOnSession(
     const useStreamJson = mode !== 'rush';
 
     const args = ['threads', 'continue', session.threadId, '--no-ide', '--execute', finalMessage];
-    if (mode) {
+    // Only pass --mode for new threads; existing threads ignore it
+    if (mode && !session.hasExistingMode) {
       args.push('--mode', mode);
     }
     if (useStreamJson) {
@@ -587,6 +589,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
         processing: false,
         pendingMessage: null,
         activeMessage: null,
+        hasExistingMode: false,
       };
       sessions.set(threadId, session);
     }
@@ -609,6 +612,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
 
     // ── Initialise cost/usage from thread file ──────────────────────────
     const initResult = await initSessionFromThread(session);
+    session.hasExistingMode = initResult.hasMessages && !!initResult.mode;
 
     // ── Tell the client we're ready ─────────────────────────────────────
     // Include the thread's mode if it has existing messages (mode is locked)

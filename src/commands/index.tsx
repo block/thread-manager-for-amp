@@ -26,6 +26,7 @@ export function useCommands(options: UseCommandsOptions): Command[] {
     agentMode,
     handleSetAgentMode,
     toggleDeepMode,
+    activeThreadModeLocked,
     showThinkingBlocks,
     toggleThinkingBlocks,
   } = useSettingsContext();
@@ -65,6 +66,7 @@ export function useCommands(options: UseCommandsOptions): Command[] {
       agentMode,
       onSetAgentMode: handleSetAgentMode,
       onToggleDeepMode: toggleDeepMode,
+      activeThreadModeLocked,
       showThinkingBlocks,
       onToggleThinkingBlocks: toggleThinkingBlocks,
     };
@@ -84,6 +86,7 @@ export function useCommands(options: UseCommandsOptions): Command[] {
     agentMode,
     handleSetAgentMode,
     toggleDeepMode,
+    activeThreadModeLocked,
     showThinkingBlocks,
     toggleThinkingBlocks,
   ]);

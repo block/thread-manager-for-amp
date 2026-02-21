@@ -229,6 +229,7 @@ export function useAppModalHandlers({
       onToggleThinkingBlocks: settings.toggleThinkingBlocks,
     },
     activeThreadId,
+    activeThreadModeLocked: settings.activeThreadModeLocked,
   });
 
   const commands = useCommands({

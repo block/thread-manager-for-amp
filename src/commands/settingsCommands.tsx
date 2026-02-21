@@ -12,9 +12,12 @@ export function createSettingsCommands(
     agentMode,
     onSetAgentMode,
     onToggleDeepMode,
+    activeThreadModeLocked,
     showThinkingBlocks,
     onToggleThinkingBlocks,
   } = context;
+
+  const modeLocked = activeThreadModeLocked;
 
   return [
     {
@@ -56,23 +59,26 @@ export function createSettingsCommands(
     {
       id: 'settings-mode-smart',
       category: CATEGORIES.SETTINGS,
-      label: `set mode: smart${agentMode === 'smart' ? ' (active)' : ''}`,
+      label: `set mode: smart${agentMode === 'smart' ? ' (active)' : ''}${modeLocked ? ' (locked)' : ''}`,
       icon: <Zap size={14} />,
       action: () => onSetAgentMode?.('smart'),
+      disabled: modeLocked,
     },
     {
       id: 'settings-mode-rush',
       category: CATEGORIES.SETTINGS,
-      label: `set mode: rush${agentMode === 'rush' ? ' (active)' : ''}`,
+      label: `set mode: rush${agentMode === 'rush' ? ' (active)' : ''}${modeLocked ? ' (locked)' : ''}`,
       icon: <Rocket size={14} />,
       action: () => onSetAgentMode?.('rush'),
+      disabled: modeLocked,
     },
     {
       id: 'settings-mode-deep',
       category: CATEGORIES.SETTINGS,
-      label: `set mode: deep${agentMode === 'deep' ? ' (active)' : ''}`,
+      label: `set mode: deep${agentMode === 'deep' ? ' (active)' : ''}${modeLocked ? ' (locked)' : ''}`,
       icon: <Brain size={14} />,
       action: () => onSetAgentMode?.('deep'),
+      disabled: modeLocked,
     },
     {
       id: 'settings-toggle-deep',
@@ -81,6 +87,7 @@ export function createSettingsCommands(
       shortcut: 'Alt+D',
       icon: <Brain size={14} />,
       action: () => onToggleDeepMode?.(),
+      disabled: modeLocked,
     },
     {
       id: 'settings-toggle-thinking',
