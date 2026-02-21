@@ -441,14 +441,7 @@ async function spawnAmpOnSession(
 
 // ── Initialise session cost/model from thread file ──────────────────────
 
-/** Map model tags from thread files to agent modes */
-function detectModeFromModelTag(modelTag: string): AgentMode | undefined {
-  const model = modelTag.replace('model:', '').toLowerCase();
-  if (model.includes('haiku')) return 'rush';
-  if (model.includes('opus')) return 'deep';
-  if (model.includes('sonnet')) return 'smart';
-  return undefined;
-}
+const VALID_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep'];
 
 async function initSessionFromThread(session: ThreadSession): Promise<AgentMode | undefined> {
   try {
@@ -474,7 +467,8 @@ async function initSessionFromThread(session: ThreadSession): Promise<AgentMode 
       estimatedCost: session.cumulativeCost.toFixed(4),
     });
 
-    return modelTag ? detectModeFromModelTag(modelTag) : undefined;
+    const mode = data.agentMode?.toLowerCase();
+    return mode && VALID_MODES.includes(mode as AgentMode) ? (mode as AgentMode) : undefined;
   } catch {
     // Default to opus pricing if we can't read the thread
     return undefined;
