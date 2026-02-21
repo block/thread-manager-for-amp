@@ -22,6 +22,9 @@ export interface ToolInput {
   [key: string]: unknown;
 }
 
+// Agent mode detected from thread model tags (read-only, informational)
+export type AgentMode = 'smart' | 'rush' | 'deep';
+
 // Client -> Server messages
 export type WsClientMessage =
   | { type: 'message'; content: string; image?: { data: string; mediaType: string } }
@@ -29,7 +32,7 @@ export type WsClientMessage =
 
 // Server -> Client messages
 export type WsServerMessage =
-  | { type: 'ready'; threadId: string }
+  | { type: 'ready'; threadId: string; mode?: AgentMode }
   | {
       type: 'usage';
       contextPercent: number;

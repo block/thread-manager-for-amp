@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Message } from '../../utils/parseMarkdown';
 import type { WsEvent } from '../../types';
+import type { AgentMode } from '../../../shared/websocket.js';
 import type { UsageInfo } from './types';
 import { formatToolUse } from '../../utils/format';
 import { playNotificationSound, isSoundEnabled } from '../../utils/sounds';
@@ -28,6 +29,7 @@ export function useTerminalWebSocket({
   const [isRunning, setIsRunning] = useState(false);
   const [agentStatus, setAgentStatus] = useState<AgentStatus>('idle');
   const [connectionError, setConnectionError] = useState(false);
+  const [threadMode, setThreadMode] = useState<AgentMode | null>(null);
   const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const [, setNoResponseDetected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
@@ -68,6 +70,9 @@ export function useTerminalWebSocket({
             case 'ready':
               wasConnected = true;
               setIsConnected(true);
+              if (data.mode) {
+                setThreadMode(data.mode);
+              }
               break;
             case 'usage':
               setUsage({
@@ -315,6 +320,7 @@ export function useTerminalWebSocket({
     isRunning,
     agentStatus,
     connectionError,
+    threadMode,
     setIsSending,
     sendMessage,
     cancelOperation,

@@ -82,6 +82,7 @@ export function Terminal({
     isRunning,
     agentStatus,
     connectionError,
+    threadMode,
     sendMessage: wsSendMessage,
     cancelOperation,
     reconnect,
@@ -321,6 +322,7 @@ export function Terminal({
         onPendingImageSet={setPendingImage}
         searchOpen={searchOpen}
         workspacePath={thread.workspacePath ?? null}
+        threadMode={threadMode}
       />
       <MessageSearchModal
         isOpen={searchOpen}

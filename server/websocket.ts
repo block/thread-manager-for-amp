@@ -5,7 +5,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage, Server } from 'http';
 import { Duplex } from 'stream';
 import type { RunningThreadState, RunningThreadsMap, ThreadImage } from '../shared/types.js';
-import type { WsServerMessage } from '../shared/websocket.js';
+import type { AgentMode, WsServerMessage } from '../shared/websocket.js';
 import { isWsClientMessage } from '../shared/validation.js';
 import {
   calculateCost,
@@ -441,7 +441,16 @@ async function spawnAmpOnSession(
 
 // ── Initialise session cost/model from thread file ──────────────────────
 
-async function initSessionFromThread(session: ThreadSession): Promise<void> {
+/** Map model tags from thread files to agent modes */
+function detectModeFromModelTag(modelTag: string): AgentMode | undefined {
+  const model = modelTag.replace('model:', '').toLowerCase();
+  if (model.includes('haiku')) return 'rush';
+  if (model.includes('opus')) return 'deep';
+  if (model.includes('sonnet')) return 'smart';
+  return undefined;
+}
+
+async function initSessionFromThread(session: ThreadSession): Promise<AgentMode | undefined> {
   try {
     const threadPath = join(THREADS_DIR, `${session.threadId}.json`);
     const content = await readFile(threadPath, 'utf-8');
@@ -464,8 +473,11 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
       maxTokens: result.maxContextTokens,
       estimatedCost: session.cumulativeCost.toFixed(4),
     });
+
+    return modelTag ? detectModeFromModelTag(modelTag) : undefined;
   } catch {
     // Default to opus pricing if we can't read the thread
+    return undefined;
   }
 }
 
@@ -573,10 +585,10 @@ export function setupWebSocket(server: Server): WebSocketServer {
     });
 
     // ── Initialise cost/usage from thread file ──────────────────────────
-    await initSessionFromThread(session);
+    const detectedMode = await initSessionFromThread(session);
 
     // ── Tell the client we're ready ─────────────────────────────────────
-    sendToSession(session, { type: 'ready', threadId });
+    sendToSession(session, { type: 'ready', threadId, mode: detectedMode });
 
     // If a child is already running (reconnect mid-run), tell client it's active
     if (session.child) {

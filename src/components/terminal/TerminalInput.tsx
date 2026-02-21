@@ -33,6 +33,7 @@ export function TerminalInput({
   onPendingImageSet,
   searchOpen,
   workspacePath,
+  threadMode,
 }: TerminalInputProps) {
   void _onCancel;
   const autocompleteRef = useRef<MentionAutocompleteHandle>(null);
@@ -188,6 +189,18 @@ export function TerminalInput({
         rows={1}
         aria-label="Message input"
       />
+      {threadMode && (
+        <span
+          className={`terminal-mode-badge mode-${threadMode}`}
+          title={`Mode: ${threadMode}`}
+          aria-label={`Agent mode: ${threadMode}`}
+        >
+          <span className="mode-icon">
+            {threadMode === 'deep' ? '🧠' : threadMode === 'rush' ? '🚀' : '⚡'}
+          </span>
+          <span className="mode-label">{threadMode}</span>
+        </span>
+      )}
       <button
         onClick={onSend}
         disabled={!isConnected || (!input.trim() && !pendingImage)}
