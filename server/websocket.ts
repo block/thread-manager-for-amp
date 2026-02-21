@@ -343,8 +343,8 @@ async function spawnAmpOnSession(
       }
     }
 
-    // deep and rush modes do not support --stream-json; fall back to plain text
-    const useStreamJson = mode !== 'deep' && mode !== 'rush';
+    // rush mode does not support --stream-json; fall back to plain text
+    const useStreamJson = mode !== 'rush';
 
     const args = ['threads', 'continue', session.threadId, '--no-ide', '--execute', finalMessage];
     if (mode) {
