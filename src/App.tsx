@@ -148,6 +148,8 @@ function App() {
           onNewThread={handleNewThread}
           onOpenThread={handleContinue}
           focusThreadId={threadCtx.focusThreadId}
+          replayThreadId={modals.replayThreadId}
+          onStopReplay={() => modals.setReplayThreadId(null)}
         />
       )}
 

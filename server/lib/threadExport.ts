@@ -3,7 +3,7 @@ import { join } from 'path';
 import { getArtifacts } from './database.js';
 import { formatMessageContent } from './threadParsing.js';
 import type { ThreadImage, Artifact } from '../../shared/types.js';
-import { THREADS_DIR, isImageContent, type ThreadFile } from './threadTypes.js';
+import { THREADS_DIR, isImageContent, type ThreadFile, type ThreadMessage } from './threadTypes.js';
 
 export async function getThreadMarkdown(
   threadId: string,
@@ -114,4 +114,13 @@ export async function getThreadImages(threadId: string): Promise<ThreadImage[]> 
   }
 
   return images;
+}
+
+export async function getThreadMessages(
+  threadId: string,
+): Promise<{ messages: ThreadMessage[]; title?: string }> {
+  const threadPath = join(THREADS_DIR, `${threadId}.json`);
+  const content = await readFile(threadPath, 'utf-8');
+  const data = JSON.parse(content) as ThreadFile;
+  return { messages: data.messages || [], title: data.title };
 }

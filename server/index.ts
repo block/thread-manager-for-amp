@@ -9,6 +9,8 @@ import { handleGitRoutes } from './routes/git.js';
 import { handleSkillRoutes } from './routes/skills.js';
 import { handleMetadataRoutes } from './routes/metadata.js';
 import { handleArtifactRoutes } from './routes/artifacts.js';
+import { handleTasksRoutes } from './routes/tasks.js';
+import { handleReviewRoutes } from './routes/review.js';
 import { setupWebSocket } from './websocket.js';
 import { setupShellWebSocket } from './shell-websocket.js';
 
@@ -74,6 +76,8 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     if (await handleSkillRoutes(url, req, res)) return;
     if (await handleMetadataRoutes(url, req, res)) return;
     if (await handleArtifactRoutes(url, req, res)) return;
+    if (await handleTasksRoutes(url, req, res)) return;
+    if (await handleReviewRoutes(url, req, res)) return;
 
     // Fallback to static file serving
     await serveStatic(req, res);

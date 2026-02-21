@@ -18,6 +18,10 @@ const BlockerModal = lazy(() =>
   import('./BlockerModal').then((m) => ({ default: m.BlockerModal })),
 );
 const OutputModal = lazy(() => import('./OutputModal').then((m) => ({ default: m.OutputModal })));
+const TasksModal = lazy(() => import('./TasksModal').then((m) => ({ default: m.TasksModal })));
+const CodeReviewModal = lazy(() =>
+  import('./CodeReviewModal').then((m) => ({ default: m.CodeReviewModal })),
+);
 
 export interface AppModalsProps {
   onRefresh: () => void;
@@ -69,6 +73,23 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
           threadTitle={threads.find((t) => t.id === threadActions.handoffThreadId)?.title}
           onConfirm={threadActions.handleHandoffConfirm}
           onCancel={() => threadActions.setHandoffThreadId(null)}
+        />
+
+        <TasksModal
+          isOpen={!!modals.tasksModal}
+          onClose={() => modals.setTasksModal(null)}
+          workspace={threads.find((t) => t.id === activeThreadId)?.workspacePath}
+          initialTab={modals.tasksModal?.tab ?? 'list'}
+        />
+
+        <CodeReviewModal
+          isOpen={!!modals.codeReviewModal}
+          onClose={() => modals.setCodeReviewModal(null)}
+          workspace={
+            modals.codeReviewModal?.workspace ??
+            threads.find((t) => t.id === activeThreadId)?.workspacePath ??
+            undefined
+          }
         />
 
         <BlockerModal

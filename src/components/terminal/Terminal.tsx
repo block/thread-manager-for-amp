@@ -16,10 +16,12 @@ import { TerminalMessages } from './TerminalMessages';
 import { TerminalInput } from './TerminalInput';
 import { TerminalStatusBar } from './TerminalStatusBar';
 import { ContextWarning } from './ContextWarning';
+import { ReplayControls } from './ReplayControls';
 import { useScrollBehavior } from './useScrollBehavior';
 import { useUnread } from '../../contexts/UnreadContext';
 import { useThreadStatus } from '../../contexts/ThreadStatusContext';
 import { useSettingsContext } from '../../contexts/SettingsContext';
+import { useReplayMode } from '../../hooks/useReplayMode';
 
 export function Terminal({
   thread,
@@ -29,12 +31,30 @@ export function Terminal({
   onNewThread,
   onOpenThread,
   autoFocus = false,
+  replayThreadId,
+  onStopReplay,
 }: TerminalProps) {
   const { id: threadId, title: threadTitle } = thread;
   const { markAsSeen } = useUnread();
   const { setStatus: setThreadStatus, clearStatus: clearThreadStatus } = useThreadStatus();
   const { agentMode, cycleAgentMode, showThinkingBlocks, setActiveThreadModeLocked } =
     useSettingsContext();
+
+  const replay = useReplayMode();
+
+  // Start replay when replayThreadId is set
+  useEffect(() => {
+    if (replayThreadId && replayThreadId === threadId && replay.replayState === 'idle') {
+      replay.startReplay(threadId);
+    }
+  }, [replayThreadId, threadId, replay]);
+
+  const isReplaying = replay.replayState !== 'idle';
+
+  const handleStopReplay = useCallback(() => {
+    replay.stopReplay();
+    onStopReplay?.();
+  }, [replay, onStopReplay]);
 
   const state = useTerminalState({ thread });
   const {
@@ -210,9 +230,11 @@ export function Terminal({
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [embedded, openSearch, containerRef]);
 
+  const displayMessages = isReplaying ? replay.replayMessages : messages;
+
   const minimapItems: MinimapItem[] = useMemo(
     () =>
-      messages
+      displayMessages
         .filter((msg) => msg.type !== 'tool_result')
         .map((msg) => {
           let label = msg.type === 'user' ? 'User:' : 'Assistant:';
@@ -240,10 +262,10 @@ export function Terminal({
             toolName: msg.toolName,
           };
         }),
-    [messages],
+    [displayMessages],
   );
 
-  const showContextWarning = checkContextWarning(messages);
+  const showContextWarning = !isReplaying && checkContextWarning(messages);
 
   const handleSendMessage = useCallback(() => {
     const isActive = isSending || isRunning;
@@ -323,19 +345,33 @@ export function Terminal({
       onClick={(e) => e.stopPropagation()}
     >
       <TerminalHeader threadTitle={threadTitle} embedded={embedded} onClose={onClose} />
-      <ThreadDiscovery
-        threadId={threadId}
-        onOpenThread={onOpenThread}
-        messages={messages}
-        onJumpToMessage={handleScrollToMessage}
-        sessionImages={sessionImages}
-        metadata={metadata || undefined}
-        onMetadataChange={setMetadata}
-        onSearchOpen={openSearch}
-      />
+      {isReplaying && (
+        <ReplayControls
+          replayState={replay.replayState}
+          replaySpeed={replay.replaySpeed}
+          progress={replay.replayProgress}
+          onPause={replay.pauseReplay}
+          onResume={replay.resumeReplay}
+          onStop={handleStopReplay}
+          onSkipToEnd={replay.skipToEnd}
+          onSetSpeed={replay.setReplaySpeed}
+        />
+      )}
+      {!isReplaying && (
+        <ThreadDiscovery
+          threadId={threadId}
+          onOpenThread={onOpenThread}
+          messages={messages}
+          onJumpToMessage={handleScrollToMessage}
+          sessionImages={sessionImages}
+          metadata={metadata || undefined}
+          onMetadataChange={setMetadata}
+          onSearchOpen={openSearch}
+        />
+      )}
       <div className="terminal-body">
         <TerminalMessages
-          messages={messages}
+          messages={displayMessages}
           isLoading={isLoading}
           hasMoreMessages={hasMoreMessages}
           loadingMore={loadingMore}

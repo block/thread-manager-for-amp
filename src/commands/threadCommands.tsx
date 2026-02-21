@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Search,
+  Play,
 } from 'lucide-react';
 import { CATEGORIES } from './categories';
 import type { Command, CommandFactoryContext, CommandHandlers } from './types';
@@ -176,6 +177,14 @@ export function createThreadCommands(
       label: 'analyze',
       icon: <Search size={14} />,
       action: () => handlers.onContextAnalyze?.(),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-replay',
+      category: CATEGORIES.THREAD,
+      label: 'replay',
+      icon: <Play size={14} />,
+      action: () => activeThreadId && handlers.onReplayThread?.(activeThreadId),
       disabled: !hasActiveThread,
     },
   ];

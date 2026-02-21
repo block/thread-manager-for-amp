@@ -19,6 +19,8 @@ export interface TerminalProps {
   onNewThread?: () => void;
   onOpenThread?: (thread: Thread) => void;
   autoFocus?: boolean;
+  replayThreadId?: string | null;
+  onStopReplay?: () => void;
 }
 
 export interface TerminalHeaderProps {

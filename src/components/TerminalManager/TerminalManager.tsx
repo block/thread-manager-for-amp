@@ -25,6 +25,8 @@ interface TerminalManagerProps {
   onNewThread?: () => void;
   onOpenThread?: (thread: Thread) => void;
   focusThreadId?: string;
+  replayThreadId?: string | null;
+  onStopReplay?: () => void;
 }
 
 export const TerminalManager = memo(function TerminalManager({
@@ -36,6 +38,8 @@ export const TerminalManager = memo(function TerminalManager({
   onNewThread,
   onOpenThread,
   focusThreadId,
+  replayThreadId,
+  onStopReplay,
 }: TerminalManagerProps) {
   const { terminalLayout: layout, setTerminalLayout: setLayout } = useSettingsContext();
 
@@ -164,6 +168,8 @@ export const TerminalManager = memo(function TerminalManager({
                     onNewThread={onNewThread}
                     onOpenThread={onOpenThread}
                     autoFocus={thread.id === focusThreadId && isVisible}
+                    replayThreadId={replayThreadId === thread.id ? replayThreadId : null}
+                    onStopReplay={onStopReplay}
                   />
                 </ErrorBoundary>
               </div>
