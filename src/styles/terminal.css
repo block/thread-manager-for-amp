@@ -1590,13 +1590,14 @@
 
 .chat-message-actions {
   display: flex;
+  flex-direction: column;
   gap: 4px;
-  margin-top: 6px;
+  align-self: center;
   opacity: 0;
   transition: opacity 0.15s;
 }
 
-.chat-bubble:hover .chat-message-actions {
+.chat-message:hover .chat-message-actions {
   opacity: 1;
 }
 

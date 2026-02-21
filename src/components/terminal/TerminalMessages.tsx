@@ -228,31 +228,31 @@ const MessageItem = memo(function MessageItem({
         <div className="chat-content">
           <MarkdownContent content={msg.content} />
         </div>
-        {msg.type === 'user' && (showEditAction || showUndoAction) && (
-          <div className="chat-message-actions">
-            {showEditAction && (
-              <button
-                className="chat-action-btn"
-                onClick={onEdit}
-                title="Edit message"
-                aria-label="Edit message"
-              >
-                <Pencil size={12} />
-              </button>
-            )}
-            {showUndoAction && (
-              <button
-                className="chat-action-btn"
-                onClick={onUndo}
-                title="Undo this turn"
-                aria-label="Undo this turn"
-              >
-                <Undo2 size={12} />
-              </button>
-            )}
-          </div>
-        )}
       </div>
+      {msg.type === 'user' && (showEditAction || showUndoAction) && (
+        <div className="chat-message-actions">
+          {showEditAction && (
+            <button
+              className="chat-action-btn"
+              onClick={onEdit}
+              title="Edit message"
+              aria-label="Edit message"
+            >
+              <Pencil size={12} />
+            </button>
+          )}
+          {showUndoAction && (
+            <button
+              className="chat-action-btn"
+              onClick={onUndo}
+              title="Undo this turn"
+              aria-label="Undo this turn"
+            >
+              <Undo2 size={12} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 });
