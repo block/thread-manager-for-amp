@@ -187,5 +187,23 @@ export function createThreadCommands(
       action: () => activeThreadId && handlers.onReplayThread?.(activeThreadId),
       disabled: !hasActiveThread,
     },
+    {
+      id: 'thread-prompt-history',
+      category: CATEGORIES.THREAD,
+      label: 'prompt history',
+      icon: <Clock size={14} />,
+      shortcut: 'Ctrl+R',
+      action: () => handlers.onOpenPromptHistory?.(),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-undo-last-turn',
+      category: CATEGORIES.THREAD,
+      label: 'undo last turn',
+      icon: <ArrowLeft size={14} />,
+      shortcut: 'Ctrl+Z',
+      action: () => handlers.onUndoLastTurn?.(),
+      disabled: !hasActiveThread,
+    },
   ];
 }

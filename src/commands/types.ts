@@ -56,6 +56,8 @@ export interface UseCommandsOptions {
   onImportTasks?: () => void;
   onReplayThread?: (id: string) => void;
   onCodeReview?: () => void;
+  onOpenPromptHistory?: () => void;
+  onUndoLastTurn?: () => void;
 }
 
 export interface CommandFactoryContext {

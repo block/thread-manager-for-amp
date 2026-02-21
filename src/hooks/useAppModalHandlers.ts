@@ -6,7 +6,7 @@ import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useCommands } from './useCommands';
 import { useModalActions } from './useModalActions';
 import { useErrorToast } from './useErrorToast';
-import { apiGet, apiPut } from '../api/client';
+import { apiGet, apiPut, apiPost } from '../api/client';
 import type { Thread } from '../types';
 import type { Command } from '../commands';
 
@@ -182,6 +182,26 @@ export function useAppModalHandlers({
     [modals, setThreadLabels, showError],
   );
 
+  const handleUndoLastTurn = useCallback(() => {
+    if (!activeThreadId) return;
+    modals.setConfirmModal({
+      title: 'Undo Last Turn',
+      message:
+        'This will remove the last user message and all subsequent assistant responses. This cannot be undone.',
+      confirmText: 'Undo',
+      isDestructive: true,
+      onConfirm: () => {
+        modals.setConfirmModal(null);
+        apiPost('/api/thread-undo', { threadId: activeThreadId })
+          .then(() => onRefresh())
+          .catch((err: unknown) => {
+            console.error('Failed to undo:', err);
+            showError('Failed to undo last turn');
+          });
+      },
+    });
+  }, [activeThreadId, modals, onRefresh, showError]);
+
   const handleManageBlockers = useCallback(
     (threadId: string) => {
       modals.setBlockerThreadId(threadId);
@@ -227,6 +247,8 @@ export function useAppModalHandlers({
       onOpenShellTerminal: modals.openShellTerminal,
       onToggleDeepMode: settings.toggleDeepMode,
       onToggleThinkingBlocks: settings.toggleThinkingBlocks,
+      onOpenPromptHistory: () => modals.setPromptHistoryOpen(true),
+      onUndoLastTurn: handleUndoLastTurn,
     },
     activeThreadId,
     activeThreadModeLocked: settings.activeThreadModeLocked,
@@ -277,6 +299,8 @@ export function useAppModalHandlers({
     onImportTasks: modalActions.handleImportTasks,
     onReplayThread: modalActions.handleReplayThread,
     onCodeReview: modalActions.handleCodeReview,
+    onOpenPromptHistory: () => modals.setPromptHistoryOpen(true),
+    onUndoLastTurn: handleUndoLastTurn,
   });
 
   return {

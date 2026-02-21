@@ -22,6 +22,9 @@ const TasksModal = lazy(() => import('./TasksModal').then((m) => ({ default: m.T
 const CodeReviewModal = lazy(() =>
   import('./CodeReviewModal').then((m) => ({ default: m.CodeReviewModal })),
 );
+const PromptHistoryModal = lazy(() =>
+  import('./PromptHistoryModal').then((m) => ({ default: m.PromptHistoryModal })),
+);
 
 export interface AppModalsProps {
   onRefresh: () => void;
@@ -90,6 +93,15 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
             threads.find((t) => t.id === activeThreadId)?.workspacePath ??
             undefined
           }
+        />
+
+        <PromptHistoryModal
+          isOpen={modals.promptHistoryOpen}
+          onClose={() => modals.setPromptHistoryOpen(false)}
+          onSelect={(text) => {
+            modals.setPendingPromptInsert(text);
+            modals.setPromptHistoryOpen(false);
+          }}
         />
 
         <BlockerModal

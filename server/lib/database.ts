@@ -68,6 +68,18 @@ function createDatabase(dbPath: string): DatabaseType {
     CREATE INDEX IF NOT EXISTS idx_artifacts_type ON artifacts(type);
   `);
 
+  instance.exec(`
+    CREATE TABLE IF NOT EXISTS prompt_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      text TEXT NOT NULL,
+      thread_id TEXT NOT NULL,
+      created_at INTEGER DEFAULT (unixepoch())
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_prompt_history_text ON prompt_history(text);
+    CREATE INDEX IF NOT EXISTS idx_prompt_history_created ON prompt_history(created_at DESC);
+  `);
+
   return instance;
 }
 
@@ -122,6 +134,13 @@ interface BlockedThreadRow {
   thread_id: string;
 }
 
+export interface PromptHistoryRow {
+  id: number;
+  text: string;
+  thread_id: string;
+  created_at: number;
+}
+
 // Prepared statements
 interface Statements {
   getMetadata: Statement<[string], ThreadMetadataRow>;
@@ -151,6 +170,11 @@ interface Statements {
   }>;
   updateArtifact: Statement<{ id: number; title: string | null; content: string | null }>;
   deleteArtifact: Statement<[number]>;
+  searchPromptHistory: Statement<[string, number], PromptHistoryRow>;
+  recentPromptHistory: Statement<[number], PromptHistoryRow>;
+  recordPrompt: Statement<{ text: string; thread_id: string; created_at: number | null }>;
+  deletePromptByText: Statement<[string]>;
+  promptHistoryCount: Statement<[], { count: number }>;
 }
 
 function prepareStatements(instance: DatabaseType): Statements {
@@ -248,6 +272,33 @@ function prepareStatements(instance: DatabaseType): Statements {
 
     deleteArtifact: instance.prepare(`
       DELETE FROM artifacts WHERE id = ?
+    `),
+
+    // Prompt history statements
+    searchPromptHistory: instance.prepare(`
+      SELECT * FROM prompt_history
+      WHERE text LIKE '%' || ? || '%'
+      ORDER BY created_at DESC, id DESC
+      LIMIT ?
+    `),
+
+    recentPromptHistory: instance.prepare(`
+      SELECT * FROM prompt_history
+      ORDER BY created_at DESC, id DESC
+      LIMIT ?
+    `),
+
+    recordPrompt: instance.prepare(`
+      INSERT INTO prompt_history (text, thread_id, created_at)
+      VALUES (@text, @thread_id, COALESCE(@created_at, unixepoch()))
+    `),
+
+    deletePromptByText: instance.prepare(`
+      DELETE FROM prompt_history WHERE text = ?
+    `),
+
+    promptHistoryCount: instance.prepare(`
+      SELECT count(*) as count FROM prompt_history
     `),
   };
 }
@@ -499,6 +550,35 @@ export function deleteThreadData(threadId: string): DeleteThreadDataResult {
   delStmts.metadata.run(threadId);
 
   return { artifacts };
+}
+
+// Prompt history functions
+
+export function recordPrompt(text: string, threadId: string, createdAt?: number): void {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+
+  const stmts = getStatements();
+  // Delete existing entry with same text (move to top on re-use)
+  stmts.deletePromptByText.run(trimmed);
+  stmts.recordPrompt.run({
+    text: trimmed,
+    thread_id: threadId,
+    created_at: createdAt ?? null,
+  });
+}
+
+export function getPromptHistoryCount(): number {
+  const stmts = getStatements();
+  return stmts.promptHistoryCount.get()?.count ?? 0;
+}
+
+export function searchPromptHistory(query: string, limit = 50): PromptHistoryRow[] {
+  const stmts = getStatements();
+  if (!query.trim()) {
+    return stmts.recentPromptHistory.all(limit);
+  }
+  return stmts.searchPromptHistory.all(query.trim(), limit);
 }
 
 export function initDatabase(dbPath: string): void {

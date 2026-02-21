@@ -18,6 +18,8 @@ import {
   shareThread,
   listWorkspaceFiles,
 } from '../lib/threads.js';
+import { truncateThreadAtMessage, undoLastTurn } from '../lib/threadCrud.js';
+import { getPromptHistory, addPromptToHistory } from '../lib/promptHistory.js';
 
 export async function handleThreadRoutes(
   url: URL,
@@ -231,6 +233,71 @@ export async function handleThreadRoutes(
       if (!threadId) throw new Error('threadId required');
       const result = await shareThread(threadId);
       return jsonResponse(res, result);
+    } catch (err) {
+      const status = (err as Error).message.includes('required') ? 400 : 500;
+      return sendError(res, status, (err as Error).message);
+    }
+  }
+
+  if (pathname === '/api/thread-edit') {
+    if (req.method !== 'POST') {
+      return sendError(res, 405, 'Method not allowed');
+    }
+    try {
+      const body = await parseBody<{
+        threadId?: string;
+        messageIndex?: number;
+      }>(req);
+      if (!body.threadId) throw new Error('threadId required');
+      if (body.messageIndex === undefined) {
+        throw new Error('messageIndex required');
+      }
+      const result = await truncateThreadAtMessage(body.threadId, body.messageIndex);
+      return jsonResponse(res, { success: true, ...result });
+    } catch (err) {
+      const msg = (err as Error).message;
+      const status = msg.includes('required') || msg.includes('Invalid') ? 400 : 500;
+      return sendError(res, status, msg);
+    }
+  }
+
+  if (pathname === '/api/thread-undo') {
+    if (req.method !== 'POST') {
+      return sendError(res, 405, 'Method not allowed');
+    }
+    try {
+      const body = await parseBody<{ threadId?: string }>(req);
+      if (!body.threadId) throw new Error('threadId required');
+      const result = await undoLastTurn(body.threadId);
+      return jsonResponse(res, { success: true, ...result });
+    } catch (err) {
+      const msg = (err as Error).message;
+      const status = msg.includes('required') || msg.includes('No user message') ? 400 : 500;
+      return sendError(res, status, msg);
+    }
+  }
+
+  if (pathname === '/api/prompt-history') {
+    try {
+      const query = url.searchParams.get('q') || '';
+      const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+      const results = await getPromptHistory(query, limit);
+      return jsonResponse(res, results);
+    } catch (err) {
+      return sendError(res, 500, (err as Error).message);
+    }
+  }
+
+  if (pathname === '/api/prompt-record') {
+    if (req.method !== 'POST') {
+      return sendError(res, 405, 'Method not allowed');
+    }
+    try {
+      const body = await parseBody<{ text?: string; threadId?: string }>(req);
+      if (!body.text) throw new Error('text required');
+      if (!body.threadId) throw new Error('threadId required');
+      addPromptToHistory(body.text, body.threadId);
+      return jsonResponse(res, { success: true });
     } catch (err) {
       const status = (err as Error).message.includes('required') ? 400 : 500;
       return sendError(res, status, (err as Error).message);
