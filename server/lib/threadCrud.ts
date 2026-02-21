@@ -361,10 +361,8 @@ export async function createThread(
 ): Promise<CreateThreadResult> {
   // Run amp threads new from the specified workspace directory
   const cwd = workspacePath || AMP_HOME;
-  const args = ['threads', 'new'];
-  if (mode) {
-    args.push('--mode', mode);
-  }
+  // --mode is a global flag that must come before the subcommand
+  const args = mode ? ['--mode', mode, 'threads', 'new'] : ['threads', 'new'];
   const stdout = await runAmp(args, { cwd });
   const match = stdout.match(/T-[\w-]+/);
   if (!match) {

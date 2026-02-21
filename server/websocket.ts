@@ -97,12 +97,15 @@ interface AmpContentBlock {
 }
 
 interface AmpStreamEvent {
-  type: 'system' | 'assistant' | 'user' | 'result';
+  type: 'system' | 'assistant' | 'user' | 'result' | 'thinking';
   subtype?: string;
   message?: {
     content?: AmpContentBlock[];
     usage?: AmpUsage;
   };
+  thinking?: string;
+  signature?: string;
+  provider?: string;
   tool_use_id?: string;
   is_error?: boolean;
   result?: string | Record<string, unknown> | null;
@@ -172,7 +175,16 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
               content: block.thinking || block.text || '',
             });
           } else if (block.type === 'text' && block.text) {
-            sendToSession(session, { type: 'text', content: block.text });
+            let text = block.text;
+            const thinkingJsonMatch = text.match(
+              /^\s*\{["\s]*type["\s]*:["\s]*thinking["\s]*,[\s\S]*?\}\s*/,
+            );
+            if (thinkingJsonMatch) {
+              text = text.slice(thinkingJsonMatch[0].length).trim();
+            }
+            if (text) {
+              sendToSession(session, { type: 'text', content: text });
+            }
           } else if (block.type === 'tool_use' && block.id && block.name) {
             if (isHiddenCostTool(block.name)) {
               let toolCost: number;
@@ -235,6 +247,13 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
             }
           }
         }
+      }
+      break;
+    }
+    case 'thinking': {
+      const thinkingText = event.thinking || '';
+      if (thinkingText) {
+        sendToSession(session, { type: 'thinking', content: thinkingText });
       }
       break;
     }
@@ -347,11 +366,12 @@ async function spawnAmpOnSession(
     // rush mode does not support --stream-json; fall back to plain text
     const useStreamJson = mode !== 'rush';
 
-    const args = ['threads', 'continue', session.threadId, '--no-ide', '--execute', finalMessage];
-    // Only pass --mode for new threads; existing threads ignore it
-    if (mode && !session.hasExistingMode) {
+    // --mode is a global flag that must come before the subcommand
+    const args: string[] = [];
+    if (mode) {
       args.push('--mode', mode);
     }
+    args.push('threads', 'continue', session.threadId, '--no-ide', '--execute', finalMessage);
     if (useStreamJson) {
       args.push('--stream-json', '--stream-json-thinking');
     }

@@ -74,7 +74,7 @@ export function useAppSettings(): UseAppSettingsReturn {
 
   const [showThinkingBlocks, setShowThinkingBlocks] = useState<boolean>(() => {
     const saved = localStorage.getItem('showThinkingBlocks');
-    return saved === 'true';
+    return saved !== 'false';
   });
 
   useEffect(() => {
