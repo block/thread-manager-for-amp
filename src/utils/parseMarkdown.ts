@@ -25,28 +25,44 @@ function parseSection(text: string, role: 'user' | 'assistant', sectionIndex: nu
   let localIndex = 0;
 
   if (role === 'assistant') {
-    // Extract thinking JSON blocks as thinking messages instead of stripping them
-    const thinkingRegex = /\{"type":"thinking"[\s\S]*?"provider":"(?:anthropic|openai)"\}\s*/g;
+    // Extract thinking markers (<!--thinking:text-->) emitted by the server
+    const thinkingMarkerRegex = /<!--thinking:([\s\S]*?)-->\s*/g;
     let thinkingMatch;
-    while ((thinkingMatch = thinkingRegex.exec(text)) !== null) {
+    while ((thinkingMatch = thinkingMarkerRegex.exec(text)) !== null) {
+      const thinkingText = thinkingMatch[1]?.trim();
+      if (thinkingText) {
+        messages.push({
+          id: `msg-s${sectionIndex}-${localIndex++}`,
+          type: 'thinking',
+          content: thinkingText,
+        });
+      }
+    }
+    let cleanText = text.replace(thinkingMarkerRegex, '');
+
+    // Also handle legacy thinking JSON blocks (from older threads)
+    const thinkingJsonRegex =
+      /\{"type":"thinking"[\s\S]*?"provider":"(?:anthropic|openai)"[\s\S]*?\}\s*/g;
+    let jsonMatch;
+    while ((jsonMatch = thinkingJsonRegex.exec(cleanText)) !== null) {
       try {
-        const parsed = JSON.parse(thinkingMatch[0].trim()) as {
+        const parsed = JSON.parse(jsonMatch[0].trim()) as {
           content?: string;
           thinking?: string;
         };
-        const thinkingText = parsed.content || parsed.thinking;
-        if (thinkingText) {
+        const jsonThinkingText = parsed.content || parsed.thinking;
+        if (jsonThinkingText) {
           messages.push({
             id: `msg-s${sectionIndex}-${localIndex++}`,
             type: 'thinking',
-            content: thinkingText,
+            content: jsonThinkingText,
           });
         }
       } catch {
         // Skip unparseable thinking blocks
       }
     }
-    const cleanText = text.replace(thinkingRegex, '');
+    cleanText = cleanText.replace(thinkingJsonRegex, '');
 
     // Find all tool uses
     const toolUseRegex = /\*\*Tool Use:\*\*\s*`(\w+)`\s*```json\s*([\s\S]*?)```/g;

@@ -2,6 +2,14 @@
  * Thread content parsing and formatting utilities
  */
 
+interface ThinkingBlock {
+  type: 'thinking';
+  thinking?: string;
+  content?: string;
+  provider?: string;
+  [key: string]: unknown;
+}
+
 interface TextBlock {
   type: 'text';
   text?: string;
@@ -38,6 +46,13 @@ export function formatMessageContent(content: MessageContent): string {
     return content
       .map((block: ContentBlock): string => {
         if (typeof block === 'string') return block;
+        if (block.type === 'thinking') {
+          const tb = block as ThinkingBlock;
+          const text = tb.thinking || tb.content || '';
+          if (!text) return '';
+          // Emit a marker the frontend parser can recognize
+          return `<!--thinking:${text}-->`;
+        }
         if (block.type === 'text') return (block as TextBlock).text || '';
         if (block.type === 'tool_use') {
           const toolBlock = block as ToolUseBlock;
