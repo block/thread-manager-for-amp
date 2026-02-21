@@ -13,6 +13,7 @@ import { handleTasksRoutes } from './routes/tasks.js';
 import { handleReviewRoutes } from './routes/review.js';
 import { setupWebSocket } from './websocket.js';
 import { setupShellWebSocket } from './shell-websocket.js';
+import { startPromptHistoryBackfill } from './lib/promptHistory.js';
 
 const PORT_FILE = join(import.meta.dirname, '..', '.server-port');
 
@@ -115,6 +116,7 @@ async function start(): Promise<void> {
     console.warn(`🚀 Thread Manager for Amp running at http://localhost:${port}`);
     console.warn(`📡 WebSocket server ready`);
     console.warn(`💻 Shell WebSocket ready at /shell`);
+    startPromptHistoryBackfill();
   });
 }
 

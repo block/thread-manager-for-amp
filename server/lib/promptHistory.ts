@@ -1,20 +1,25 @@
 import { readFile, readdir, stat } from 'fs/promises';
 import { join } from 'path';
 import { THREADS_DIR, isTextContent, type ThreadFile } from './threadTypes.js';
-import { recordPrompt, searchPromptHistory, type PromptHistoryRow } from './database.js';
+import {
+  recordPrompt,
+  searchPromptHistory,
+  getPromptHistoryCount,
+  type PromptHistoryRow,
+} from './database.js';
 
-let backfillDone = false;
+let backfillPromise: Promise<void> | null = null;
 
 /**
- * Backfill prompt history from thread files on first query.
- * Scans all thread JSON files and records user messages into the SQLite cache.
+ * Backfill prompt history from thread files.
+ * Skips if the prompt_history table already has data (i.e., was previously backfilled).
  * Runs at most once per server lifetime.
  */
 async function backfillPromptHistory(): Promise<void> {
-  if (backfillDone) return;
-  backfillDone = true;
-
   try {
+    // Skip if already backfilled (data persists across restarts)
+    if (getPromptHistoryCount() > 0) return;
+
     const files = await readdir(THREADS_DIR);
     const threadFiles = files.filter((f) => f.startsWith('T-') && f.endsWith('.json'));
 
@@ -26,6 +31,8 @@ async function backfillPromptHistory(): Promise<void> {
         batch.map(async (file) => {
           try {
             const filePath = join(THREADS_DIR, file);
+            const fileStat = await stat(filePath);
+            const fileMtime = Math.floor(fileStat.mtimeMs / 1000);
             const content = await readFile(filePath, 'utf-8');
             const data = JSON.parse(content) as ThreadFile;
             const threadId = file.replace('.json', '');
@@ -43,7 +50,9 @@ async function backfillPromptHistory(): Promise<void> {
               }
 
               if (text.trim()) {
-                recordPrompt(text, threadId);
+                // Use message sentAt if available, otherwise fall back to file mtime
+                const createdAt = msg.meta?.sentAt ? Math.floor(msg.meta.sentAt / 1000) : fileMtime;
+                recordPrompt(text, threadId, createdAt);
               }
             }
           } catch {
@@ -56,8 +65,16 @@ async function backfillPromptHistory(): Promise<void> {
     console.warn(`📋 Prompt history backfill complete (scanned ${threadFiles.length} threads)`);
   } catch (err) {
     console.error('[prompt-history] Backfill failed:', err);
-    // Allow retry on next query
-    backfillDone = false;
+  }
+}
+
+/**
+ * Start backfill in the background on server startup.
+ * Returns immediately; the backfill runs asynchronously.
+ */
+export function startPromptHistoryBackfill(): void {
+  if (!backfillPromise) {
+    backfillPromise = backfillPromptHistory();
   }
 }
 
@@ -78,10 +95,12 @@ function toEntry(row: PromptHistoryRow): PromptHistoryEntry {
 }
 
 /**
- * Search prompt history. On first call, backfills from thread files.
+ * Search prompt history. Waits for any in-progress backfill to complete first.
  */
 export async function getPromptHistory(query: string, limit = 50): Promise<PromptHistoryEntry[]> {
-  await backfillPromptHistory();
+  if (backfillPromise) {
+    await backfillPromise;
+  }
   return searchPromptHistory(query, limit).map(toEntry);
 }
 
