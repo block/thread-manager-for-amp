@@ -26,16 +26,20 @@ function parseSection(text: string, role: 'user' | 'assistant', sectionIndex: nu
 
   if (role === 'assistant') {
     // Extract thinking JSON blocks as thinking messages instead of stripping them
-    const thinkingRegex = /\{"type":"thinking"[\s\S]*?"provider":"anthropic"\}\s*/g;
+    const thinkingRegex = /\{"type":"thinking"[\s\S]*?"provider":"(?:anthropic|openai)"\}\s*/g;
     let thinkingMatch;
     while ((thinkingMatch = thinkingRegex.exec(text)) !== null) {
       try {
-        const parsed = JSON.parse(thinkingMatch[0].trim()) as { content?: string };
-        if (parsed.content) {
+        const parsed = JSON.parse(thinkingMatch[0].trim()) as {
+          content?: string;
+          thinking?: string;
+        };
+        const thinkingText = parsed.content || parsed.thinking;
+        if (thinkingText) {
           messages.push({
             id: `msg-s${sectionIndex}-${localIndex++}`,
             type: 'thinking',
-            content: parsed.content,
+            content: thinkingText,
           });
         }
       } catch {
