@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 import { useAppSettings } from '../hooks/useAppSettings';
 import type { ViewMode } from '../types';
 import type { AgentMode } from '../../shared/websocket.js';
@@ -45,11 +45,14 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     setLocked(locked);
   }, []);
 
-  const value: SettingsContextValue = {
-    ...settings,
-    activeThreadModeLocked,
-    setActiveThreadModeLocked,
-  };
+  const value = useMemo<SettingsContextValue>(
+    () => ({
+      ...settings,
+      activeThreadModeLocked,
+      setActiveThreadModeLocked,
+    }),
+    [settings, activeThreadModeLocked, setActiveThreadModeLocked],
+  );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }

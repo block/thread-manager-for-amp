@@ -26,60 +26,69 @@ function parseSection(text: string, role: 'user' | 'assistant', sectionIndex: nu
   let localIndex = 0;
 
   if (role === 'assistant') {
-    // Extract thinking markers (<!--thinking:text-->) emitted by the server
-    const thinkingMarkerRegex = /<!--thinking:([\s\S]*?)-->\s*/g;
-    let thinkingMatch;
-    while ((thinkingMatch = thinkingMarkerRegex.exec(text)) !== null) {
-      const thinkingText = thinkingMatch[1]?.trim();
-      if (thinkingText) {
-        messages.push({
-          id: `msg-s${sectionIndex}-${localIndex++}`,
-          type: 'thinking',
-          content: thinkingText,
-        });
-      }
-    }
-    let cleanText = text.replace(thinkingMarkerRegex, '');
+    // Helper: split a text chunk into thinking blocks and plain text, preserving order
+    const pushTextWithThinking = (chunk: string) => {
+      // Combined regex matching both thinking markers and legacy JSON blocks
+      const thinkingRegex =
+        /<!--thinking:([\s\S]*?)-->|\{"type":"thinking"[\s\S]*?"provider":"(?:anthropic|openai)"[\s\S]*?\}/g;
+      let pos = 0;
+      let thinkMatch;
 
-    // Also handle legacy thinking JSON blocks (from older threads)
-    const thinkingJsonRegex =
-      /\{"type":"thinking"[\s\S]*?"provider":"(?:anthropic|openai)"[\s\S]*?\}\s*/g;
-    let jsonMatch;
-    while ((jsonMatch = thinkingJsonRegex.exec(cleanText)) !== null) {
-      try {
-        const parsed = JSON.parse(jsonMatch[0].trim()) as {
-          content?: string;
-          thinking?: string;
-        };
-        const jsonThinkingText = parsed.content || parsed.thinking;
-        if (jsonThinkingText) {
+      while ((thinkMatch = thinkingRegex.exec(chunk)) !== null) {
+        // Push any plain text before this thinking block
+        const before = chunk.slice(pos, thinkMatch.index).trim();
+        if (before) {
+          messages.push({
+            id: `msg-s${sectionIndex}-${localIndex++}`,
+            type: 'assistant',
+            content: before,
+          });
+        }
+
+        // Extract thinking text
+        let thinkingText = thinkMatch[1]?.trim(); // from marker format
+        if (!thinkingText) {
+          // Legacy JSON format
+          try {
+            const parsed = JSON.parse(thinkMatch[0].trim()) as {
+              content?: string;
+              thinking?: string;
+            };
+            thinkingText = (parsed.content || parsed.thinking || '').trim();
+          } catch {
+            // Skip unparseable
+          }
+        }
+        if (thinkingText) {
           messages.push({
             id: `msg-s${sectionIndex}-${localIndex++}`,
             type: 'thinking',
-            content: jsonThinkingText,
+            content: thinkingText,
           });
         }
-      } catch {
-        // Skip unparseable thinking blocks
+        pos = thinkMatch.index + thinkMatch[0].length;
       }
-    }
-    cleanText = cleanText.replace(thinkingJsonRegex, '');
+
+      // Push any remaining plain text
+      const remaining = chunk.slice(pos).trim();
+      if (remaining) {
+        messages.push({
+          id: `msg-s${sectionIndex}-${localIndex++}`,
+          type: 'assistant',
+          content: remaining,
+        });
+      }
+    };
 
     // Find all tool uses
     const toolUseRegex = /\*\*Tool Use:\*\*\s*`(\w+)`\s*```json\s*([\s\S]*?)```/g;
     let lastIndex = 0;
     let match;
 
-    while ((match = toolUseRegex.exec(cleanText)) !== null) {
-      // Add any text before this tool use
-      const textBefore = cleanText.slice(lastIndex, match.index).trim();
-      if (textBefore) {
-        messages.push({
-          id: `msg-s${sectionIndex}-${localIndex++}`,
-          type: 'assistant',
-          content: textBefore,
-        });
-      }
+    while ((match = toolUseRegex.exec(text)) !== null) {
+      // Process text before this tool use (may contain thinking blocks)
+      const textBefore = text.slice(lastIndex, match.index);
+      pushTextWithThinking(textBefore);
 
       // Add the tool use
       let input: ToolInput = {};
@@ -102,15 +111,8 @@ function parseSection(text: string, role: 'user' | 'assistant', sectionIndex: nu
       lastIndex = match.index + match[0].length;
     }
 
-    // Add any remaining text after last tool use
-    const remainingText = cleanText.slice(lastIndex).trim();
-    if (remainingText) {
-      messages.push({
-        id: `msg-s${sectionIndex}-${localIndex}`,
-        type: 'assistant',
-        content: remainingText,
-      });
-    }
+    // Process any remaining text after last tool use
+    pushTextWithThinking(text.slice(lastIndex));
   } else {
     // User section - find tool results and plain text
     const toolResultRegex = /\*\*Tool Result:\*\*\s*`[^`]*`\s*```([\s\S]*?)```/g;
