@@ -23,16 +23,31 @@ async function backfillPromptHistory(): Promise<void> {
     const files = await readdir(THREADS_DIR);
     const threadFiles = files.filter((f) => f.startsWith('T-') && f.endsWith('.json'));
 
+    // Stat all files and sort oldest-first so duplicate prompts keep the most recent timestamp
+    const fileStats = (
+      await Promise.all(
+        threadFiles.map(async (file) => {
+          try {
+            const fileStat = await stat(join(THREADS_DIR, file));
+            return { file, mtimeMs: fileStat.mtimeMs };
+          } catch {
+            return null;
+          }
+        }),
+      )
+    )
+      .filter((s): s is { file: string; mtimeMs: number } => s !== null)
+      .sort((a, b) => a.mtimeMs - b.mtimeMs);
+
     // Process in parallel batches to avoid overwhelming the filesystem
     const BATCH_SIZE = 20;
-    for (let i = 0; i < threadFiles.length; i += BATCH_SIZE) {
-      const batch = threadFiles.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < fileStats.length; i += BATCH_SIZE) {
+      const batch = fileStats.slice(i, i + BATCH_SIZE);
       await Promise.all(
-        batch.map(async (file) => {
+        batch.map(async ({ file, mtimeMs }) => {
           try {
             const filePath = join(THREADS_DIR, file);
-            const fileStat = await stat(filePath);
-            const fileMtime = Math.floor(fileStat.mtimeMs / 1000);
+            const fileMtime = Math.floor(mtimeMs / 1000);
             const content = await readFile(filePath, 'utf-8');
             const data = JSON.parse(content) as ThreadFile;
             const threadId = file.replace('.json', '');
@@ -55,8 +70,8 @@ async function backfillPromptHistory(): Promise<void> {
                 recordPrompt(text, threadId, createdAt);
               }
             }
-          } catch {
-            // Skip files that fail to parse
+          } catch (err) {
+            console.warn(`[prompt-history] Failed to parse ${file}:`, err);
           }
         }),
       );

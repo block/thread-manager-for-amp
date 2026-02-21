@@ -67,10 +67,20 @@ function PromptHistoryContent({
 
   // Load recent prompts on mount
   useEffect(() => {
+    let active = true;
     apiGet<PromptHistoryEntry[]>('/api/prompt-history?limit=50')
-      .then(setResults)
-      .catch(() => setResults([]))
-      .finally(() => setIsLoading(false));
+      .then((data) => {
+        if (active) setResults(data);
+      })
+      .catch(() => {
+        if (active) setResults([]);
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -157,6 +167,7 @@ function PromptHistoryContent({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search prompt history"
+            aria-activedescendant={results.length > 0 ? `prompt-option-${clampedIndex}` : undefined}
           />
         </div>
         <button className="message-search-close" onClick={onClose} aria-label="Close">
@@ -179,6 +190,7 @@ function PromptHistoryContent({
         {results.map((entry, index) => (
           <div
             key={entry.id}
+            id={`prompt-option-${index}`}
             className={`message-search-result ${index === clampedIndex ? 'selected' : ''}`}
             role="option"
             aria-selected={index === clampedIndex}
