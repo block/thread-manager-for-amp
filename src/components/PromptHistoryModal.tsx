@@ -80,6 +80,7 @@ function PromptHistoryContent({
   useEffect(() => {
     if (!query.trim()) return;
 
+    let active = true;
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const params = new URLSearchParams({ limit: '50' });
@@ -87,13 +88,20 @@ function PromptHistoryContent({
 
       apiGet<PromptHistoryEntry[]>(`/api/prompt-history?${params.toString()}`)
         .then((data) => {
-          setResults(data);
-          setSelectedIndex(0);
+          if (active) {
+            setResults(data);
+            setSelectedIndex(0);
+          }
         })
-        .catch(() => setResults([]));
+        .catch(() => {
+          if (active) setResults([]);
+        });
     }, 150);
 
-    return () => clearTimeout(debounceRef.current);
+    return () => {
+      active = false;
+      clearTimeout(debounceRef.current);
+    };
   }, [query]);
 
   const clampedIndex = Math.min(selectedIndex, Math.max(0, results.length - 1));

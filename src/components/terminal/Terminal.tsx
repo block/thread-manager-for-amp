@@ -372,18 +372,7 @@ export function Terminal({
               setInput(currentText);
               inputRef.current?.focus();
               // Clear messages from the edit point onward in the UI
-              setMessages((prev) => {
-                // Find user messages and determine which frontend messages to keep
-                let userCount = 0;
-                const cutoff = prev.findIndex((msg) => {
-                  if (msg.type === 'user') {
-                    if (userCount === messageIndex) return true;
-                    userCount++;
-                  }
-                  return false;
-                });
-                return cutoff >= 0 ? prev.slice(0, cutoff) : prev;
-              });
+              setMessages((prev) => prev.slice(0, messageIndex));
             })
             .catch((err: unknown) => console.error('Failed to edit message:', err));
         },

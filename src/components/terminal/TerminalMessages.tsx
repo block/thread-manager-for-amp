@@ -283,15 +283,12 @@ export const TerminalMessages = memo(function TerminalMessages({
     return undefined;
   }, [messages]);
 
-  // Build a map of message ID → original message index (for user messages only)
+  // Build a map of user message ID → absolute index in the messages array
   const userMessageIndices = useMemo(() => {
     const map = new Map<string, number>();
-    // Track the user message index in the original thread file ordering
-    let userIdx = 0;
-    for (const msg of messages) {
-      if (msg.type === 'user') {
-        map.set(msg.id, userIdx);
-        userIdx++;
+    for (let i = 0; i < messages.length; i++) {
+      if (messages[i]?.type === 'user') {
+        map.set(messages[i].id, i);
       }
     }
     return map;
