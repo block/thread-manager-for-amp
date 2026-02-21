@@ -80,6 +80,7 @@ export interface ThreadFile {
   title?: string;
   visibility?: 'Private' | 'Public' | 'Workspace';
   created?: number; // Unix timestamp in milliseconds
+  agentMode?: string;
   messages?: ThreadMessage[];
   relationships?: ThreadRelationship[];
   env?: ThreadEnv;

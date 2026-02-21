@@ -5,7 +5,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage, Server } from 'http';
 import { Duplex } from 'stream';
 import type { RunningThreadState, RunningThreadsMap, ThreadImage } from '../shared/types.js';
-import type { WsServerMessage } from '../shared/websocket.js';
+import type { AgentMode, WsServerMessage } from '../shared/websocket.js';
 import { isWsClientMessage } from '../shared/validation.js';
 import {
   calculateCost,
@@ -32,6 +32,7 @@ const PING_INTERVAL_MS = 25_000;
 interface PendingMessage {
   content: string;
   image: ThreadImage | null;
+  mode?: string;
 }
 
 interface ThreadSession {
@@ -48,6 +49,7 @@ interface ThreadSession {
   processing: boolean;
   pendingMessage: PendingMessage | null;
   activeMessage: string | null;
+  hasExistingMode: boolean;
 }
 
 const sessions = new Map<string, ThreadSession>();
@@ -81,8 +83,9 @@ interface AmpUsage {
 }
 
 interface AmpContentBlock {
-  type: 'text' | 'tool_use' | 'tool_result';
+  type: 'text' | 'thinking' | 'tool_use' | 'tool_result';
   text?: string;
+  thinking?: string;
   id?: string;
   name?: string;
   input?: Record<string, unknown>;
@@ -94,12 +97,15 @@ interface AmpContentBlock {
 }
 
 interface AmpStreamEvent {
-  type: 'system' | 'assistant' | 'user' | 'result';
+  type: 'system' | 'assistant' | 'user' | 'result' | 'thinking';
   subtype?: string;
   message?: {
     content?: AmpContentBlock[];
     usage?: AmpUsage;
   };
+  thinking?: string;
+  signature?: string;
+  provider?: string;
   tool_use_id?: string;
   is_error?: boolean;
   result?: string | Record<string, unknown> | null;
@@ -163,8 +169,22 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
 
       if (content) {
         for (const block of content) {
-          if (block.type === 'text' && block.text) {
-            sendToSession(session, { type: 'text', content: block.text });
+          if (block.type === 'thinking' && (block.thinking || block.text)) {
+            sendToSession(session, {
+              type: 'thinking',
+              content: block.thinking || block.text || '',
+            });
+          } else if (block.type === 'text' && block.text) {
+            let text = block.text;
+            const thinkingJsonMatch = text.match(
+              /^\s*\{["\s]*type["\s]*:["\s]*thinking["\s]*,[\s\S]*?\}\s*/,
+            );
+            if (thinkingJsonMatch) {
+              text = text.slice(thinkingJsonMatch[0].length).trim();
+            }
+            if (text) {
+              sendToSession(session, { type: 'text', content: text });
+            }
           } else if (block.type === 'tool_use' && block.id && block.name) {
             if (isHiddenCostTool(block.name)) {
               let toolCost: number;
@@ -230,6 +250,13 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
       }
       break;
     }
+    case 'thinking': {
+      const thinkingText = event.thinking || '';
+      if (thinkingText) {
+        sendToSession(session, { type: 'thinking', content: thinkingText });
+      }
+      break;
+    }
     case 'result':
       if (event.tool_use_id) {
         let resultStr: string;
@@ -268,6 +295,7 @@ async function spawnAmpOnSession(
   session: ThreadSession,
   message: string,
   image: ThreadImage | null = null,
+  mode?: string,
 ): Promise<void> {
   // If a child is already running, interrupt it and queue this message.
   // The SIGINT kills the child before amp persists the user's message to the
@@ -278,7 +306,7 @@ async function spawnAmpOnSession(
     const composed = interruptedMsg
       ? `[The user sent this message but interrupted before you could respond:]\n${interruptedMsg}\n\n[The user then sent this follow-up message:]\n${message}`
       : message;
-    session.pendingMessage = { content: composed, image };
+    session.pendingMessage = { content: composed, image, mode };
     session.child.kill('SIGINT');
     sendToSession(session, { type: 'system', subtype: 'interrupting' });
     return;
@@ -287,7 +315,8 @@ async function spawnAmpOnSession(
   // Serialization guard: prevent the async gap race where two rapid messages
   // both pass the session.child check before either spawns.
   if (session.processing) {
-    session.pendingMessage = { content: message, image };
+    session.pendingMessage = { content: message, image, mode };
+    sendToSession(session, { type: 'system', subtype: 'message_queued' });
     return;
   }
 
@@ -334,23 +363,24 @@ async function spawnAmpOnSession(
       }
     }
 
-    const child = spawn(
-      AMP_BIN,
-      [
-        'threads',
-        'continue',
-        session.threadId,
-        '--no-ide',
-        '--execute',
-        finalMessage,
-        '--stream-json',
-      ],
-      {
-        cwd: AMP_HOME,
-        env: { ...process.env, CI: '1', TERM: 'dumb' },
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
-    );
+    // rush mode does not support --stream-json; fall back to plain text
+    const useStreamJson = mode !== 'rush';
+
+    // --mode is a global flag that must come before the subcommand
+    const args: string[] = [];
+    if (mode) {
+      args.push('--mode', mode);
+    }
+    args.push('threads', 'continue', session.threadId, '--no-ide', '--execute', finalMessage);
+    if (useStreamJson) {
+      args.push('--stream-json', '--stream-json-thinking');
+    }
+
+    const child = spawn(AMP_BIN, args, {
+      cwd: AMP_HOME,
+      env: { ...process.env, CI: '1', TERM: 'dumb' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
 
     session.child = child;
     session.startedAt = Date.now();
@@ -365,21 +395,32 @@ async function spawnAmpOnSession(
       session.activeMessage = null;
     });
 
-    child.stdout.on('data', (data: Buffer) => {
-      session.buffer += data.toString();
-      const lines = session.buffer.split('\n');
-      session.buffer = lines.pop() || '';
+    if (useStreamJson) {
+      // Structured JSON streaming for smart mode
+      child.stdout.on('data', (data: Buffer) => {
+        session.buffer += data.toString();
+        const lines = session.buffer.split('\n');
+        session.buffer = lines.pop() || '';
 
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-          const json = JSON.parse(line) as AmpStreamEvent;
-          handleStreamEvent(session, json);
-        } catch {
-          // Skip non-JSON lines
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const json = JSON.parse(line) as AmpStreamEvent;
+            handleStreamEvent(session, json);
+          } catch {
+            // Skip non-JSON lines
+          }
         }
-      }
-    });
+      });
+    } else {
+      // Plain text streaming for deep/rush modes (no --stream-json support)
+      child.stdout.on('data', (data: Buffer) => {
+        const text = data.toString();
+        if (text) {
+          sendToSession(session, { type: 'text', content: text });
+        }
+      });
+    }
 
     child.stderr.on('data', (data: Buffer) => {
       session.stderrBuffer += data.toString();
@@ -425,13 +466,15 @@ async function spawnAmpOnSession(
 
       if (pending) {
         session.pendingMessage = null;
-        void spawnAmpOnSession(session, pending.content, pending.image).catch((err: unknown) => {
-          console.error(
-            `[WS] spawnAmp error for queued message on thread ${session.threadId}:`,
-            err,
-          );
-          sendToSession(session, { type: 'error', content: 'Failed to process queued message' });
-        });
+        void spawnAmpOnSession(session, pending.content, pending.image, pending.mode).catch(
+          (err: unknown) => {
+            console.error(
+              `[WS] spawnAmp error for queued message on thread ${session.threadId}:`,
+              err,
+            );
+            sendToSession(session, { type: 'error', content: 'Failed to process queued message' });
+          },
+        );
       }
     });
   } finally {
@@ -441,7 +484,14 @@ async function spawnAmpOnSession(
 
 // ── Initialise session cost/model from thread file ──────────────────────
 
-async function initSessionFromThread(session: ThreadSession): Promise<void> {
+const VALID_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep'];
+
+interface InitResult {
+  mode?: AgentMode;
+  hasMessages: boolean;
+}
+
+async function initSessionFromThread(session: ThreadSession): Promise<InitResult> {
   try {
     const threadPath = join(THREADS_DIR, `${session.threadId}.json`);
     const content = await readFile(threadPath, 'utf-8');
@@ -464,8 +514,15 @@ async function initSessionFromThread(session: ThreadSession): Promise<void> {
       maxTokens: result.maxContextTokens,
       estimatedCost: session.cumulativeCost.toFixed(4),
     });
+
+    const mode = data.agentMode?.toLowerCase();
+    return {
+      mode: mode && VALID_MODES.includes(mode as AgentMode) ? (mode as AgentMode) : undefined,
+      hasMessages: messages.length > 0,
+    };
   } catch {
     // Default to opus pricing if we can't read the thread
+    return { hasMessages: false };
   }
 }
 
@@ -552,6 +609,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
         processing: false,
         pendingMessage: null,
         activeMessage: null,
+        hasExistingMode: false,
       };
       sessions.set(threadId, session);
     }
@@ -573,10 +631,16 @@ export function setupWebSocket(server: Server): WebSocketServer {
     });
 
     // ── Initialise cost/usage from thread file ──────────────────────────
-    await initSessionFromThread(session);
+    const initResult = await initSessionFromThread(session);
+    session.hasExistingMode = initResult.hasMessages && !!initResult.mode;
 
     // ── Tell the client we're ready ─────────────────────────────────────
-    sendToSession(session, { type: 'ready', threadId });
+    // Include the thread's mode if it has existing messages (mode is locked)
+    sendToSession(session, {
+      type: 'ready',
+      threadId,
+      mode: initResult.hasMessages ? initResult.mode : undefined,
+    });
 
     // If a child is already running (reconnect mid-run), tell client it's active
     if (session.child) {
@@ -606,10 +670,12 @@ export function setupWebSocket(server: Server): WebSocketServer {
         const image = parsed.image
           ? ({ data: parsed.image.data, mediaType: parsed.image.mediaType } as ThreadImage)
           : null;
-        void spawnAmpOnSession(session, parsed.content, image).catch((err: unknown) => {
-          console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
-          sendToSession(session, { type: 'error', content: 'Failed to process message' });
-        });
+        void spawnAmpOnSession(session, parsed.content, image, parsed.mode).catch(
+          (err: unknown) => {
+            console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
+            sendToSession(session, { type: 'error', content: 'Failed to process message' });
+          },
+        );
       } else if (parsed.type === 'cancel') {
         if (session.child) {
           session.child.kill('SIGINT');

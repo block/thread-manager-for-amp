@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { apiPost, apiDelete, apiPatch } from '../api/client';
+import { useSettingsContext } from '../contexts/SettingsContext';
 import type { Thread, ThreadStatus } from '../types';
 
 export interface UseThreadActionsOptions {
@@ -63,6 +64,7 @@ export function useThreadActions({
   showInputModal,
   showConfirmModal,
 }: UseThreadActionsOptions): UseThreadActionsReturn {
+  const { agentMode } = useSettingsContext();
   const [openThreads, setOpenThreads] = useState<Thread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | undefined>();
   const [focusThreadId, setFocusThreadId] = useState<string | undefined>();
@@ -196,6 +198,7 @@ export function useThreadActions({
       try {
         const result = await apiPost<{ threadId: string; workspace?: string }>('/api/thread-new', {
           workspace: workspacePath,
+          mode: agentMode,
         });
         const newThread: Thread = {
           id: result.threadId,
@@ -213,7 +216,7 @@ export function useThreadActions({
         showError('Failed to create thread');
       }
     },
-    [refetch, showError],
+    [agentMode, refetch, showError],
   );
 
   const handleHandoffConfirm = useCallback(

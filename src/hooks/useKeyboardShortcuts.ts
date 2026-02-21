@@ -9,19 +9,24 @@ export interface KeyboardShortcutHandlers {
   onHandoff: () => void;
   onToggleSidebar: () => void;
   onOpenShellTerminal: () => void;
+  onToggleDeepMode: () => void;
+  onToggleThinkingBlocks: () => void;
 }
 
 export interface UseKeyboardShortcutsOptions {
   handlers: KeyboardShortcutHandlers;
   activeThreadId: string | undefined;
+  activeThreadModeLocked: boolean;
 }
 
 export function useKeyboardShortcuts({
   handlers,
   activeThreadId,
+  activeThreadModeLocked,
 }: UseKeyboardShortcutsOptions): void {
   const handlersRef = useRef(handlers);
   const activeThreadIdRef = useRef(activeThreadId);
+  const modeLockedRef = useRef(activeThreadModeLocked);
 
   useEffect(() => {
     handlersRef.current = handlers;
@@ -30,6 +35,10 @@ export function useKeyboardShortcuts({
   useEffect(() => {
     activeThreadIdRef.current = activeThreadId;
   }, [activeThreadId]);
+
+  useEffect(() => {
+    modeLockedRef.current = activeThreadModeLocked;
+  }, [activeThreadModeLocked]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -79,6 +88,18 @@ export function useKeyboardShortcuts({
       if (e.ctrlKey && !e.metaKey && e.key === 't') {
         e.preventDefault();
         h.onOpenShellTerminal();
+      }
+      // Alt+D to toggle deep mode (disabled when thread mode is locked)
+      if (e.altKey && e.key === 'd') {
+        e.preventDefault();
+        if (!modeLockedRef.current) {
+          h.onToggleDeepMode();
+        }
+      }
+      // Alt+T to toggle thinking blocks visibility
+      if (e.altKey && e.key === 't') {
+        e.preventDefault();
+        h.onToggleThinkingBlocks();
       }
     };
 

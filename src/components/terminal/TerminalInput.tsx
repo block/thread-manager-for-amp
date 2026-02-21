@@ -12,6 +12,8 @@ function getStatusMessage(agentStatus: string): string {
       return 'Streaming response...';
     case 'running_tools':
       return 'Running tools...';
+    case 'queued':
+      return 'Message queued — press Enter to interrupt and send now';
     default:
       return '';
   }
@@ -33,6 +35,10 @@ export function TerminalInput({
   onPendingImageSet,
   searchOpen,
   workspacePath,
+  agentMode,
+  onCycleMode,
+  isModeLocked,
+  hasQueuedMessage,
 }: TerminalInputProps) {
   void _onCancel;
   const autocompleteRef = useRef<MentionAutocompleteHandle>(null);
@@ -78,7 +84,10 @@ export function TerminalInput({
 
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSend();
+      // Allow force-send of queued message even with empty input
+      if (hasQueuedMessage || input.trim() || pendingImage) {
+        onSend();
+      }
     }
     if (e.key === 'Escape' && !searchOpen) {
       if (isSending || isRunning) {
@@ -189,10 +198,32 @@ export function TerminalInput({
         aria-label="Message input"
       />
       <button
+        className={`terminal-mode-badge mode-${agentMode} ${isModeLocked ? 'mode-locked' : ''}`}
+        onClick={isModeLocked ? undefined : onCycleMode}
+        disabled={isModeLocked}
+        title={
+          isModeLocked
+            ? `Mode: ${agentMode} (locked for this thread)`
+            : `Mode: ${agentMode} (click to change)`
+        }
+        aria-label={`Agent mode: ${agentMode}${isModeLocked ? ' (locked)' : ''}`}
+      >
+        <span className="mode-icon">
+          {agentMode === 'deep' ? '🧠' : agentMode === 'rush' ? '🚀' : '⚡'}
+        </span>
+        <span className="mode-label">{agentMode}</span>
+      </button>
+      <button
         onClick={onSend}
-        disabled={!isConnected || (!input.trim() && !pendingImage)}
-        className={`terminal-send ${isActive && input.trim() ? 'will-cancel' : ''}`}
-        title={isActive && input.trim() ? 'Send (will cancel current operation)' : 'Send message'}
+        disabled={!isConnected || (!input.trim() && !pendingImage && !hasQueuedMessage)}
+        className={`terminal-send ${isActive && input.trim() ? 'will-cancel' : ''} ${hasQueuedMessage && !input.trim() ? 'will-cancel' : ''}`}
+        title={
+          hasQueuedMessage && !input.trim()
+            ? 'Send now (will interrupt current operation)'
+            : isActive && input.trim()
+              ? 'Send (will queue message)'
+              : 'Send message'
+        }
       >
         <Send size={18} />
       </button>

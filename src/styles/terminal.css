@@ -295,6 +295,26 @@
   font-style: italic;
 }
 
+.chat-queued-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+  font-weight: 500;
+  animation: queued-pulse 2s ease-in-out infinite;
+}
+
+@keyframes queued-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 .chat-message-user .chat-header {
   justify-content: flex-end;
 }
@@ -880,11 +900,41 @@
   color: var(--error);
 }
 
-.chat-thinking {
+.chat-thinking-block {
+  margin: 4px 0;
+  border-left: 2px solid var(--accent-purple, #a855f7);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+}
+
+.chat-thinking-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  background: none;
+  border: none;
   color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  transition: color 0.15s;
+}
+
+.chat-thinking-toggle:hover {
+  color: var(--text-secondary);
+}
+
+.chat-thinking-label {
+  font-style: italic;
+}
+
+.chat-thinking-content {
+  padding: 0 12px 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  opacity: 0.85;
 }
 
 /* Terminal status bar */
@@ -1092,6 +1142,56 @@
 
 .terminal-send.will-cancel:hover {
   filter: brightness(1.1);
+}
+
+/* Agent mode badge */
+.terminal-mode-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.terminal-mode-badge:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
+}
+
+.terminal-mode-badge .mode-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.terminal-mode-badge .mode-label {
+  text-transform: capitalize;
+}
+
+.terminal-mode-badge.mode-deep {
+  border-color: var(--accent-purple, #a855f7);
+  color: var(--accent-purple, #a855f7);
+}
+
+.terminal-mode-badge.mode-rush {
+  border-color: var(--accent-orange, #f97316);
+  color: var(--accent-orange, #f97316);
+}
+
+.terminal-mode-badge.mode-locked {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.terminal-mode-badge.mode-locked:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border);
 }
 
 /* Terminal with minimap layout */

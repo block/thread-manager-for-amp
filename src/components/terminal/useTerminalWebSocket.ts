@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Message } from '../../utils/parseMarkdown';
 import type { WsEvent } from '../../types';
+import type { AgentMode } from '../../../shared/websocket.js';
 import type { UsageInfo } from './types';
 import { formatToolUse } from '../../utils/format';
 import { playNotificationSound, isSoundEnabled } from '../../utils/sounds';
@@ -13,7 +14,7 @@ interface UseTerminalWebSocketOptions {
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export type AgentStatus = 'idle' | 'waiting' | 'streaming' | 'running_tools';
+export type AgentStatus = 'idle' | 'waiting' | 'streaming' | 'running_tools' | 'queued';
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 
@@ -28,6 +29,7 @@ export function useTerminalWebSocket({
   const [isRunning, setIsRunning] = useState(false);
   const [agentStatus, setAgentStatus] = useState<AgentStatus>('idle');
   const [connectionError, setConnectionError] = useState(false);
+  const [threadMode, setThreadMode] = useState<AgentMode | null>(null);
   const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const [, setNoResponseDetected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
@@ -68,6 +70,9 @@ export function useTerminalWebSocket({
             case 'ready':
               wasConnected = true;
               setIsConnected(true);
+              if (data.mode) {
+                setThreadMode(data.mode);
+              }
               break;
             case 'usage':
               setUsage({
@@ -86,6 +91,15 @@ export function useTerminalWebSocket({
               setMessages((prev) => [
                 ...prev,
                 { id: generateId(), type: 'assistant', content: data.content },
+              ]);
+              break;
+            case 'thinking':
+              setIsSending(false);
+              setIsRunning(true);
+              gotResponseRef.current = true;
+              setMessages((prev) => [
+                ...prev,
+                { id: generateId(), type: 'thinking', content: data.content },
               ]);
               break;
             case 'tool_use':
@@ -183,6 +197,8 @@ export function useTerminalWebSocket({
                   }
                   return updated;
                 });
+              } else if (data.subtype === 'message_queued') {
+                setAgentStatus('queued');
               }
               break;
             case 'cancelled':
@@ -272,13 +288,16 @@ export function useTerminalWebSocket({
   }, [threadId, reconnectTrigger, setMessages, setUsage, setIsLoading]);
 
   const sendMessage = useCallback(
-    (content: string, image?: { data: string; mediaType: string }) => {
+    (content: string, image?: { data: string; mediaType: string }, mode?: AgentMode) => {
       if (!wsRef.current || !isConnected) return false;
 
       // Reset response tracking
       gotResponseRef.current = false;
       wasCancelledRef.current = false;
       setNoResponseDetected(false);
+
+      // Use the locked thread mode if set, otherwise use the provided mode
+      const effectiveMode = threadMode ?? mode;
 
       // Always send the message — if the agent is already running, the server
       // will interrupt the current operation (SIGINT) and queue this message
@@ -288,14 +307,20 @@ export function useTerminalWebSocket({
           type: 'message',
           content,
           image: image || undefined,
+          mode: effectiveMode || undefined,
         }),
       );
+
+      // Lock the mode after the first send on a new thread
+      if (!threadMode && effectiveMode) {
+        setThreadMode(effectiveMode);
+      }
 
       setIsSending(true);
       setAgentStatus('waiting');
       return true;
     },
-    [isConnected],
+    [isConnected, threadMode],
   );
 
   const cancelOperation = useCallback(() => {
@@ -315,6 +340,7 @@ export function useTerminalWebSocket({
     isRunning,
     agentStatus,
     connectionError,
+    threadMode,
     setIsSending,
     sendMessage,
     cancelOperation,

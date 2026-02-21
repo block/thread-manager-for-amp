@@ -144,9 +144,9 @@ export async function handleThreadRoutes(
       return sendError(res, 405, 'Method not allowed');
     }
     try {
-      const body = await parseBody<{ workspace?: string }>(req);
+      const body = await parseBody<{ workspace?: string; mode?: string }>(req);
       const workspacePath = body.workspace || null;
-      const result = await createThread(workspacePath);
+      const result = await createThread(workspacePath, body.mode);
       return jsonResponse(res, result);
     } catch (err) {
       return sendError(res, 500, (err as Error).message);

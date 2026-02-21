@@ -357,10 +357,13 @@ interface CreateThreadResult {
 
 export async function createThread(
   workspacePath: string | null = null,
+  mode?: string,
 ): Promise<CreateThreadResult> {
   // Run amp threads new from the specified workspace directory
   const cwd = workspacePath || AMP_HOME;
-  const stdout = await runAmp(['threads', 'new'], { cwd });
+  // --mode is a global flag that must come before the subcommand
+  const args = mode ? ['--mode', mode, 'threads', 'new'] : ['threads', 'new'];
+  const stdout = await runAmp(args, { cwd });
   const match = stdout.match(/T-[\w-]+/);
   if (!match) {
     throw new Error('Could not parse thread ID from output');

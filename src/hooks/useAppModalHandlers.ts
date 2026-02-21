@@ -225,8 +225,11 @@ export function useAppModalHandlers({
       onHandoff: () => activeThreadId && handleHandoff(activeThreadId),
       onToggleSidebar: settings.handleToggleSidebar,
       onOpenShellTerminal: modals.openShellTerminal,
+      onToggleDeepMode: settings.toggleDeepMode,
+      onToggleThinkingBlocks: settings.toggleThinkingBlocks,
     },
     activeThreadId,
+    activeThreadModeLocked: settings.activeThreadModeLocked,
   });
 
   const commands = useCommands({

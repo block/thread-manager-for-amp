@@ -1,6 +1,7 @@
 import type { Message } from '../../utils/parseMarkdown';
 import type { Thread } from '../../types';
 import type { AgentStatus } from './useTerminalWebSocket';
+import type { AgentMode } from '../../../shared/websocket.js';
 
 export interface UsageInfo {
   contextPercent: number;
@@ -37,6 +38,7 @@ export interface TerminalMessagesProps {
   messageRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
   onLoadMore: () => void;
   onViewImage: (image: { data: string; mediaType: string }) => void;
+  showThinkingBlocks: boolean;
 }
 
 export interface TerminalInputProps {
@@ -55,6 +57,10 @@ export interface TerminalInputProps {
   onPendingImageSet: (image: { data: string; mediaType: string }) => void;
   searchOpen: boolean;
   workspacePath: string | null;
+  agentMode: AgentMode;
+  onCycleMode: () => void;
+  isModeLocked: boolean;
+  hasQueuedMessage: boolean;
 }
 
 export interface TerminalStatusBarProps {
