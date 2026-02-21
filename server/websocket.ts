@@ -462,14 +462,7 @@ async function spawnAmpOnSession(
 
 // ── Initialise session cost/model from thread file ──────────────────────
 
-/** Map model tags from thread files to agent modes */
-function detectModeFromModelTag(modelTag: string): AgentMode | undefined {
-  const model = modelTag.replace('model:', '').toLowerCase();
-  if (model.includes('haiku')) return 'rush';
-  if (model.includes('opus')) return 'deep';
-  if (model.includes('sonnet')) return 'smart';
-  return undefined;
-}
+const VALID_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep'];
 
 interface InitResult {
   mode?: AgentMode;
@@ -500,8 +493,9 @@ async function initSessionFromThread(session: ThreadSession): Promise<InitResult
       estimatedCost: session.cumulativeCost.toFixed(4),
     });
 
+    const mode = data.agentMode?.toLowerCase();
     return {
-      mode: modelTag ? detectModeFromModelTag(modelTag) : undefined,
+      mode: mode && VALID_MODES.includes(mode as AgentMode) ? (mode as AgentMode) : undefined,
       hasMessages: messages.length > 0,
     };
   } catch {
