@@ -1,6 +1,7 @@
 import { useState, memo, lazy, Suspense } from 'react';
 import { ChevronDown, ChevronRight, Check, Loader2, XCircle, Ban } from 'lucide-react';
 import { getToolIcon, getToolLabel, shortenPath, type ToolInput } from '../utils/format';
+import type { RunningStatus } from '../../shared/types.js';
 
 const MermaidDiagram = lazy(() =>
   import('./MermaidDiagram').then((m) => ({ default: m.MermaidDiagram })),
@@ -15,6 +16,8 @@ interface ToolBlockProps {
   highlighted?: boolean;
   status?: ToolStatus;
   result?: string;
+  onOpenThreadId?: (threadId: string) => void;
+  handoffThreadStatus?: RunningStatus;
 }
 
 const MAX_CMD_LENGTH = 80;
@@ -206,6 +209,8 @@ export const ToolBlock = memo(function ToolBlock({
   highlighted,
   status,
   result,
+  onOpenThreadId,
+  handoffThreadStatus,
 }: ToolBlockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -245,7 +250,34 @@ export const ToolBlock = memo(function ToolBlock({
           <span className="handoff-label">Handoff</span>
           <span className="handoff-goal">{shortCmd}</span>
         </div>
-        {threadId && <div className="handoff-thread-link">↳ {threadId}</div>}
+        {threadId && (
+          <div className="handoff-thread-link">
+            ↳{' '}
+            {onOpenThreadId ? (
+              <button
+                className="handoff-thread-btn"
+                onClick={() => onOpenThreadId(threadId)}
+                title="Open this thread"
+              >
+                {threadId}
+              </button>
+            ) : (
+              threadId
+            )}
+            {handoffThreadStatus && (
+              <span
+                className={`handoff-thread-status handoff-thread-status-${handoffThreadStatus}`}
+              >
+                {handoffThreadStatus === 'running' && <Loader2 size={10} className="spinning" />}
+                {handoffThreadStatus === 'running'
+                  ? 'running'
+                  : handoffThreadStatus === 'connected'
+                    ? 'idle'
+                    : 'disconnected'}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     );
   }

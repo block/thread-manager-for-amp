@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { useThreadContext } from './contexts/ThreadContext';
 import { useModalContext } from './contexts/ModalContext';
 import { useRunningThreads } from './hooks/useRunningThreads';
+import { RunningThreadsProvider } from './contexts/RunningThreadsContext';
 import { useFilters } from './hooks/useFilters';
 import { useSettingsContext } from './contexts/SettingsContext';
 import { ThreadList } from './components/ThreadList';
@@ -68,99 +69,103 @@ function App() {
   );
 
   return (
-    <div className="app">
-      <div className="app-layout">
-        <Sidebar
-          threads={threadCtx.threads}
-          metadata={threadCtx.metadata}
-          onSelectThread={handleContinue}
-          activeThreadId={threadCtx.activeThreadId}
-          runningThreads={runningThreads}
-          onArchiveThread={threadCtx.handleArchive}
-          onOpenInBrowser={(id: string) =>
-            window.open(`https://ampcode.com/threads/${id}`, '_blank')
-          }
-          onDeleteThread={threadCtx.handleDelete}
-          onCopyThreadId={(id: string) => void navigator.clipboard.writeText(id)}
-          onCopyThreadUrl={(id: string) =>
-            void navigator.clipboard.writeText(`https://ampcode.com/threads/${id}`)
-          }
-          onOpenTerminal={
-            modals.shellTerminal?.minimized ? modals.restoreShellTerminal : modals.openShellTerminal
-          }
-          terminalMinimized={modals.shellTerminal?.minimized}
-        />
-
-        <main className="main">
-          <Toolbar
-            searchValue={filters.searchInput}
-            onSearchChange={filters.setSearchInput}
-            onRefresh={handleRefreshWithSteps}
-            loading={threadCtx.loading || !!refreshLoading}
-            onOpenThread={handleContinue}
-            onNewThread={handleNewThread}
-            onReset={handleReset}
+    <RunningThreadsProvider value={runningThreads}>
+      <div className="app">
+        <div className="app-layout">
+          <Sidebar
             threads={threadCtx.threads}
-            selectedRepo={filters.filterRepo}
-            selectedWorkspace={filters.filterWorkspace}
-            selectedLabel={filters.filterLabel}
-            selectedStatus={filters.filterStatus}
-            labels={filters.availableLabels}
-            onRepoChange={filters.setFilterRepo}
-            onWorkspaceChange={filters.setFilterWorkspace}
-            onLabelChange={filters.setFilterLabel}
-            onStatusChange={filters.setFilterStatus}
+            metadata={threadCtx.metadata}
+            onSelectThread={handleContinue}
+            activeThreadId={threadCtx.activeThreadId}
+            runningThreads={runningThreads}
+            onArchiveThread={threadCtx.handleArchive}
+            onOpenInBrowser={(id: string) =>
+              window.open(`https://ampcode.com/threads/${id}`, '_blank')
+            }
+            onDeleteThread={threadCtx.handleDelete}
+            onCopyThreadId={(id: string) => void navigator.clipboard.writeText(id)}
+            onCopyThreadUrl={(id: string) =>
+              void navigator.clipboard.writeText(`https://ampcode.com/threads/${id}`)
+            }
+            onOpenTerminal={
+              modals.shellTerminal?.minimized
+                ? modals.restoreShellTerminal
+                : modals.openShellTerminal
+            }
+            terminalMinimized={modals.shellTerminal?.minimized}
           />
 
-          {threadCtx.error && <div className="error">Error: {threadCtx.error}</div>}
-
-          {threadCtx.loading && threadCtx.threads.length === 0 ? (
-            <div className="loading">Loading threads...</div>
-          ) : (
-            <ThreadList
-              threads={filters.filteredThreads}
-              metadata={threadCtx.metadata}
-              threadLabels={filters.threadLabels}
-              sortField={filters.sortField}
-              sortDirection={filters.sortDirection}
-              onSort={filters.handleSort}
-              onContinue={handleContinue}
-              onArchive={threadCtx.handleArchive}
-              onDelete={threadCtx.handleDelete}
-              onBulkArchive={threadCtx.handleBulkArchive}
-              onBulkDelete={threadCtx.handleBulkDelete}
-              onBulkStatusChange={threadCtx.handleBulkStatusChange}
-              onStatusChange={threadCtx.updateStatus}
-              viewMode={settings.viewMode}
-              groupByDate={settings.groupByDate}
+          <main className="main">
+            <Toolbar
+              searchValue={filters.searchInput}
+              onSearchChange={filters.setSearchInput}
+              onRefresh={handleRefreshWithSteps}
+              loading={threadCtx.loading || !!refreshLoading}
+              onOpenThread={handleContinue}
+              onNewThread={handleNewThread}
+              onReset={handleReset}
+              threads={threadCtx.threads}
+              selectedRepo={filters.filterRepo}
+              selectedWorkspace={filters.filterWorkspace}
+              selectedLabel={filters.filterLabel}
+              selectedStatus={filters.filterStatus}
+              labels={filters.availableLabels}
+              onRepoChange={filters.setFilterRepo}
+              onWorkspaceChange={filters.setFilterWorkspace}
+              onLabelChange={filters.setFilterLabel}
+              onStatusChange={filters.setFilterStatus}
             />
-          )}
-        </main>
-      </div>
 
-      {threadCtx.openThreads.length > 0 && (
-        <TerminalManager
-          threads={threadCtx.openThreads}
-          onClose={threadCtx.handleCloseThread}
-          onCloseAll={threadCtx.handleCloseAll}
-          onActiveChange={threadCtx.setActiveThreadId}
-          onHandoff={(id: string) => threadCtx.setHandoffThreadId(id)}
+            {threadCtx.error && <div className="error">Error: {threadCtx.error}</div>}
+
+            {threadCtx.loading && threadCtx.threads.length === 0 ? (
+              <div className="loading">Loading threads...</div>
+            ) : (
+              <ThreadList
+                threads={filters.filteredThreads}
+                metadata={threadCtx.metadata}
+                threadLabels={filters.threadLabels}
+                sortField={filters.sortField}
+                sortDirection={filters.sortDirection}
+                onSort={filters.handleSort}
+                onContinue={handleContinue}
+                onArchive={threadCtx.handleArchive}
+                onDelete={threadCtx.handleDelete}
+                onBulkArchive={threadCtx.handleBulkArchive}
+                onBulkDelete={threadCtx.handleBulkDelete}
+                onBulkStatusChange={threadCtx.handleBulkStatusChange}
+                onStatusChange={threadCtx.updateStatus}
+                viewMode={settings.viewMode}
+                groupByDate={settings.groupByDate}
+              />
+            )}
+          </main>
+        </div>
+
+        {threadCtx.openThreads.length > 0 && (
+          <TerminalManager
+            threads={threadCtx.openThreads}
+            onClose={threadCtx.handleCloseThread}
+            onCloseAll={threadCtx.handleCloseAll}
+            onActiveChange={threadCtx.setActiveThreadId}
+            onHandoff={(id: string) => threadCtx.setHandoffThreadId(id)}
+            onNewThread={handleNewThread}
+            onOpenThread={handleContinue}
+            focusThreadId={threadCtx.focusThreadId}
+            replayThreadId={modals.replayThreadId}
+            onStopReplay={() => modals.setReplayThreadId(null)}
+          />
+        )}
+
+        <AppModals
+          onRefresh={handleRefreshWithSteps}
           onNewThread={handleNewThread}
-          onOpenThread={handleContinue}
-          focusThreadId={threadCtx.focusThreadId}
-          replayThreadId={modals.replayThreadId}
-          onStopReplay={() => modals.setReplayThreadId(null)}
+          setThreadLabels={filters.setThreadLabels}
         />
-      )}
 
-      <AppModals
-        onRefresh={handleRefreshWithSteps}
-        onNewThread={handleNewThread}
-        setThreadLabels={filters.setThreadLabels}
-      />
-
-      <LoadingToast state={refreshLoading} />
-    </div>
+        <LoadingToast state={refreshLoading} />
+      </div>
+    </RunningThreadsProvider>
   );
 }
 

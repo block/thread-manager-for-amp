@@ -757,6 +757,43 @@
   font-family: var(--font-mono);
 }
 
+.handoff-thread-btn {
+  background: none;
+  border: none;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s;
+}
+
+.handoff-thread-btn:hover {
+  text-decoration-color: var(--accent-cyan);
+}
+
+.handoff-thread-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.handoff-thread-status-running {
+  color: var(--accent-yellow);
+}
+
+.handoff-thread-status-connected {
+  color: var(--accent-green);
+}
+
 .tool-result {
   padding: 8px 12px;
   margin-left: 32px;
