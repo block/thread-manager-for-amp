@@ -112,6 +112,7 @@ export function createThreadCommands(
       id: 'thread-map',
       category: CATEGORIES.THREAD,
       label: 'map',
+      shortcut: 'Ctrl+M',
       icon: <Map size={14} />,
       action: () => activeThreadId && handlers.onThreadMap?.(activeThreadId),
       disabled: !hasActiveThread,

@@ -322,6 +322,91 @@ export async function getWorkspaceGitStatusDirect(
   }
 }
 
+export interface WorkspaceGitInfo {
+  branch: string | null;
+  isWorktree: boolean;
+  worktreePath: string | null;
+}
+
+/**
+ * Get git branch/worktree info for a workspace.
+ * If touchedFiles are provided, we find the actual git root from those paths
+ * (the agent may have worked in a worktree different from the launch directory).
+ */
+export async function getWorkspaceGitInfo(
+  inputWorkspacePath: string,
+  touchedFiles?: string[],
+): Promise<WorkspaceGitInfo> {
+  const checkPath = await resolveActualWorkingDir(inputWorkspacePath, touchedFiles);
+  return getGitInfoForPath(checkPath);
+}
+
+async function resolveActualWorkingDir(
+  workspacePath: string,
+  touchedFiles?: string[],
+): Promise<string> {
+  if (!touchedFiles?.length) return workspacePath;
+
+  // Find git toplevel for touched files to detect if agent worked in a worktree
+  const roots = new Map<string, number>();
+  // Sample up to 5 files for efficiency
+  for (const filePath of touchedFiles.slice(0, 5)) {
+    if (!filePath.startsWith('/')) continue;
+    const dir = filePath.substring(0, filePath.lastIndexOf('/'));
+    try {
+      const toplevel = (
+        await spawnGitAndCapture(['-C', dir, 'rev-parse', '--show-toplevel'])
+      ).trim();
+      if (toplevel) {
+        roots.set(toplevel, (roots.get(toplevel) || 0) + 1);
+      }
+    } catch {
+      // Not a git dir or doesn't exist
+    }
+  }
+
+  if (roots.size === 0) return workspacePath;
+
+  // Pick the most common git root among touched files
+  let bestRoot = workspacePath;
+  let bestCount = 0;
+  for (const [root, count] of roots) {
+    if (count > bestCount) {
+      bestRoot = root;
+      bestCount = count;
+    }
+  }
+
+  return bestRoot;
+}
+
+async function getGitInfoForPath(dirPath: string): Promise<WorkspaceGitInfo> {
+  try {
+    const checkPath = await validateWorkspacePath(dirPath);
+
+    const isGit = await spawnGitAndCheckExit(['-C', checkPath, 'rev-parse', '--git-dir']);
+    if (!isGit) {
+      return { branch: null, isWorktree: false, worktreePath: null };
+    }
+
+    const [branch, gitDir] = await Promise.all([
+      spawnGitAndCapture(['-C', checkPath, 'branch', '--show-current']),
+      spawnGitAndCapture(['-C', checkPath, 'rev-parse', '--git-dir']),
+    ]);
+
+    const trimmedGitDir = gitDir.trim();
+    const isWorktree = trimmedGitDir.includes('.git/worktrees/');
+
+    return {
+      branch: branch.trim() || null,
+      isWorktree,
+      worktreePath: isWorktree ? checkPath : null,
+    };
+  } catch {
+    return { branch: null, isWorktree: false, worktreePath: null };
+  }
+}
+
 export async function getFileDiff(
   inputFilePath: string,
   inputWorkspacePath: string,

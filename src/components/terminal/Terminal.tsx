@@ -8,7 +8,7 @@ import type { ThreadMetadata } from '../../types';
 import type { Message } from '../../utils/parseMarkdown';
 import { extractIssueUrl } from '../../utils/issueTracker';
 import type { AgentMode } from '../../../shared/websocket.js';
-import type { TerminalProps } from './types';
+import type { TerminalProps, GitInfo } from './types';
 import { useTerminalWebSocket } from './useTerminalWebSocket';
 import { useTerminalMessages } from './useTerminalMessages';
 import { useTerminalState, generateId } from './useTerminalState';
@@ -102,6 +102,18 @@ export function Terminal({
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [gitInfo, setGitInfo] = useState<GitInfo | null>(null);
+
+  // Fetch git branch/worktree info, using touched files to detect the actual working directory
+  useEffect(() => {
+    if (!thread.workspacePath) return;
+    apiPost<GitInfo>('/api/workspace-git-info', {
+      workspace: thread.workspacePath,
+      touchedFiles: thread.touchedFiles,
+    })
+      .then(setGitInfo)
+      .catch(() => setGitInfo(null));
+  }, [thread.workspacePath, thread.touchedFiles]);
 
   const {
     isConnected,
@@ -483,7 +495,7 @@ export function Terminal({
           onLoadMore={loadMoreMessages}
         />
       </div>
-      {usage && <TerminalStatusBar usage={usage} />}
+      {usage && <TerminalStatusBar usage={usage} gitInfo={gitInfo} />}
       {showContextWarning && (
         <ContextWarning
           threadId={threadId}

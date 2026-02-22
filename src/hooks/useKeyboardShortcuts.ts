@@ -11,6 +11,7 @@ export interface KeyboardShortcutHandlers {
   onOpenShellTerminal: () => void;
   onToggleDeepMode: () => void;
   onToggleThinkingBlocks: () => void;
+  onThreadMap?: () => void;
   onOpenPromptHistory?: () => void;
   onUndoLastTurn?: () => void;
   onSwitchToPrevious?: () => void;
@@ -105,6 +106,13 @@ export function useKeyboardShortcuts({
       if (e.altKey && (e.key === 't' || e.code === 'KeyT')) {
         e.preventDefault();
         h.onToggleThinkingBlocks();
+      }
+      // Ctrl+M to open thread map
+      if (e.ctrlKey && !e.metaKey && e.key === 'm') {
+        e.preventDefault();
+        if (threadId) {
+          h.onThreadMap?.();
+        }
       }
       // Alt+[ to switch to previous tab
       if (e.altKey && e.key === '[') {

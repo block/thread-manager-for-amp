@@ -25,6 +25,11 @@ interface ThreadChain {
   descendants: ChainThread[];
 }
 
+function truncateComment(comment: string, maxLen = 120): string {
+  if (comment.length <= maxLen) return comment;
+  return comment.slice(0, maxLen).trimEnd() + '…';
+}
+
 export function ThreadMapModal({ isOpen, onClose, threadId, onOpenThread }: ThreadMapModalProps) {
   const [chain, setChain] = useState<ThreadChain | null>(null);
   const [loading, setLoading] = useState(false);
@@ -109,8 +114,8 @@ export function ThreadMapModal({ isOpen, onClose, threadId, onOpenThread }: Thre
                   </span>
                 </button>
                 {t.comment && (
-                  <div className="thread-map-handoff-label">
-                    <span className="thread-map-handoff-text">"{t.comment}"</span>
+                  <div className="thread-map-handoff-label" title={t.comment}>
+                    <span className="thread-map-handoff-text">"{truncateComment(t.comment)}"</span>
                   </div>
                 )}
                 {(i < chain.ancestors.length - 1 || chain.current) && (
@@ -136,8 +141,10 @@ export function ThreadMapModal({ isOpen, onClose, threadId, onOpenThread }: Thre
                   </span>
                 </div>
                 {chain.current.comment && chain.descendants.length > 0 && (
-                  <div className="thread-map-handoff-label">
-                    <span className="thread-map-handoff-text">"{chain.current.comment}"</span>
+                  <div className="thread-map-handoff-label" title={chain.current.comment}>
+                    <span className="thread-map-handoff-text">
+                      "{truncateComment(chain.current.comment)}"
+                    </span>
                   </div>
                 )}
                 {chain.descendants.length > 0 && (
@@ -166,8 +173,8 @@ export function ThreadMapModal({ isOpen, onClose, threadId, onOpenThread }: Thre
                   </span>
                 </button>
                 {t.comment && i < chain.descendants.length - 1 && (
-                  <div className="thread-map-handoff-label">
-                    <span className="thread-map-handoff-text">"{t.comment}"</span>
+                  <div className="thread-map-handoff-label" title={t.comment}>
+                    <span className="thread-map-handoff-text">"{truncateComment(t.comment)}"</span>
                   </div>
                 )}
                 {i < chain.descendants.length - 1 && (

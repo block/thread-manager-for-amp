@@ -226,6 +226,7 @@ export function useAppModalHandlers({
       onOpenShellTerminal: modals.openShellTerminal,
       onToggleDeepMode: settings.toggleDeepMode,
       onToggleThinkingBlocks: settings.toggleThinkingBlocks,
+      onThreadMap: () => activeThreadId && handleThreadMap(activeThreadId),
       onOpenPromptHistory: () => modals.setPromptHistoryOpen(true),
       onUndoLastTurn: handleUndoLastTurn,
       onSwitchToPrevious: handleSwitchToPrevious,

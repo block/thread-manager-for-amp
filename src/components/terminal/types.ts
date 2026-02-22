@@ -68,8 +68,14 @@ export interface TerminalInputProps {
   hasQueuedMessage: boolean;
 }
 
+export interface GitInfo {
+  branch: string | null;
+  isWorktree: boolean;
+}
+
 export interface TerminalStatusBarProps {
   usage: UsageInfo;
+  gitInfo?: GitInfo | null;
 }
 
 export interface ContextWarningProps {

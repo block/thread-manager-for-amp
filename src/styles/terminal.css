@@ -989,6 +989,21 @@
   background: var(--warning);
 }
 
+.status-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-left: 4px;
+}
+
+.worktree-badge {
+  background: rgba(0, 217, 255, 0.15);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 217, 255, 0.3);
+}
+
 .terminal-input-area {
   position: relative;
   display: flex;
