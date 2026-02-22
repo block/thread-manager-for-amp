@@ -3,6 +3,8 @@ import { CostInfoTip } from '../CostInfoTip';
 import type { TerminalStatusBarProps } from './types';
 
 export function TerminalStatusBar({ usage, gitInfo }: TerminalStatusBarProps) {
+  const contextPct = usage.contextPercent >= 0 ? usage.contextPercent : null;
+
   return (
     <div className="terminal-status-bar">
       {gitInfo?.branch && (
@@ -16,13 +18,13 @@ export function TerminalStatusBar({ usage, gitInfo }: TerminalStatusBarProps) {
       )}
       <div className="status-item">
         <span className="status-label">Context</span>
-        <span className={`status-value ${usage.contextPercent > 80 ? 'warning' : ''}`}>
-          {usage.contextPercent}%
+        <span className={`status-value ${contextPct !== null && contextPct > 80 ? 'warning' : ''}`}>
+          {contextPct !== null ? `${contextPct}%` : '—'}
         </span>
         <div className="context-bar">
           <div
-            className={`context-fill ${usage.contextPercent > 80 ? 'warning' : ''}`}
-            style={{ width: `${Math.min(usage.contextPercent, 100)}%` }}
+            className={`context-fill ${contextPct !== null && contextPct > 80 ? 'warning' : ''}`}
+            style={{ width: `${contextPct !== null ? Math.min(contextPct, 100) : 0}%` }}
           />
         </div>
       </div>

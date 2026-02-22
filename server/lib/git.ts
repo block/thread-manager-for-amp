@@ -160,8 +160,24 @@ function spawnGitAndCheckExit(args: string[], cwd?: string): Promise<boolean> {
 function parseStatusLabel(status: string): FileStatusLabel {
   if (status === '??' || status === 'A') return 'added';
   if (status === 'D') return 'deleted';
-  if (status === 'R') return 'renamed';
+  if (status.startsWith('R')) return 'renamed';
   return 'modified';
+}
+
+/**
+ * Extract the file path from a git status --porcelain line.
+ * Handles rename lines like "R  old -> new" by returning the destination path.
+ */
+function parseStatusPath(line: string): string {
+  const filePath = line.slice(3);
+  const status = line.slice(0, 2).trim();
+  if (status.startsWith('R')) {
+    const arrowIdx = filePath.indexOf(' -> ');
+    if (arrowIdx !== -1) {
+      return filePath.slice(arrowIdx + 4);
+    }
+  }
+  return filePath;
 }
 
 interface GitStatusError {
@@ -211,7 +227,7 @@ export async function getWorkspaceGitStatus(threadId: string): Promise<GitStatus
 
     for (const line of statusLines) {
       const status = line.slice(0, 2).trim();
-      const filePath = line.slice(3);
+      const filePath = parseStatusPath(line);
       const fullPath = join(workspacePath, filePath);
 
       const touchedByThread = touchedFiles.has(fullPath);
@@ -251,7 +267,7 @@ export async function getWorkspaceGitStatusByPath(
 
     for (const line of statusLines) {
       const status = line.slice(0, 2).trim();
-      const filePath = line.slice(3);
+      const filePath = parseStatusPath(line);
       const fullPath = join(workspacePath, filePath);
 
       files.push({
@@ -296,7 +312,7 @@ export async function getWorkspaceGitStatusDirect(
 
     for (const line of statusLines) {
       const status = line.slice(0, 2).trim();
-      const filePath = line.slice(3);
+      const filePath = parseStatusPath(line);
 
       files.push({
         path: filePath,

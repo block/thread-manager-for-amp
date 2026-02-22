@@ -223,33 +223,39 @@ export function useThreadActions({
   const handleHandoffConfirm = useCallback(
     async (goal: string, newTitle?: string): Promise<void> => {
       if (!handoffThreadId) return;
-      const result = await apiPost<{ threadId: string }>('/api/thread-handoff', {
-        threadId: handoffThreadId,
-        goal,
-      });
+      try {
+        const result = await apiPost<{ threadId: string }>('/api/thread-handoff', {
+          threadId: handoffThreadId,
+          goal,
+        });
 
-      // Use provided title, or fall back to goal-based name
-      const threadName = newTitle || (goal.length > 60 ? goal.slice(0, 57) + '...' : goal);
-      await apiPatch<{ success: boolean }>('/api/thread-rename', {
-        threadId: result.threadId,
-        name: threadName,
-      });
+        // Use provided title, or fall back to goal-based name
+        const threadName = newTitle || (goal.length > 60 ? goal.slice(0, 57) + '...' : goal);
+        await apiPatch<{ success: boolean }>('/api/thread-rename', {
+          threadId: result.threadId,
+          name: threadName,
+        });
 
-      const newThread: Thread = {
-        id: result.threadId,
-        title: threadName,
-        lastUpdated: 'Just now',
-        visibility: 'Private',
-        messages: 0,
-        autoInvoke: true,
-      };
-      setOpenThreads((prev) => [...prev, newThread]);
-      setActiveThreadId(result.threadId);
-      setFocusThreadId(result.threadId);
-      refetch();
-      setHandoffThreadId(null);
+        const newThread: Thread = {
+          id: result.threadId,
+          title: threadName,
+          lastUpdated: 'Just now',
+          visibility: 'Private',
+          messages: 0,
+          autoInvoke: true,
+        };
+        setOpenThreads((prev) => [...prev, newThread]);
+        setActiveThreadId(result.threadId);
+        setFocusThreadId(result.threadId);
+        refetch();
+      } catch (err) {
+        console.error('Failed to handoff:', err);
+        showError('Failed to hand off thread');
+      } finally {
+        setHandoffThreadId(null);
+      }
     },
-    [handoffThreadId, refetch],
+    [handoffThreadId, refetch, showError],
   );
 
   const handleRenameThread = useCallback(

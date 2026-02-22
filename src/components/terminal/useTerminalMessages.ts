@@ -49,6 +49,12 @@ export function useTerminalMessages({
   useEffect(() => {
     const controller = new AbortController();
     async function loadHistory() {
+      // Clear stale state from previous thread before fetching
+      setMessages([]);
+      setIsLoading(true);
+      setHasMoreMessages(false);
+      setCurrentOffset(0);
+
       try {
         const [markdown, threadImages] = await Promise.all([
           apiGetText(
