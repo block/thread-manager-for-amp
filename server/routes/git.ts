@@ -11,6 +11,7 @@ import {
   getWorkspaceGitStatusDirect,
   getFileDiff,
   getWorkspaceGitInfo,
+  revertFile,
 } from '../lib/git.js';
 import { getThreadGitActivity } from '../lib/git-activity.js';
 
@@ -77,6 +78,26 @@ export async function handleGitRoutes(
       const workspacePath = getParam(url, 'workspace');
       const diff = await getFileDiff(filePath, workspacePath);
       return jsonResponse(res, diff);
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  }
+
+  if (pathname === '/api/git-revert-file') {
+    try {
+      if (req.method !== 'POST') throw new BadRequestError('Method not allowed');
+      const body = await parseBody<{
+        workspacePath?: string;
+        filePath?: string;
+        created?: boolean;
+      }>(req);
+      if (!body.workspacePath) throw new BadRequestError('workspacePath required');
+      if (!body.filePath) throw new BadRequestError('filePath required');
+      const result = await revertFile(body.workspacePath, body.filePath, !!body.created);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to revert file');
+      }
+      return jsonResponse(res, { success: true });
     } catch (err) {
       return handleRouteError(res, err);
     }

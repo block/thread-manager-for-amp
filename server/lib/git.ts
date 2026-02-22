@@ -1,5 +1,5 @@
 import { spawn, ChildProcess } from 'child_process';
-import { readFile, stat } from 'fs/promises';
+import { readFile, stat, unlink } from 'fs/promises';
 import { join, resolve, isAbsolute } from 'path';
 import type { GitStatus, GitFileStatus, FileDiff } from '../../shared/types.js';
 import { THREADS_DIR } from './threadTypes.js';
@@ -469,5 +469,43 @@ export async function getFileDiff(
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     return { error };
+  }
+}
+
+export async function revertFile(
+  inputWorkspacePath: string,
+  inputFilePath: string,
+  isCreated: boolean,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const workspacePath = await validateWorkspacePath(inputWorkspacePath);
+    const filePath = validateFilePath(inputFilePath, workspacePath);
+    const relativePath = filePath.replace(workspacePath + '/', '');
+
+    if (isCreated) {
+      // Unstage if staged, then delete the file
+      await spawnGitAndCapture(['reset', 'HEAD', '--', relativePath], workspacePath);
+      await unlink(filePath);
+    } else {
+      // Restore tracked file from HEAD
+      const success = await spawnGitAndCheckExit(
+        ['checkout', 'HEAD', '--', relativePath],
+        workspacePath,
+      );
+      if (!success) {
+        // Fallback: try without HEAD (for files not yet committed)
+        const fallback = await spawnGitAndCheckExit(
+          ['checkout', '--', relativePath],
+          workspacePath,
+        );
+        if (!fallback) {
+          return { success: false, error: `Failed to revert ${relativePath}` };
+        }
+      }
+    }
+    return { success: true };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    return { success: false, error };
   }
 }

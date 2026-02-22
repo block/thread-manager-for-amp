@@ -116,6 +116,47 @@
   text-overflow: ellipsis;
 }
 
+.change-revert-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.change-file-header:hover .change-revert-btn {
+  opacity: 1;
+}
+
+.change-revert-btn:hover {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  background: rgba(14, 243, 255, 0.1);
+}
+
+.change-revert-btn.reverting {
+  opacity: 1;
+  cursor: wait;
+}
+
+.change-revert-btn:disabled {
+  cursor: wait;
+}
+
+.summary-reverted {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-cyan);
+}
+
 .change-expand {
   color: var(--text-muted);
 }
