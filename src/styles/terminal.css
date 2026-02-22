@@ -1077,6 +1077,14 @@
   border: 1px solid rgba(0, 217, 255, 0.3);
 }
 
+.status-item.clickable {
+  cursor: pointer;
+}
+
+.status-item.clickable:hover {
+  opacity: 0.8;
+}
+
 .terminal-input-area {
   position: relative;
   display: flex;

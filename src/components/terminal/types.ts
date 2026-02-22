@@ -44,6 +44,7 @@ export interface TerminalMessagesProps {
   showThinkingBlocks: boolean;
   onEditMessage?: (messageIndex: number, currentText: string) => void;
   onUndoLastTurn?: () => void;
+  onOpenThreadId?: (threadId: string) => void;
 }
 
 export interface TerminalInputProps {
@@ -71,6 +72,7 @@ export interface TerminalInputProps {
 export interface GitInfo {
   branch: string | null;
   isWorktree: boolean;
+  worktreePath: string | null;
 }
 
 export interface TerminalStatusBarProps {

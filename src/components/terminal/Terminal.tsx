@@ -438,6 +438,20 @@ export function Terminal({
     });
   }, [threadId, setConfirmModal, setMessages]);
 
+  const handleOpenThreadById = useCallback(
+    (id: string) => {
+      if (!onOpenThread) return;
+      onOpenThread({
+        id,
+        title: id,
+        lastUpdated: '',
+        visibility: 'Private',
+        messages: 0,
+      });
+    },
+    [onOpenThread],
+  );
+
   const content = (
     <div
       ref={containerRef}
@@ -485,6 +499,7 @@ export function Terminal({
           showThinkingBlocks={showThinkingBlocks && (threadMode || agentMode) === 'deep'}
           onEditMessage={handleEditMessage}
           onUndoLastTurn={handleUndoLastTurn}
+          onOpenThreadId={handleOpenThreadById}
         />
         <Minimap
           items={minimapItems}
