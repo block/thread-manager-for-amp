@@ -6,7 +6,6 @@ export interface KeyboardShortcutHandlers {
   onRefresh: () => void;
   onCloseThread: () => void;
   onCloseAllThreads: () => void;
-  onOpenSettings: () => void;
   onHandoff: () => void;
   onToggleSidebar: () => void;
   onOpenShellTerminal: () => void;
@@ -77,11 +76,6 @@ export function useKeyboardShortcuts({
         if (threadId) {
           h.onCloseThread();
         }
-      }
-      // Ctrl+, to open settings
-      if ((e.ctrlKey || e.metaKey) && e.key === ',') {
-        e.preventDefault();
-        h.onOpenSettings();
       }
       // Ctrl+H for handoff
       if ((e.ctrlKey || e.metaKey) && e.key === 'h') {

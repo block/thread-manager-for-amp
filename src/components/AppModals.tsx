@@ -18,6 +18,12 @@ const BlockerModal = lazy(() =>
   import('./BlockerModal').then((m) => ({ default: m.BlockerModal })),
 );
 const OutputModal = lazy(() => import('./OutputModal').then((m) => ({ default: m.OutputModal })));
+const ContextAnalyzeModal = lazy(() =>
+  import('./ContextAnalyzeModal').then((m) => ({ default: m.ContextAnalyzeModal })),
+);
+const ThreadMapModal = lazy(() =>
+  import('./ThreadMapModal').then((m) => ({ default: m.ThreadMapModal })),
+);
 const CodeReviewModal = lazy(() =>
   import('./CodeReviewModal').then((m) => ({ default: m.CodeReviewModal })),
 );
@@ -75,6 +81,23 @@ export function AppModals({ onRefresh, onNewThread, setThreadLabels }: AppModals
           threadTitle={threads.find((t) => t.id === threadActions.handoffThreadId)?.title}
           onConfirm={threadActions.handleHandoffConfirm}
           onCancel={() => threadActions.setHandoffThreadId(null)}
+        />
+
+        <ContextAnalyzeModal
+          isOpen={!!modals.contextAnalyzeThreadId}
+          onClose={() => modals.setContextAnalyzeThreadId(null)}
+          threadId={modals.contextAnalyzeThreadId || ''}
+        />
+
+        <ThreadMapModal
+          isOpen={!!modals.threadMapThreadId}
+          onClose={() => modals.setThreadMapThreadId(null)}
+          threadId={modals.threadMapThreadId || ''}
+          onOpenThread={(threadId) => {
+            modals.setThreadMapThreadId(null);
+            const thread = threads.find((t) => t.id === threadId);
+            if (thread) handleContinueWithTracking(thread);
+          }}
         />
 
         <CodeReviewModal

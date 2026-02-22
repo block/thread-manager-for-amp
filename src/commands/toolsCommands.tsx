@@ -1,14 +1,4 @@
-import {
-  List,
-  Plus,
-  Trash2,
-  Wrench,
-  Eye,
-  Box,
-  Plug,
-  TerminalSquare,
-  FileSearch,
-} from 'lucide-react';
+import { List, Plus, Trash2, Wrench, Eye, TerminalSquare, FileSearch } from 'lucide-react';
 import { CATEGORIES } from './categories';
 import type { Command, CommandFactoryContext, CommandHandlers } from './types';
 
@@ -41,11 +31,11 @@ export function createToolsCommands(
       action: () => handlers.onSkillRemove?.(),
     },
     {
-      id: 'skill-invoke',
+      id: 'skill-info',
       category: CATEGORIES.SKILL,
-      label: 'invoke',
+      label: 'info',
       icon: <Wrench size={14} />,
-      action: () => handlers.onSkillInvoke?.(),
+      action: () => handlers.onSkillInfo?.(),
       disabled: !hasActiveThread,
     },
     {
@@ -69,20 +59,7 @@ export function createToolsCommands(
       icon: <List size={14} />,
       action: () => handlers.onShowMcpList?.(),
     },
-    {
-      id: 'toolbox-list',
-      category: CATEGORIES.TOOLBOX,
-      label: 'list',
-      icon: <Box size={14} />,
-      action: () => handlers.onShowToolbox?.(),
-    },
-    {
-      id: 'ide-connect',
-      category: CATEGORIES.IDE,
-      label: 'connect',
-      icon: <Plug size={14} />,
-      action: () => handlers.onIdeConnect?.(),
-    },
+
     {
       id: 'shell-terminal',
       category: CATEGORIES.TOOLS,

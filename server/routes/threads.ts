@@ -20,6 +20,7 @@ import {
 } from '../lib/threads.js';
 import { truncateThreadAtMessage, undoLastTurn } from '../lib/threadCrud.js';
 import { getPromptHistory, addPromptToHistory } from '../lib/promptHistory.js';
+import { analyzeContext } from '../lib/contextAnalyze.js';
 
 export async function handleThreadRoutes(
   url: URL,
@@ -274,6 +275,17 @@ export async function handleThreadRoutes(
       const msg = (err as Error).message;
       const status = msg.includes('required') || msg.includes('No user message') ? 400 : 500;
       return sendError(res, status, msg);
+    }
+  }
+
+  if (pathname === '/api/context-analyze') {
+    try {
+      const threadId = getParam(url, 'threadId');
+      const result = await analyzeContext(threadId);
+      return jsonResponse(res, result);
+    } catch (err) {
+      const status = (err as Error).message.includes('required') ? 400 : 500;
+      return sendError(res, status, (err as Error).message);
     }
   }
 

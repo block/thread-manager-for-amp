@@ -83,33 +83,12 @@ export function useAppModalHandlers({
     [threadActions],
   );
 
-  const handleOpenSettings = useCallback(async () => {
-    try {
-      const result = await apiGet<{ path: string }>('/api/settings-path');
-      window.open(`vscode://file/${result.path}`, '_blank');
-    } catch (err) {
-      console.error('Failed to open settings:', err);
-      showError('Failed to open settings');
-    }
-  }, [showError]);
-
-  const handleOpenPermissionsUser = useCallback(async () => {
-    try {
-      const result = await apiGet<{ path: string }>('/api/settings-path');
-      window.open(`vscode://file/${result.path}`, '_blank');
-    } catch (err) {
-      console.error('Failed to open permissions:', err);
-      showError('Failed to open permissions');
-    }
-  }, [showError]);
-
-  const handleOpenPermissionsWorkspace = useCallback(() => {
-    window.open('vscode://file/.amp/permissions.json', '_blank');
-  }, []);
-
-  const handleThreadMap = useCallback((id: string) => {
-    window.open(`https://ampcode.com/threads/${id}`, '_blank');
-  }, []);
+  const handleThreadMap = useCallback(
+    (id: string) => {
+      modalActions.handleThreadMap(id);
+    },
+    [modalActions],
+  );
 
   const handleAddLabel = useCallback(
     (id: string) => {
@@ -242,7 +221,6 @@ export function useAppModalHandlers({
       onRefresh: onRefresh,
       onCloseThread: () => activeThreadId && threadActions.handleCloseThread(activeThreadId),
       onCloseAllThreads: threadActions.handleCloseAll,
-      onOpenSettings: handleOpenSettings,
       onHandoff: () => activeThreadId && handleHandoff(activeThreadId),
       onToggleSidebar: settings.handleToggleSidebar,
       onOpenShellTerminal: modals.openShellTerminal,
@@ -281,7 +259,6 @@ export function useAppModalHandlers({
     onShowMcpStatus: modalActions.handleShowMcpStatus,
     onShowMcpList: modalActions.handleShowMcpList,
     onShowPermissions: modalActions.handleShowPermissions,
-    onOpenSettings: handleOpenSettings,
     onShowHelp: modalActions.handleShowHelp,
     onThreadMap: handleThreadMap,
     onArchiveAndClose: threadActions.handleArchiveAndClose,
@@ -289,15 +266,11 @@ export function useAppModalHandlers({
     onSwitchToPrevious: handleSwitchToPrevious,
     onSwitchToNext: handleSwitchToNext,
     onContextAnalyze: () => modalActions.handleContextAnalyze(activeThreadId),
-    onOpenPermissionsUser: handleOpenPermissionsUser,
-    onOpenPermissionsWorkspace: handleOpenPermissionsWorkspace,
-    onIdeConnect: modalActions.handleIdeConnect,
-    onShowToolbox: modalActions.handleShowToolbox,
     onAddLabel: handleAddLabel,
     onRemoveLabel: handleRemoveLabel,
     onSkillAdd: modalActions.handleSkillAdd,
     onSkillRemove: modalActions.handleSkillRemove,
-    onSkillInvoke: modalActions.handleSkillInvoke,
+    onSkillInfo: modalActions.handleSkillInfo,
     onManageBlockers: handleManageBlockers,
     onToggleSidebar: settings.handleToggleSidebar,
     onOpenShellTerminal: modals.openShellTerminal,

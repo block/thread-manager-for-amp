@@ -1,0 +1,254 @@
+.context-analyze-modal {
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  background: var(--bg-primary);
+  border: 1px solid var(--accent-blue);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.2s ease;
+}
+
+.context-analyze-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.context-analyze-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.context-analyze-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.context-analyze-title h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.context-analyze-close {
+  padding: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.context-analyze-close:hover {
+  color: var(--accent-pink);
+  border-color: var(--accent-pink);
+}
+
+.context-analyze-loading,
+.context-analyze-error {
+  padding: 24px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.context-analyze-loading {
+  color: var(--text-muted);
+}
+
+.context-analyze-error {
+  color: var(--accent-pink);
+  background: rgba(255, 100, 100, 0.1);
+  border: 1px solid var(--accent-pink);
+  border-radius: 6px;
+  margin: 16px;
+}
+
+.context-analyze-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.context-analyze-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.context-analyze-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-blue);
+  margin: 0;
+}
+
+/* Stats grid */
+.context-analyze-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.context-analyze-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.context-analyze-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.context-analyze-stat-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+/* Progress bar */
+.context-analyze-progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.context-analyze-progress-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.context-analyze-progress-bar {
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.context-analyze-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Tables */
+.context-analyze-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.context-analyze-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.context-analyze-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.context-analyze-table-label {
+  color: var(--text-muted);
+}
+
+.context-analyze-table-value {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.context-analyze-table th:last-child,
+.context-analyze-table td:last-child {
+  text-align: right;
+}
+
+.context-analyze-tool-name {
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* Context growth */
+.context-analyze-growth {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.context-analyze-growth-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-analyze-growth-label {
+  flex-shrink: 0;
+  width: 32px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.context-analyze-growth-bar-track {
+  flex: 1;
+  height: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.context-analyze-growth-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-yellow));
+  transition: width 0.2s ease;
+}
+
+.context-analyze-growth-pct {
+  flex-shrink: 0;
+  width: 36px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-align: right;
+}
