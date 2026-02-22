@@ -80,8 +80,9 @@ function parseSection(text: string, role: 'user' | 'assistant', sectionIndex: nu
       }
     };
 
-    // Find all tool uses
-    const toolUseRegex = /\*\*Tool Use:\*\*\s*`(\w+)`\s*```json\s*([\s\S]*?)```/g;
+    // Find all tool uses (with optional <!--toolId:xxx--> comment)
+    const toolUseRegex =
+      /\*\*Tool Use:\*\*\s*`(\w+)`(?:\s*<!--toolId:([^>]+)-->)?\s*```json\s*([\s\S]*?)```/g;
     let lastIndex = 0;
     let match;
 
@@ -94,17 +95,19 @@ function parseSection(text: string, role: 'user' | 'assistant', sectionIndex: nu
       let input: ToolInput = {};
       try {
         // Unescape triple backticks that were escaped during formatting
-        const jsonStr = (match[2] ?? '').replace(/\\`\\`\\`/g, '```');
+        const jsonStr = (match[3] ?? '').replace(/\\`\\`\\`/g, '```');
         input = JSON.parse(jsonStr) as ToolInput;
       } catch {
         /* ignore parse errors */
       }
 
+      const toolId = match[2]?.trim() || undefined;
       messages.push({
         id: `msg-s${sectionIndex}-${localIndex++}`,
         type: 'tool_use',
         content: formatToolUse(match[1] ?? '', input),
         toolName: match[1] ?? '',
+        toolId,
         toolInput: input,
       });
 
@@ -115,7 +118,7 @@ function parseSection(text: string, role: 'user' | 'assistant', sectionIndex: nu
     pushTextWithThinking(text.slice(lastIndex));
   } else {
     // User section - find tool results and plain text
-    const toolResultRegex = /\*\*Tool Result:\*\*\s*`[^`]*`\s*```([\s\S]*?)```/g;
+    const toolResultRegex = /\*\*Tool Result:\*\*\s*`([^`]*)`\s*```([\s\S]*?)```/g;
     let lastIndex = 0;
     let match;
 
@@ -132,12 +135,14 @@ function parseSection(text: string, role: 'user' | 'assistant', sectionIndex: nu
 
       // Add the tool result (skip empty/no output ones)
       // Unescape triple backticks that were escaped during formatting
-      const resultContent = (match[1] ?? '').trim().replace(/\\`\\`\\`/g, '```');
+      const toolId = match[1]?.trim() || undefined;
+      const resultContent = (match[2] ?? '').trim().replace(/\\`\\`\\`/g, '```');
       if (resultContent && resultContent !== 'undefined' && resultContent !== '(no output)') {
         messages.push({
           id: `msg-s${sectionIndex}-${localIndex++}`,
           type: 'tool_result',
           content: resultContent,
+          toolId,
           success: true,
         });
       }

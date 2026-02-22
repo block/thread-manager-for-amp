@@ -17,6 +17,7 @@ interface TextBlock {
 
 interface ToolUseBlock {
   type: 'tool_use';
+  id?: string;
   name: string;
   input?: Record<string, unknown>;
 }
@@ -61,7 +62,8 @@ export function formatMessageContent(content: MessageContent): string {
             /```/g,
             '\\`\\`\\`',
           );
-          return `**Tool Use:** \`${toolBlock.name}\`\n\n\`\`\`json\n${jsonStr}\n\`\`\``;
+          const idComment = toolBlock.id ? ` <!--toolId:${toolBlock.id}-->` : '';
+          return `**Tool Use:** \`${toolBlock.name}\`${idComment}\n\n\`\`\`json\n${jsonStr}\n\`\`\``;
         }
         if (block.type === 'tool_result') {
           const resultBlock = block as ToolResultBlock;
