@@ -168,7 +168,6 @@ export async function getThreads({
             repo,
             touchedFiles: [...touchedFiles],
             handoffParentId,
-            handoffChildId: uniqueChildIds[uniqueChildIds.length - 1] ?? null,
             handoffChildIds: uniqueChildIds,
           };
         } catch (e) {

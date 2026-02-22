@@ -19,8 +19,6 @@ export interface Thread {
   autoInvoke?: boolean;
   // Handoff relationship IDs (derived from relationships for quick access)
   handoffParentId?: string | null;
-  /** @deprecated Use handoffChildIds instead. Kept for backward compat (last child seen). */
-  handoffChildId?: string | null;
   handoffChildIds?: string[];
 }
 
