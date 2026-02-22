@@ -794,6 +794,11 @@
   color: var(--accent-green);
 }
 
+.handoff-thread-status-done,
+.handoff-thread-status-disconnected {
+  color: var(--text-muted);
+}
+
 .tool-result {
   padding: 8px 12px;
   margin-left: 32px;

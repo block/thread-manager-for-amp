@@ -264,18 +264,21 @@ export const ToolBlock = memo(function ToolBlock({
             ) : (
               threadId
             )}
-            {handoffThreadStatus && (
-              <span
-                className={`handoff-thread-status handoff-thread-status-${handoffThreadStatus}`}
-              >
-                {handoffThreadStatus === 'running' && <Loader2 size={10} className="spinning" />}
-                {handoffThreadStatus === 'running'
+            {(() => {
+              const label =
+                handoffThreadStatus === 'running'
                   ? 'running'
                   : handoffThreadStatus === 'connected'
                     ? 'idle'
-                    : 'disconnected'}
-              </span>
-            )}
+                    : 'done';
+              const cls = handoffThreadStatus ?? 'done';
+              return (
+                <span className={`handoff-thread-status handoff-thread-status-${cls}`}>
+                  {handoffThreadStatus === 'running' && <Loader2 size={10} className="spinning" />}
+                  {label}
+                </span>
+              );
+            })()}
           </div>
         )}
       </div>
