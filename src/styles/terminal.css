@@ -742,12 +742,13 @@
 .tool-block.handoff-block .tool-block-header {
   padding: 6px 12px;
   gap: 8px;
+  align-items: baseline;
 }
 
 .handoff-label {
   color: var(--accent-cyan);
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 
