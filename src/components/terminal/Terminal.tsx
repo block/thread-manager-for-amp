@@ -5,6 +5,7 @@ import { MessageSearchModal } from '../MessageSearchModal';
 import { ImageViewer } from '../ImageViewer';
 import { apiGet, apiPatch, apiPost } from '../../api/client';
 import type { ThreadMetadata } from '../../types';
+import type { Message } from '../../utils/parseMarkdown';
 import { extractIssueUrl } from '../../utils/issueTracker';
 import type { AgentMode } from '../../../shared/websocket.js';
 import type { TerminalProps } from './types';
@@ -38,8 +39,13 @@ export function Terminal({
   const { id: threadId, title: threadTitle } = thread;
   const { markAsSeen } = useUnread();
   const { setStatus: setThreadStatus, clearStatus: clearThreadStatus } = useThreadStatus();
-  const { agentMode, cycleAgentMode, showThinkingBlocks, setActiveThreadModeLocked } =
-    useSettingsContext();
+  const {
+    agentMode,
+    cycleAgentMode,
+    showThinkingBlocks,
+    setActiveThreadModeLocked,
+    scmRefreshKey,
+  } = useSettingsContext();
   const { pendingPromptInsert, setPendingPromptInsert, setConfirmModal } = useModalContext();
 
   const replay = useReplayMode();
@@ -94,23 +100,15 @@ export function Terminal({
     mode: AgentMode;
   } | null>(null);
 
-  const {
-    messages,
-    setMessages,
-    isLoading,
-    setIsLoading,
-    hasMoreMessages,
-    loadingMore,
-    loadMoreMessages,
-    messagesContainerRef,
-    messagesEndRef,
-    messageRefs,
-  } = useTerminalMessages({ threadId, wsConnected });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const {
     isConnected,
     isSending,
     isRunning,
+    isInterrupted,
+    externalUpdateKey,
     agentStatus,
     connectionError,
     threadMode,
@@ -118,6 +116,23 @@ export function Terminal({
     cancelOperation,
     reconnect,
   } = useTerminalWebSocket({ threadId, setMessages, setUsage, setIsLoading });
+
+  const {
+    hasMoreMessages,
+    loadingMore,
+    loadMoreMessages,
+    messagesContainerRef,
+    messagesEndRef,
+    messageRefs,
+  } = useTerminalMessages({
+    threadId,
+    wsConnected,
+    refreshKey: scmRefreshKey + externalUpdateKey,
+    messages,
+    setMessages,
+    isLoading,
+    setIsLoading,
+  });
 
   // Effective mode: locked thread mode takes priority over global setting
   const effectiveMode = threadMode ?? agentMode;
@@ -455,7 +470,7 @@ export function Terminal({
           messageRefs={messageRefs}
           onLoadMore={loadMoreMessages}
           onViewImage={setViewingImage}
-          showThinkingBlocks={showThinkingBlocks}
+          showThinkingBlocks={showThinkingBlocks && (threadMode || agentMode) === 'deep'}
           onEditMessage={handleEditMessage}
           onUndoLastTurn={handleUndoLastTurn}
         />
@@ -487,6 +502,19 @@ export function Terminal({
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {isInterrupted && !isRunning && !isSending && (
+        <div className="resume-banner">
+          <span>This thread was interrupted. The agent didn't finish responding.</span>
+          <button
+            className="resume-btn"
+            onClick={() =>
+              wsSendMessage('Please continue where you left off.', undefined, effectiveMode)
+            }
+          >
+            Resume
+          </button>
         </div>
       )}
       <TerminalInput

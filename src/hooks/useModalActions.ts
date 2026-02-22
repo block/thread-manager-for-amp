@@ -16,8 +16,6 @@ export interface UseModalActionsReturn {
   handleSkillAdd: () => void;
   handleSkillRemove: () => void;
   handleSkillInvoke: () => void;
-  handleShowTasks: () => void;
-  handleImportTasks: () => void;
   handleReplayThread: (id: string) => void;
   handleCodeReview: () => void;
 }
@@ -193,14 +191,6 @@ export function useModalActions(
     });
   }, [modals, showError]);
 
-  const handleShowTasks = useCallback(() => {
-    modals.setTasksModal({ tab: 'list' });
-  }, [modals]);
-
-  const handleImportTasks = useCallback(() => {
-    modals.setTasksModal({ tab: 'import' });
-  }, [modals]);
-
   const handleReplayThread = useCallback(
     (id: string) => {
       modals.setReplayThreadId(id);
@@ -226,8 +216,6 @@ export function useModalActions(
     handleSkillAdd,
     handleSkillRemove,
     handleSkillInvoke,
-    handleShowTasks,
-    handleImportTasks,
     handleReplayThread,
     handleCodeReview,
   };

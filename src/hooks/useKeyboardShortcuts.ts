@@ -5,6 +5,7 @@ export interface KeyboardShortcutHandlers {
   onNewThread: () => void;
   onRefresh: () => void;
   onCloseThread: () => void;
+  onCloseAllThreads: () => void;
   onOpenSettings: () => void;
   onHandoff: () => void;
   onToggleSidebar: () => void;
@@ -13,6 +14,10 @@ export interface KeyboardShortcutHandlers {
   onToggleThinkingBlocks: () => void;
   onOpenPromptHistory?: () => void;
   onUndoLastTurn?: () => void;
+  onSwitchToPrevious?: () => void;
+  onSwitchToNext?: () => void;
+  onToggleLayout?: () => void;
+  onArchiveAndClose?: () => void;
 }
 
 export interface UseKeyboardShortcutsOptions {
@@ -52,8 +57,8 @@ export function useKeyboardShortcuts({
         e.preventDefault();
         h.onOpenCommandPalette();
       }
-      // Ctrl+N for new thread
-      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+      // Alt+N for new thread (e.code works cross-platform; e.key may be '˜' on Mac)
+      if (e.altKey && (e.key === 'n' || e.code === 'KeyN')) {
         e.preventDefault();
         h.onNewThread();
       }
@@ -96,16 +101,43 @@ export function useKeyboardShortcuts({
         h.onOpenShellTerminal();
       }
       // Alt+D to toggle deep mode (disabled when thread mode is locked)
-      if (e.altKey && e.key === 'd') {
+      if (e.altKey && (e.key === 'd' || e.code === 'KeyD')) {
         e.preventDefault();
         if (!modeLockedRef.current) {
           h.onToggleDeepMode();
         }
       }
       // Alt+T to toggle thinking blocks visibility
-      if (e.altKey && e.key === 't') {
+      if (e.altKey && (e.key === 't' || e.code === 'KeyT')) {
         e.preventDefault();
         h.onToggleThinkingBlocks();
+      }
+      // Alt+[ to switch to previous tab
+      if (e.altKey && e.key === '[') {
+        e.preventDefault();
+        h.onSwitchToPrevious?.();
+      }
+      // Alt+] to switch to next tab
+      if (e.altKey && e.key === ']') {
+        e.preventDefault();
+        h.onSwitchToNext?.();
+      }
+      // Alt+L to toggle layout (e.code for Mac compatibility)
+      if (e.altKey && (e.key === 'l' || e.code === 'KeyL')) {
+        e.preventDefault();
+        h.onToggleLayout?.();
+      }
+      // Alt+W to archive and close current thread (e.code for Mac compatibility)
+      if (e.altKey && (e.key === 'w' || e.code === 'KeyW')) {
+        e.preventDefault();
+        if (threadId) {
+          h.onArchiveAndClose?.();
+        }
+      }
+      // Ctrl+Shift+W to close all threads
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'w') {
+        e.preventDefault();
+        h.onCloseAllThreads();
       }
       // Ctrl+Z when not in a text input — undo last turn
       if (

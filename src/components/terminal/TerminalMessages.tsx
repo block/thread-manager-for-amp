@@ -199,6 +199,9 @@ const MessageItem = memo(function MessageItem({
     );
   }
 
+  // Skip empty assistant/system messages (e.g. after stripping thinking blocks)
+  if (msg.type === 'assistant' && !msg.content.trim() && !msg.image) return null;
+
   return (
     <div
       ref={(el) => registerRef(msg.id, el)}

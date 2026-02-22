@@ -32,6 +32,8 @@ export function useTerminalWebSocket({
   const [threadMode, setThreadMode] = useState<AgentMode | null>(null);
   const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const [, setNoResponseDetected] = useState(false);
+  const [isInterrupted, setIsInterrupted] = useState(false);
+  const [externalUpdateKey, setExternalUpdateKey] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
   const gotResponseRef = useRef(false);
   const wasCancelledRef = useRef(false);
@@ -73,6 +75,9 @@ export function useTerminalWebSocket({
               if (data.mode) {
                 setThreadMode(data.mode);
               }
+              if (data.interrupted) {
+                setIsInterrupted(true);
+              }
               break;
             case 'usage':
               setUsage({
@@ -83,16 +88,20 @@ export function useTerminalWebSocket({
                 estimatedCost: data.estimatedCost,
               });
               break;
-            case 'text':
+            case 'text': {
               setIsSending(false);
               setIsRunning(true);
               setAgentStatus('streaming');
               gotResponseRef.current = true;
-              setMessages((prev) => [
-                ...prev,
-                { id: generateId(), type: 'assistant', content: data.content },
-              ]);
+              const textContent = (data.content || '').trim();
+              if (textContent) {
+                setMessages((prev) => [
+                  ...prev,
+                  { id: generateId(), type: 'assistant', content: textContent },
+                ]);
+              }
               break;
+            }
             case 'thinking':
               setIsSending(false);
               setIsRunning(true);
@@ -199,6 +208,8 @@ export function useTerminalWebSocket({
                 });
               } else if (data.subtype === 'message_queued') {
                 setAgentStatus('queued');
+              } else if (data.subtype === 'thread_updated') {
+                setExternalUpdateKey((prev) => prev + 1);
               }
               break;
             case 'cancelled':
@@ -295,6 +306,7 @@ export function useTerminalWebSocket({
       gotResponseRef.current = false;
       wasCancelledRef.current = false;
       setNoResponseDetected(false);
+      setIsInterrupted(false);
 
       // Use the locked thread mode if set, otherwise use the provided mode
       const effectiveMode = threadMode ?? mode;
@@ -338,6 +350,8 @@ export function useTerminalWebSocket({
     isConnected,
     isSending,
     isRunning,
+    isInterrupted,
+    externalUpdateKey,
     agentStatus,
     connectionError,
     threadMode,

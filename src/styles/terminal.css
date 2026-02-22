@@ -1619,3 +1619,36 @@
   border-color: var(--accent-cyan);
   background: rgba(14, 243, 255, 0.1);
 }
+
+/* Resume banner */
+.resume-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  margin: 0 16px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-yellow, #f0c674);
+  border-left: 4px solid var(--accent-yellow, #f0c674);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.resume-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--accent-yellow, #f0c674);
+  border: none;
+  border-radius: 6px;
+  color: var(--bg-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.resume-btn:hover {
+  opacity: 0.85;
+}

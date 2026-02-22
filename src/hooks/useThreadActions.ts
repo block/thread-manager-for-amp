@@ -210,6 +210,7 @@ export function useThreadActions({
         };
         setOpenThreads((prev) => [...prev, newThread]);
         setActiveThreadId(result.threadId);
+        setFocusThreadId(result.threadId);
         refetch();
       } catch (err) {
         console.error('Failed to create thread:', err);
@@ -265,6 +266,7 @@ export function useThreadActions({
               threadId: id,
               name: newName,
             });
+            setOpenThreads((prev) => prev.map((t) => (t.id === id ? { ...t, title: newName } : t)));
             refetch();
           } catch (err) {
             console.error('Failed to rename:', err);

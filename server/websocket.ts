@@ -1,5 +1,6 @@
 import { spawn, ChildProcess } from 'child_process';
 import { readFile, writeFile, mkdir } from 'fs/promises';
+import { watchFile, unwatchFile, type StatWatcher } from 'fs';
 import { join } from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage, Server } from 'http';
@@ -49,7 +50,10 @@ interface ThreadSession {
   processing: boolean;
   pendingMessage: PendingMessage | null;
   activeMessage: string | null;
+  activeMode?: string;
   hasExistingMode: boolean;
+  fileWatcher?: StatWatcher;
+  lastKnownMtime?: number;
 }
 
 const sessions = new Map<string, ThreadSession>();
@@ -170,16 +174,32 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
       if (content) {
         for (const block of content) {
           if (block.type === 'thinking' && (block.thinking || block.text)) {
-            sendToSession(session, {
-              type: 'thinking',
-              content: block.thinking || block.text || '',
-            });
+            if (session.activeMode === 'deep') {
+              sendToSession(session, {
+                type: 'thinking',
+                content: block.thinking || block.text || '',
+              });
+            }
           } else if (block.type === 'text' && block.text) {
             let text = block.text;
             const thinkingJsonMatch = text.match(
               /^\s*\{["\s]*type["\s]*:["\s]*thinking["\s]*,[\s\S]*?\}\s*/,
             );
             if (thinkingJsonMatch) {
+              if (session.activeMode === 'deep') {
+                try {
+                  const parsed = JSON.parse(thinkingJsonMatch[0].trim()) as {
+                    content?: string;
+                    thinking?: string;
+                  };
+                  const thinkingContent = (parsed.content || parsed.thinking || '').trim();
+                  if (thinkingContent) {
+                    sendToSession(session, { type: 'thinking', content: thinkingContent });
+                  }
+                } catch {
+                  // Skip unparseable thinking JSON
+                }
+              }
               text = text.slice(thinkingJsonMatch[0].length).trim();
             }
             if (text) {
@@ -251,9 +271,11 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
       break;
     }
     case 'thinking': {
-      const thinkingText = event.thinking || '';
-      if (thinkingText) {
-        sendToSession(session, { type: 'thinking', content: thinkingText });
+      if (session.activeMode === 'deep') {
+        const thinkingText = event.thinking || '';
+        if (thinkingText) {
+          sendToSession(session, { type: 'thinking', content: thinkingText });
+        }
       }
       break;
     }
@@ -365,6 +387,7 @@ async function spawnAmpOnSession(
 
     // rush mode does not support --stream-json; fall back to plain text
     const useStreamJson = mode !== 'rush';
+    const isDeepMode = mode === 'deep';
 
     // --mode is a global flag that must come before the subcommand
     const args: string[] = [];
@@ -373,7 +396,10 @@ async function spawnAmpOnSession(
     }
     args.push('threads', 'continue', session.threadId, '--no-ide', '--execute', finalMessage);
     if (useStreamJson) {
-      args.push('--stream-json', '--stream-json-thinking');
+      args.push('--stream-json');
+      if (isDeepMode) {
+        args.push('--stream-json-thinking');
+      }
     }
 
     const child = spawn(AMP_BIN, args, {
@@ -385,6 +411,7 @@ async function spawnAmpOnSession(
     session.child = child;
     session.startedAt = Date.now();
     session.activeMessage = finalMessage;
+    session.activeMode = mode;
 
     child.on('error', (err: Error) => {
       console.error(`[WS] Child process error for thread ${session.threadId}:`, err.message);
@@ -489,6 +516,7 @@ const VALID_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep'];
 interface InitResult {
   mode?: AgentMode;
   hasMessages: boolean;
+  interrupted: boolean;
 }
 
 async function initSessionFromThread(session: ThreadSession): Promise<InitResult> {
@@ -515,15 +543,46 @@ async function initSessionFromThread(session: ThreadSession): Promise<InitResult
       estimatedCost: session.cumulativeCost.toFixed(4),
     });
 
+    // Detect interrupted threads: last message was from user (agent never responded)
+    const lastMessage = messages[messages.length - 1];
+    const interrupted = !!lastMessage && lastMessage.role === 'user' && messages.length > 1;
+
     const mode = data.agentMode?.toLowerCase();
     return {
       mode: mode && VALID_MODES.includes(mode as AgentMode) ? (mode as AgentMode) : undefined,
       hasMessages: messages.length > 0,
+      interrupted,
     };
   } catch {
     // Default to opus pricing if we can't read the thread
-    return { hasMessages: false };
+    return { hasMessages: false, interrupted: false };
   }
+}
+
+// ── File watcher for external changes (e.g. CLI running the thread) ─────
+
+function startFileWatcher(session: ThreadSession): void {
+  if (session.fileWatcher) return; // already watching
+
+  const threadPath = join(THREADS_DIR, `${session.threadId}.json`);
+  session.fileWatcher = watchFile(threadPath, { interval: 2000 }, (curr, prev) => {
+    // Skip if we have our own child process running (we get streaming updates)
+    if (session.child) return;
+    // Skip if file hasn't actually changed
+    if (curr.mtimeMs === prev.mtimeMs) return;
+    // Skip if this is the same mtime we already handled
+    if (session.lastKnownMtime && curr.mtimeMs <= session.lastKnownMtime) return;
+
+    session.lastKnownMtime = curr.mtimeMs;
+    sendToSession(session, { type: 'system', subtype: 'thread_updated' });
+  });
+}
+
+function stopFileWatcher(session: ThreadSession): void {
+  if (!session.fileWatcher) return;
+  const threadPath = join(THREADS_DIR, `${session.threadId}.json`);
+  unwatchFile(threadPath);
+  session.fileWatcher = undefined;
 }
 
 // ── Disconnect handling ─────────────────────────────────────────────────
@@ -540,6 +599,7 @@ function startGracePeriod(session: ThreadSession, reason: string): void {
 
   session.killTimeout = setTimeout(() => {
     console.warn(`[WS] Grace period expired for thread ${session.threadId}, killing child process`);
+    stopFileWatcher(session);
     session.child?.kill('SIGTERM');
     session.child = null;
     session.killTimeout = null;
@@ -640,12 +700,16 @@ export function setupWebSocket(server: Server): WebSocketServer {
       type: 'ready',
       threadId,
       mode: initResult.hasMessages ? initResult.mode : undefined,
+      interrupted: initResult.interrupted || undefined,
     });
 
     // If a child is already running (reconnect mid-run), tell client it's active
     if (session.child) {
       sendToSession(session, { type: 'system', subtype: 'resumed' });
     }
+
+    // Watch the thread file for external changes (e.g. CLI running the thread)
+    startFileWatcher(session);
 
     // ── Client messages ─────────────────────────────────────────────────
     ws.on('message', (data: Buffer) => {
@@ -694,6 +758,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
       if (session.child) {
         startGracePeriod(session, 'Connection closed');
       } else {
+        stopFileWatcher(session);
         sessions.delete(threadId);
       }
     });
@@ -707,6 +772,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
       if (session.child) {
         startGracePeriod(session, 'Connection error');
       } else {
+        stopFileWatcher(session);
         sessions.delete(threadId);
       }
     });

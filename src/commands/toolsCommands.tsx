@@ -7,8 +7,6 @@ import {
   Box,
   Plug,
   TerminalSquare,
-  ClipboardList,
-  Import,
   FileSearch,
 } from 'lucide-react';
 import { CATEGORIES } from './categories';
@@ -92,20 +90,6 @@ export function createToolsCommands(
       icon: <TerminalSquare size={14} />,
       shortcut: '⌃T',
       action: () => handlers.onOpenShellTerminal?.(),
-    },
-    {
-      id: 'tasks-list',
-      category: CATEGORIES.TASKS,
-      label: 'list',
-      icon: <ClipboardList size={14} />,
-      action: () => handlers.onShowTasks?.(),
-    },
-    {
-      id: 'tasks-import',
-      category: CATEGORIES.TASKS,
-      label: 'import',
-      icon: <Import size={14} />,
-      action: () => handlers.onImportTasks?.(),
     },
     {
       id: 'tools-code-review',

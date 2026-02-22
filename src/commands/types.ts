@@ -52,8 +52,6 @@ export interface UseCommandsOptions {
   onManageBlockers?: (id: string) => void;
   onToggleSidebar?: () => void;
   onOpenShellTerminal?: () => void;
-  onShowTasks?: () => void;
-  onImportTasks?: () => void;
   onReplayThread?: (id: string) => void;
   onCodeReview?: () => void;
   onOpenPromptHistory?: () => void;

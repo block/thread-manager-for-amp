@@ -11,7 +11,6 @@ export const CATEGORIES = {
   AMP: 'amp',
   TERMINAL: 'terminal',
   VIEW: 'view',
-  TASKS: 'tasks',
 } as const;
 
 export type Category = (typeof CATEGORIES)[keyof typeof CATEGORIES];
