@@ -2,8 +2,46 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { spawn, type StdioOptions } from 'child_process';
 import { readFile } from 'fs/promises';
 import { join, extname, normalize } from 'path';
+import { fileURLToPath } from 'url';
 import { MIME_TYPES, AMP_BIN, AMP_HOME } from './constants.js';
 export { stripAnsi } from '../../shared/utils.js';
+
+export class BadRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BadRequestError';
+  }
+}
+
+export function isBadRequest(err: unknown): boolean {
+  return err instanceof BadRequestError;
+}
+
+/**
+ * Safely convert a file:// URI to a filesystem path.
+ * Returns null for non-file URIs or invalid input.
+ */
+export function parseFileUri(uri: string | undefined | null): string | null {
+  if (!uri) return null;
+  try {
+    if (uri.startsWith('file://')) {
+      return fileURLToPath(new URL(uri));
+    }
+    // Already a plain path
+    return uri.startsWith('/') ? uri : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Standard route error handler. Maps BadRequestError → 400, everything else → 500.
+ */
+export function handleRouteError(res: ServerResponse, err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  const status = isBadRequest(err) ? 400 : 500;
+  return sendError(res, status, message);
+}
 
 interface RunAmpOptions {
   cwd?: string;
@@ -54,7 +92,7 @@ export function sendError(res: ServerResponse, status: number, message: string):
 export function getParam(url: URL, name: string): string {
   const value = url.searchParams.get(name);
   if (!value) {
-    throw new Error(`${name} required`);
+    throw new BadRequestError(`${name} required`);
   }
   return value;
 }

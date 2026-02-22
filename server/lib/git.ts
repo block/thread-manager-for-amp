@@ -3,6 +3,7 @@ import { readFile, stat } from 'fs/promises';
 import { join, resolve, isAbsolute } from 'path';
 import type { GitStatus, GitFileStatus, FileDiff } from '../../shared/types.js';
 import { THREADS_DIR } from './threadTypes.js';
+import { parseFileUri } from './utils.js';
 
 /**
  * Validates and sanitizes a workspace path to prevent path traversal attacks.
@@ -202,7 +203,8 @@ export async function getWorkspaceGitStatus(threadId: string): Promise<GitStatus
       return { error: 'No workspace found', files: [] };
     }
     const workspaceUri = firstTree.uri;
-    const rawWorkspacePath = workspaceUri.replace('file://', '');
+    const rawWorkspacePath = parseFileUri(workspaceUri);
+    if (!rawWorkspacePath) return { error: 'Invalid workspace URI', files: [] };
     const workspacePath = await validateWorkspacePath(rawWorkspacePath);
     const workspaceName = firstTree.displayName;
 

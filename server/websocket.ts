@@ -19,6 +19,7 @@ import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS, isAllowedOrigin } from '
 import { createArtifact } from './lib/database.js';
 import { THREADS_DIR, ARTIFACTS_DIR, type ThreadFile } from './lib/threadTypes.js';
 import { resolveMessageReferences } from './lib/mentionResolver.js';
+import { parseFileUri } from './lib/utils.js';
 
 // Grace period before killing child process on disconnect (30 seconds)
 const DISCONNECT_GRACE_PERIOD_MS = 30_000;
@@ -351,7 +352,7 @@ async function spawnAmpOnSession(
         await readFile(join(THREADS_DIR, `${session.threadId}.json`), 'utf-8'),
       ) as ThreadFile;
       const uri = threadData.env?.initial?.trees?.[0]?.uri;
-      workspacePath = uri ? uri.replace('file://', '') : null;
+      workspacePath = parseFileUri(uri);
     } catch {
       // No workspace info available
     }
