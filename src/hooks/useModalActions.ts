@@ -15,6 +15,9 @@ export interface UseModalActionsReturn {
   handleSkillAdd: () => void;
   handleSkillRemove: () => void;
   handleSkillInfo: () => void;
+  handleMcpAdd: () => void;
+  handleMcpApprove: () => void;
+  handlePermissionsTest: () => void;
   handleReplayThread: (id: string) => void;
   handleCodeReview: () => void;
   handleShowAgentsMdList: () => Promise<void>;
@@ -136,26 +139,39 @@ export function useModalActions(
     });
   }, [modals, showError]);
 
-  const handleSkillRemove = useCallback(() => {
-    modals.setInputModal({
-      title: 'Remove Skill',
-      label: 'Skill name',
-      placeholder: 'Enter skill name to remove',
-      confirmText: 'Remove',
-      onConfirm: async (name: string) => {
-        modals.setInputModal(null);
-        try {
-          const result = await apiDelete<{ output: string; success: boolean }>(
-            '/api/skill-remove',
-            { name },
-          );
-          modals.setOutputModal({ title: 'Skill Removed', content: result.output });
-        } catch (err) {
-          console.error('Failed to remove skill:', err);
-          showError(`Failed to remove skill: ${String(err)}`);
-        }
-      },
-    });
+  const handleSkillRemove = useCallback(async () => {
+    try {
+      const summary = await apiGet<{ skills: { name: string; description: string }[] }>(
+        '/api/skills-summary',
+      );
+      const skillNames = summary.skills.map((s) => s.name);
+      if (skillNames.length === 0) {
+        showError('No skills installed');
+        return;
+      }
+      modals.setInputModal({
+        title: 'Remove Skill',
+        label: `Installed skills: ${skillNames.join(', ')}`,
+        placeholder: 'Enter skill name to remove',
+        confirmText: 'Remove',
+        onConfirm: async (name: string) => {
+          modals.setInputModal(null);
+          try {
+            const result = await apiDelete<{ output: string; success: boolean }>(
+              '/api/skill-remove',
+              { name },
+            );
+            modals.setOutputModal({ title: 'Skill Removed', content: result.output });
+          } catch (err) {
+            console.error('Failed to remove skill:', err);
+            showError(`Failed to remove skill: ${String(err)}`);
+          }
+        },
+      });
+    } catch (err) {
+      console.error('Failed to load skills:', err);
+      showError('Failed to load skills list');
+    }
   }, [modals, showError]);
 
   const handleSkillInfo = useCallback(() => {
@@ -175,6 +191,89 @@ export function useModalActions(
           console.error('Failed to get skill info:', err);
           showError(`Failed to get skill info: ${String(err)}`);
         }
+      },
+    });
+  }, [modals, showError]);
+
+  const handleMcpAdd = useCallback(() => {
+    modals.setInputModal({
+      title: 'Add MCP Server',
+      label: 'Server name',
+      placeholder: 'e.g. my-server',
+      confirmText: 'Next',
+      onConfirm: (name: string) => {
+        modals.setInputModal(null);
+        modals.setInputModal({
+          title: 'Add MCP Server',
+          label: `Source command for "${name}"`,
+          placeholder: 'e.g. npx -y @modelcontextprotocol/server-filesystem',
+          confirmText: 'Add',
+          onConfirm: async (source: string) => {
+            modals.setInputModal(null);
+            try {
+              const result = await apiPost<{ output: string; success: boolean }>('/api/mcp-add', {
+                name,
+                source,
+              });
+              modals.setOutputModal({ title: 'MCP Server Added', content: result.output });
+            } catch (err) {
+              console.error('Failed to add MCP server:', err);
+              showError(`Failed to add MCP server: ${String(err)}`);
+            }
+          },
+        });
+      },
+    });
+  }, [modals, showError]);
+
+  const handleMcpApprove = useCallback(() => {
+    modals.setInputModal({
+      title: 'Approve MCP Server',
+      label: 'Server name',
+      placeholder: 'Enter MCP server name to approve',
+      confirmText: 'Approve',
+      onConfirm: async (name: string) => {
+        modals.setInputModal(null);
+        try {
+          const result = await apiPost<{ output: string; success: boolean }>('/api/mcp-approve', {
+            name,
+          });
+          modals.setOutputModal({ title: 'MCP Server Approved', content: result.output });
+        } catch (err) {
+          console.error('Failed to approve MCP server:', err);
+          showError(`Failed to approve MCP server: ${String(err)}`);
+        }
+      },
+    });
+  }, [modals, showError]);
+
+  const handlePermissionsTest = useCallback(() => {
+    modals.setInputModal({
+      title: 'Test Permission',
+      label: 'Tool name',
+      placeholder: 'e.g. Bash',
+      confirmText: 'Next',
+      onConfirm: (tool: string) => {
+        modals.setInputModal(null);
+        modals.setInputModal({
+          title: 'Test Permission',
+          label: `Command to test for "${tool}"`,
+          placeholder: 'e.g. git push',
+          confirmText: 'Test',
+          onConfirm: async (cmd: string) => {
+            modals.setInputModal(null);
+            try {
+              const result = await apiPost<{ output: string }>('/api/permissions-test', {
+                tool,
+                cmd,
+              });
+              modals.setOutputModal({ title: 'Permission Test Result', content: result.output });
+            } catch (err) {
+              console.error('Failed to test permission:', err);
+              showError(`Failed to test permission: ${String(err)}`);
+            }
+          },
+        });
       },
     });
   }, [modals, showError]);
@@ -249,6 +348,9 @@ export function useModalActions(
     handleSkillAdd,
     handleSkillRemove,
     handleSkillInfo,
+    handleMcpAdd,
+    handleMcpApprove,
+    handlePermissionsTest,
     handleReplayThread,
     handleCodeReview,
     handleShowAgentsMdList,

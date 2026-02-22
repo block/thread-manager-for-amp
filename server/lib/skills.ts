@@ -111,8 +111,23 @@ export async function listMcp(): Promise<SkillOutput> {
   return { output: stripAnsi(stdout) };
 }
 
+export async function addMcp(name: string, source: string): Promise<SkillMutationResult> {
+  const stdout = await runAmp(['mcp', 'add', name, '--', source]);
+  return { output: stripAnsi(stdout), success: true };
+}
+
+export async function approveMcp(name: string): Promise<SkillMutationResult> {
+  const stdout = await runAmp(['mcp', 'approve', name]);
+  return { output: stripAnsi(stdout), success: true };
+}
+
 export async function listPermissions(): Promise<SkillOutput> {
   const stdout = await runAmp(['permissions', 'list']);
+  return { output: stripAnsi(stdout) };
+}
+
+export async function testPermission(tool: string, cmd: string): Promise<SkillOutput> {
+  const stdout = await runAmp(['permissions', 'test', tool, '--cmd', cmd]);
   return { output: stripAnsi(stdout) };
 }
 
