@@ -177,8 +177,8 @@ const MessageItem = memo(function MessageItem({
   if (msg.type === 'tool_result') {
     const resolvedToolName = toolName || msg.toolName;
 
-    // Hide tool_result for subagents - shown inline in ToolBlock
-    if (resolvedToolName === 'Task') {
+    // Hide tool_result for subagents and handoffs - shown inline in ToolBlock
+    if (resolvedToolName === 'Task' || resolvedToolName === 'handoff') {
       return null;
     }
     if (resolvedToolName === 'look_at') {

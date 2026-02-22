@@ -734,6 +734,29 @@
   font-size: 11px;
 }
 
+/* Handoff block */
+.tool-block.handoff-block {
+  border-left-color: var(--accent-cyan);
+}
+
+.handoff-label {
+  color: var(--accent-cyan);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.handoff-goal {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.handoff-thread-link {
+  padding: 2px 12px 8px 34px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
 .tool-result {
   padding: 8px 12px;
   margin-left: 32px;
