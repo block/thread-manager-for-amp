@@ -59,8 +59,7 @@ export interface ThreadChainNode {
 export interface ThreadChain {
   ancestors: ChainThread[];
   current: ChainThread | null;
-  descendants: ChainThread[];
-  descendantsTree?: ThreadChainNode[];
+  descendantsTree: ThreadChainNode[];
 }
 
 export interface FileEdit {

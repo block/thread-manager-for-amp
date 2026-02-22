@@ -44,7 +44,6 @@ describe('getThreadChain', () => {
     const chain = await getThreadChain('solo');
     expect(chain.ancestors).toEqual([]);
     expect(chain.current?.id).toBe('solo');
-    expect(chain.descendants).toEqual([]);
     expect(chain.descendantsTree).toEqual([]);
   });
 
@@ -62,11 +61,10 @@ describe('getThreadChain', () => {
     const chain = await getThreadChain('leaf');
     expect(chain.ancestors.map((a) => a.id)).toEqual(['root', 'middle']);
     expect(chain.current?.id).toBe('leaf');
-    expect(chain.descendants).toEqual([]);
     expect(chain.descendantsTree).toEqual([]);
   });
 
-  it('returns flat descendants and tree for a fork', async () => {
+  it('returns tree with fork for multiple children', async () => {
     // root → mid → [child-a, child-b]
     mockedGetThreads.mockResolvedValue({
       threads: [
@@ -83,20 +81,20 @@ describe('getThreadChain', () => {
     expect(chain.ancestors).toEqual([]);
     expect(chain.current?.id).toBe('root');
 
-    // Flat descendants should contain all 3
-    const descIds = chain.descendants.map((d) => d.id);
-    expect(descIds).toContain('mid');
-    expect(descIds).toContain('child-a');
-    expect(descIds).toContain('child-b');
-
     // Tree: root's direct child is mid, mid has two children
     expect(chain.descendantsTree).toHaveLength(1);
-    const midNode = chain.descendantsTree?.[0];
+    const midNode = chain.descendantsTree[0];
     expect(midNode?.thread.id).toBe('mid');
     expect(midNode?.children).toHaveLength(2);
     const childIds = midNode?.children.map((c) => c.thread.id) ?? [];
     expect(childIds).toContain('child-a');
     expect(childIds).toContain('child-b');
+
+    // All 3 descendants are in the tree
+    const allIds = collectNodeIds(chain.descendantsTree);
+    expect(allIds).toContain('mid');
+    expect(allIds).toContain('child-a');
+    expect(allIds).toContain('child-b');
   });
 
   it('builds tree from middle of a chain', async () => {
@@ -121,18 +119,18 @@ describe('getThreadChain', () => {
 
     // Descendants tree: two children of mid
     expect(chain.descendantsTree).toHaveLength(2);
-    const allDescIds = collectNodeIds(chain.descendantsTree ?? []);
+    const allDescIds = collectNodeIds(chain.descendantsTree);
     expect(allDescIds).toContain('child-a');
     expect(allDescIds).toContain('child-b');
     expect(allDescIds).toContain('grandchild');
 
     // child-a should have grandchild as its child in the tree
-    const childANode = chain.descendantsTree?.find((n) => n.thread.id === 'child-a');
+    const childANode = chain.descendantsTree.find((n) => n.thread.id === 'child-a');
     expect(childANode?.children).toHaveLength(1);
     expect(childANode?.children[0]?.thread.id).toBe('grandchild');
 
     // child-b is a leaf
-    const childBNode = chain.descendantsTree?.find((n) => n.thread.id === 'child-b');
+    const childBNode = chain.descendantsTree.find((n) => n.thread.id === 'child-b');
     expect(childBNode?.children).toEqual([]);
   });
 
@@ -146,11 +144,10 @@ describe('getThreadChain', () => {
     const chain = await getThreadChain('nonexistent');
     expect(chain.current).toBeNull();
     expect(chain.ancestors).toEqual([]);
-    expect(chain.descendants).toEqual([]);
+    expect(chain.descendantsTree).toEqual([]);
   });
 
-  it('flat descendants match tree contents', async () => {
-    // Verify the flat list and tree contain the same threads
+  it('tree contains all descendants in a complex fork', async () => {
     // root → [a → [a1, a2], b]
     mockedGetThreads.mockResolvedValue({
       threads: [
@@ -165,9 +162,14 @@ describe('getThreadChain', () => {
     });
 
     const chain = await getThreadChain('root');
-    const flatIds = chain.descendants.map((d) => d.id).sort();
-    const treeIds = collectNodeIds(chain.descendantsTree ?? []).sort();
-    expect(flatIds).toEqual(treeIds);
-    expect(flatIds).toEqual(['a', 'a1', 'a2', 'b']);
+    const treeIds = collectNodeIds(chain.descendantsTree).sort();
+    expect(treeIds).toEqual(['a', 'a1', 'a2', 'b']);
+
+    // Verify tree structure: root has 2 direct children
+    expect(chain.descendantsTree).toHaveLength(2);
+    const nodeA = chain.descendantsTree.find((n) => n.thread.id === 'a');
+    expect(nodeA?.children).toHaveLength(2);
+    const nodeB = chain.descendantsTree.find((n) => n.thread.id === 'b');
+    expect(nodeB?.children).toEqual([]);
   });
 });

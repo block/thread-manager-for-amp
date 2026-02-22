@@ -61,7 +61,6 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
   }
 
   const descendantsTree: ThreadChainNode[] = [];
-  const flatDescendants: ChainThread[] = [];
   const directChildIds = parentToChildren.get(threadId) || [];
   for (const childId of directChildIds) {
     if (visited.has(childId)) continue;
@@ -70,19 +69,10 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     if (node) descendantsTree.push(node);
   }
 
-  // BFS flatten the tree for backward-compatible flat descendants list
-  function flattenTree(nodes: ThreadChainNode[]): void {
-    for (const node of nodes) {
-      flatDescendants.push(node.thread);
-      flattenTree(node.children);
-    }
-  }
-  flattenTree(descendantsTree);
-
   const currentThread = threadMap.get(threadId);
   const current: ChainThread | null = currentThread ? toChainThread(currentThread) : null;
 
-  return { ancestors, current, descendants: flatDescendants, descendantsTree };
+  return { ancestors, current, descendantsTree };
 }
 
 interface HandoffResult {
