@@ -74,11 +74,19 @@ function buildPrecomputedData(messages: Message[]): PrecomputedData {
       }
       toolStatusMap.set(key, status);
 
-      // Subagent result lookup
-      if (msg.toolName === 'Task' && msg.toolId) {
-        const result = toolResultByToolId.get(msg.toolId);
-        if (result) {
-          subagentResultMap.set(msg.id, result.content);
+      // Subagent / handoff result lookup
+      if (msg.toolName === 'Task' || msg.toolName === 'handoff') {
+        if (msg.toolId) {
+          const result = toolResultByToolId.get(msg.toolId);
+          if (result) {
+            subagentResultMap.set(msg.id, result.content);
+          }
+        } else {
+          // History fallback: no toolId linkage, check next message
+          const next = messages[i + 1];
+          if (next?.type === 'tool_result') {
+            subagentResultMap.set(msg.id, next.content);
+          }
         }
       }
     }
@@ -179,6 +187,10 @@ const MessageItem = memo(function MessageItem({
 
     // Hide tool_result for subagents and handoffs - shown inline in ToolBlock
     if (resolvedToolName === 'Task' || resolvedToolName === 'handoff') {
+      return null;
+    }
+    // Also detect handoff results from history (no toolId linkage) by content
+    if (!resolvedToolName && msg.content.includes('"newThreadID"')) {
       return null;
     }
     if (resolvedToolName === 'look_at') {
