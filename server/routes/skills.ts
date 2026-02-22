@@ -13,6 +13,8 @@ import {
   getSettingsPath,
   getAmpHelp,
   listAgentsMd,
+  getUsage,
+  getAmpVersion,
 } from '../lib/skills.js';
 
 interface SkillAddBody {
@@ -145,6 +147,24 @@ export async function handleSkillRoutes(
     try {
       const workspace = url.searchParams.get('workspace') ?? undefined;
       const result = await listAgentsMd(workspace);
+      return jsonResponse(res, result);
+    } catch (err) {
+      return sendError(res, 500, (err as Error).message);
+    }
+  }
+
+  if (pathname === '/api/amp-usage') {
+    try {
+      const result = await getUsage();
+      return jsonResponse(res, result);
+    } catch (err) {
+      return sendError(res, 500, (err as Error).message);
+    }
+  }
+
+  if (pathname === '/api/amp-version') {
+    try {
+      const result = await getAmpVersion();
       return jsonResponse(res, result);
     } catch (err) {
       return sendError(res, 500, (err as Error).message);

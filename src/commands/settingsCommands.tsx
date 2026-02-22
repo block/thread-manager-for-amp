@@ -1,4 +1,15 @@
-import { Shield, Volume2, VolumeX, Zap, Rocket, Brain, Maximize, FileText } from 'lucide-react';
+import {
+  Shield,
+  Volume2,
+  VolumeX,
+  Zap,
+  Rocket,
+  Brain,
+  Maximize,
+  FileText,
+  Info,
+  DollarSign,
+} from 'lucide-react';
 import { CATEGORIES } from './categories';
 import { DEEP_EFFORT_LABELS } from '../../shared/websocket.js';
 import type { Command, CommandFactoryContext, CommandHandlers } from './types';
@@ -97,6 +108,20 @@ export function createSettingsCommands(
       label: 'agents-md: list',
       icon: <FileText size={14} />,
       action: () => handlers.onShowAgentsMdList?.(),
+    },
+    {
+      id: 'amp-usage',
+      category: CATEGORIES.AMP,
+      label: 'usage',
+      icon: <DollarSign size={14} />,
+      action: () => handlers.onShowUsage?.(),
+    },
+    {
+      id: 'amp-check-updates',
+      category: CATEGORIES.AMP,
+      label: 'check for updates',
+      icon: <Info size={14} />,
+      action: () => handlers.onCheckForUpdates?.(),
     },
   ];
 }

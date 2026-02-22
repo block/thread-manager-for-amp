@@ -18,6 +18,9 @@ export interface UseModalActionsReturn {
   handleReplayThread: (id: string) => void;
   handleCodeReview: () => void;
   handleShowAgentsMdList: () => Promise<void>;
+  handleSetVisibility: (id: string, visibility: string) => Promise<void>;
+  handleShowUsage: () => Promise<void>;
+  handleCheckForUpdates: () => Promise<void>;
 }
 
 export function useModalActions(
@@ -197,6 +200,42 @@ export function useModalActions(
     }
   }, [modals, showError]);
 
+  const handleSetVisibility = useCallback(
+    async (id: string, visibility: string) => {
+      try {
+        const result = await apiPost<{ output: string; success: boolean }>(
+          '/api/thread-set-visibility',
+          { threadId: id, visibility },
+        );
+        modals.setOutputModal({ title: 'Visibility Updated', content: result.output });
+      } catch (err) {
+        console.error('Failed to set visibility:', err);
+        showError(`Failed to set visibility: ${String(err)}`);
+      }
+    },
+    [modals, showError],
+  );
+
+  const handleShowUsage = useCallback(async () => {
+    try {
+      const result = await apiGet<{ output: string }>('/api/amp-usage');
+      modals.setOutputModal({ title: 'Amp Usage', content: result.output });
+    } catch (err) {
+      console.error('Failed to get usage:', err);
+      showError('Failed to get usage info');
+    }
+  }, [modals, showError]);
+
+  const handleCheckForUpdates = useCallback(async () => {
+    try {
+      const result = await apiGet<{ output: string }>('/api/amp-version');
+      modals.setOutputModal({ title: 'Amp Version', content: result.output });
+    } catch (err) {
+      console.error('Failed to check version:', err);
+      showError('Failed to check for updates');
+    }
+  }, [modals, showError]);
+
   return {
     handleShareThread,
     handleShowSkills,
@@ -213,5 +252,8 @@ export function useModalActions(
     handleReplayThread,
     handleCodeReview,
     handleShowAgentsMdList,
+    handleSetVisibility,
+    handleShowUsage,
+    handleCheckForUpdates,
   };
 }

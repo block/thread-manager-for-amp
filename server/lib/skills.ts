@@ -177,3 +177,27 @@ export async function listAgentsMd(workspacePath?: string): Promise<SkillOutput>
   const output = `Found ${files.length} AGENTS.md file(s):\n\n${files.map((f) => `  • ${f}`).join('\n')}`;
   return { output };
 }
+
+export async function getUsage(): Promise<SkillOutput> {
+  const stdout = await runAmp(['usage']);
+  return { output: stripAnsi(stdout) };
+}
+
+export async function getAmpVersion(): Promise<SkillOutput> {
+  const stdout = await runAmp(['--version']);
+  return { output: stripAnsi(stdout) };
+}
+
+export async function setThreadVisibility(
+  threadId: string,
+  visibility: string,
+): Promise<SkillMutationResult> {
+  const stdout = await runAmp([
+    'threads',
+    'share',
+    threadId,
+    '--visibility',
+    visibility.toLowerCase(),
+  ]);
+  return { output: stripAnsi(stdout), success: true };
+}
