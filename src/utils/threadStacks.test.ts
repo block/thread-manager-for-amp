@@ -133,6 +133,18 @@ describe('buildThreadStacks', () => {
     expect(ancestorIds).toContain('parent');
     expect(ancestorIds).toContain('child1');
     expect(ancestorIds).toContain('child2');
+
+    // Topology captures the fork: parent has 3 children
+    const topo = at(entries, 0).stack?.topology;
+    expect(topo).toBeDefined();
+    expect(topo?.rootId).toBe('parent');
+    expect(topo?.parentToChildren['parent']).toHaveLength(3);
+    expect(topo?.parentToChildren['parent']).toContain('child1');
+    expect(topo?.parentToChildren['parent']).toContain('child2');
+    expect(topo?.parentToChildren['parent']).toContain('child3');
+    expect(topo?.childToParent['child1']).toBe('parent');
+    expect(topo?.childToParent['child2']).toBe('parent');
+    expect(topo?.childToParent['child3']).toBe('parent');
   });
 
   it('handles fan-out: parent with children that also have children', () => {
@@ -160,6 +172,23 @@ describe('buildThreadStacks', () => {
     // leaf is most recent
     expect(at(entries, 0).thread.id).toBe('leaf');
     expect(getStackSize(at(entries, 0))).toBe(4);
+
+    // Topology captures the full tree including fork at root
+    const topo = at(entries, 0).stack?.topology;
+    expect(topo).toBeDefined();
+    expect(topo?.rootId).toBe('root');
+    // root has two children (branch-a and branch-b)
+    expect(topo?.parentToChildren['root']).toHaveLength(2);
+    expect(topo?.parentToChildren['root']).toContain('branch-a');
+    expect(topo?.parentToChildren['root']).toContain('branch-b');
+    // branch-a has one child (leaf)
+    expect(topo?.parentToChildren['branch-a']).toEqual(['leaf']);
+    // branch-b is a leaf (no children entry)
+    expect(topo?.parentToChildren['branch-b']).toBeUndefined();
+    // child-to-parent edges
+    expect(topo?.childToParent['branch-a']).toBe('root');
+    expect(topo?.childToParent['branch-b']).toBe('root');
+    expect(topo?.childToParent['leaf']).toBe('branch-a');
   });
 });
 
