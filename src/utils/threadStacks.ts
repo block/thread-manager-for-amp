@@ -1,4 +1,4 @@
-import type { Thread, ThreadStack } from '../types';
+import type { Thread, ThreadStack, ThreadStackTopology } from '../types';
 
 export interface ThreadListEntry {
   kind: 'thread' | 'stack';
@@ -85,10 +85,40 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
     }
 
     if (ancestors.length > 0) {
+      // Build topology restricted to this stack's members
+      const childToParentLocal: Record<string, string> = {};
+      const parentToChildrenLocal: Record<string, string[]> = {};
+      let rootId = head.id;
+
+      for (const member of chainMembers) {
+        const pid = childToParent.get(member.id);
+        if (pid && visited.has(pid)) {
+          childToParentLocal[member.id] = pid;
+          if (!parentToChildrenLocal[pid]) {
+            parentToChildrenLocal[pid] = [];
+          }
+          parentToChildrenLocal[pid].push(member.id);
+        }
+      }
+
+      // Find root: the member with no parent in this stack
+      for (const member of chainMembers) {
+        if (!childToParentLocal[member.id]) {
+          rootId = member.id;
+          break;
+        }
+      }
+
+      const topology: ThreadStackTopology = {
+        rootId,
+        childToParent: childToParentLocal,
+        parentToChildren: parentToChildrenLocal,
+      };
+
       entries.push({
         kind: 'stack',
         thread: head,
-        stack: { head, ancestors },
+        stack: { head, ancestors, topology },
       });
     } else {
       entries.push({

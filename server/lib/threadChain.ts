@@ -1,79 +1,88 @@
-import type { Thread, ThreadChain, ChainThread, ThreadRelationship } from '../../shared/types.js';
+import type { Thread, ThreadChain, ChainThread, ThreadChainNode } from '../../shared/types.js';
 import { runAmp, stripAnsi } from './utils.js';
 import { getThreads } from './threadCrud.js';
-import { isHandoffRelationship } from './threadTypes.js';
+
+function toChainThread(t: Thread, comment?: string): ChainThread {
+  return {
+    id: t.id,
+    title: t.title,
+    lastUpdated: t.lastUpdated,
+    workspace: t.workspace,
+    ...(comment != null ? { comment } : {}),
+  };
+}
 
 export async function getThreadChain(threadId: string): Promise<ThreadChain> {
   const { threads } = await getThreads({ limit: 1000 });
   const threadMap = new Map(threads.map((t) => [t.id, t]));
 
+  // Build parent-to-children index from all threads' handoffParentId
+  const parentToChildren = new Map<string, string[]>();
+  for (const t of threads) {
+    if (t.handoffParentId && threadMap.has(t.handoffParentId)) {
+      const existing = parentToChildren.get(t.handoffParentId);
+      if (existing) {
+        existing.push(t.id);
+      } else {
+        parentToChildren.set(t.handoffParentId, [t.id]);
+      }
+    }
+  }
+
+  // Walk up to collect ancestors (linear path to root)
   const ancestors: ChainThread[] = [];
   const visited = new Set<string>([threadId]);
-
-  interface ThreadWithRelationships extends Thread {
-    relationships?: ThreadRelationship[];
+  let currentId = threadId;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
+  while (true) {
+    const thread = threadMap.get(currentId);
+    const parentId = thread?.handoffParentId;
+    if (!parentId || visited.has(parentId)) break;
+    const parentThread = threadMap.get(parentId);
+    if (!parentThread) break;
+    visited.add(parentId);
+    ancestors.unshift(toChainThread(parentThread));
+    currentId = parentId;
   }
 
-  function findAncestors(id: string): void {
-    const thread = threadMap.get(id) as ThreadWithRelationships | undefined;
-    if (!thread?.relationships) return;
+  // Build descendants tree (recursive, supports forks)
+  function buildDescendantNode(id: string): ThreadChainNode | null {
+    const t = threadMap.get(id);
+    if (!t) return null;
+    const childIds = parentToChildren.get(id) || [];
+    const children: ThreadChainNode[] = [];
+    for (const childId of childIds) {
+      if (visited.has(childId)) continue;
+      visited.add(childId);
+      const node = buildDescendantNode(childId);
+      if (node) children.push(node);
+    }
+    return { thread: toChainThread(t), children };
+  }
 
-    for (const rel of thread.relationships) {
-      if (isHandoffRelationship(rel) && rel.role === 'parent' && !visited.has(rel.threadID)) {
-        visited.add(rel.threadID);
-        const parentThread = threadMap.get(rel.threadID);
-        if (parentThread) {
-          ancestors.unshift({
-            id: parentThread.id,
-            title: parentThread.title,
-            lastUpdated: parentThread.lastUpdated,
-            workspace: parentThread.workspace,
-            comment: rel.comment,
-          });
-          findAncestors(rel.threadID);
-        }
-      }
+  const descendantsTree: ThreadChainNode[] = [];
+  const flatDescendants: ChainThread[] = [];
+  const directChildIds = parentToChildren.get(threadId) || [];
+  for (const childId of directChildIds) {
+    if (visited.has(childId)) continue;
+    visited.add(childId);
+    const node = buildDescendantNode(childId);
+    if (node) descendantsTree.push(node);
+  }
+
+  // BFS flatten the tree for backward-compatible flat descendants list
+  function flattenTree(nodes: ThreadChainNode[]): void {
+    for (const node of nodes) {
+      flatDescendants.push(node.thread);
+      flattenTree(node.children);
     }
   }
-
-  const descendants: ChainThread[] = [];
-
-  function findDescendants(id: string): void {
-    const thread = threadMap.get(id) as ThreadWithRelationships | undefined;
-    if (!thread?.relationships) return;
-
-    for (const rel of thread.relationships) {
-      if (isHandoffRelationship(rel) && rel.role === 'child' && !visited.has(rel.threadID)) {
-        visited.add(rel.threadID);
-        const childThread = threadMap.get(rel.threadID);
-        if (childThread) {
-          descendants.push({
-            id: childThread.id,
-            title: childThread.title,
-            lastUpdated: childThread.lastUpdated,
-            workspace: childThread.workspace,
-            comment: rel.comment,
-          });
-          findDescendants(rel.threadID);
-        }
-      }
-    }
-  }
-
-  findAncestors(threadId);
-  findDescendants(threadId);
+  flattenTree(descendantsTree);
 
   const currentThread = threadMap.get(threadId);
-  const current: ChainThread | null = currentThread
-    ? {
-        id: currentThread.id,
-        title: currentThread.title,
-        lastUpdated: currentThread.lastUpdated,
-        workspace: currentThread.workspace,
-      }
-    : null;
+  const current: ChainThread | null = currentThread ? toChainThread(currentThread) : null;
 
-  return { ancestors, current, descendants };
+  return { ancestors, current, descendants: flatDescendants, descendantsTree };
 }
 
 interface HandoffResult {
