@@ -241,3 +241,12 @@ export interface Artifact {
   created_at: number;
   updated_at: number;
 }
+
+export interface ReviewCheck {
+  name: string;
+  description: string;
+  severity?: string;
+  tools?: string[];
+  globs?: string[];
+  filePath: string;
+}

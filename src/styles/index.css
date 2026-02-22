@@ -27,5 +27,6 @@
 @import './replay-controls.css';
 @import './context-analyze-modal.css';
 @import './thread-map-modal.css';
+@import './thread-map.css';
 
 @import './responsive.css';

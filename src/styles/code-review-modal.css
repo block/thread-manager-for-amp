@@ -262,3 +262,34 @@
   color: var(--text-muted);
   font-size: 14px;
 }
+
+.code-review-check-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.code-review-severity {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.code-review-severity.high {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--error);
+}
+
+.code-review-severity.medium {
+  background: rgba(250, 212, 109, 0.15);
+  color: var(--warning);
+}
+
+.code-review-severity.low {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--success);
+}

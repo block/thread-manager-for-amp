@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { X, FileSearch, Play, Square, ChevronDown } from 'lucide-react';
+import { X, FileSearch, Play, Square, ChevronDown, ShieldCheck } from 'lucide-react';
 import { BaseModal } from './BaseModal';
 import { MarkdownContent } from './MarkdownContent';
 import { apiGet, apiPost } from '../api/client';
+import type { ReviewCheck } from '../types';
 
 interface CodeReviewModalProps {
   isOpen: boolean;
@@ -31,6 +32,9 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
   const [reviewOutput, setReviewOutput] = useState('');
   const [reviewing, setReviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checks, setChecks] = useState<ReviewCheck[]>([]);
+  const [selectedChecks, setSelectedChecks] = useState<string[]>([]);
+  const [showChecks, setShowChecks] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -42,8 +46,17 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
       setInstructions('');
       setSummaryOnly(false);
       setShowFilePicker(false);
+      setSelectedChecks([]);
+      setShowChecks(false);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !workspace) return;
+    void apiGet<ReviewCheck[]>(`/api/review-checks?workspace=${encodeURIComponent(workspace)}`)
+      .then(setChecks)
+      .catch(() => setChecks([]));
+  }, [isOpen, workspace]);
 
   const loadFiles = useCallback(async () => {
     if (!workspace) return;
@@ -76,10 +89,20 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
     abortRef.current = controller;
 
     try {
+      let reviewInstructions = instructions.trim() || undefined;
+      if (selectedChecks.length > 0) {
+        const checkDescs = checks
+          .filter((c) => selectedChecks.includes(c.name))
+          .map((c) => `- **${c.name}** (${c.severity || 'default'}): ${c.description}`)
+          .join('\n');
+        const checksBlock = `\n\nApply these review checks:\n${checkDescs}`;
+        reviewInstructions = (reviewInstructions || '') + checksBlock;
+      }
+
       const body = {
         workspace,
         files: selectedFiles.length > 0 ? selectedFiles : undefined,
-        instructions: instructions.trim() || undefined,
+        instructions: reviewInstructions,
         summaryOnly,
         stream: true,
       };
@@ -153,7 +176,7 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
       setReviewing(false);
       abortRef.current = null;
     }
-  }, [workspace, selectedFiles, instructions, summaryOnly]);
+  }, [workspace, selectedFiles, instructions, summaryOnly, selectedChecks, checks]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -163,6 +186,12 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
   const toggleFile = useCallback((filePath: string) => {
     setSelectedFiles((prev) =>
       prev.includes(filePath) ? prev.filter((f) => f !== filePath) : [...prev, filePath],
+    );
+  }, []);
+
+  const toggleCheck = useCallback((checkName: string) => {
+    setSelectedChecks((prev) =>
+      prev.includes(checkName) ? prev.filter((c) => c !== checkName) : [...prev, checkName],
     );
   }, []);
 
@@ -241,6 +270,48 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
                     ))}
                   </div>
                 </div>
+              )}
+
+              {checks.length > 0 && (
+                <>
+                  <button
+                    className="code-review-file-toggle"
+                    onClick={() => setShowChecks(!showChecks)}
+                    type="button"
+                  >
+                    <ShieldCheck size={14} />
+                    <span>
+                      {selectedChecks.length > 0
+                        ? `${selectedChecks.length} check${selectedChecks.length !== 1 ? 's' : ''} selected`
+                        : `${checks.length} available check${checks.length !== 1 ? 's' : ''}`}
+                    </span>
+                    <ChevronDown size={14} className={showChecks ? 'rotated' : ''} />
+                  </button>
+
+                  {showChecks && (
+                    <div className="code-review-file-picker">
+                      <div className="code-review-file-list">
+                        {checks.map((check) => (
+                          <label key={check.name} className="code-review-file-item">
+                            <input
+                              type="checkbox"
+                              checked={selectedChecks.includes(check.name)}
+                              onChange={() => toggleCheck(check.name)}
+                            />
+                            <span className="code-review-check-info">
+                              <span className="code-review-file-name">{check.name}</span>
+                              {check.severity && (
+                                <span className={`code-review-severity ${check.severity}`}>
+                                  {check.severity}
+                                </span>
+                              )}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               <textarea

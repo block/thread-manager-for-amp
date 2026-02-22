@@ -9,6 +9,7 @@ import {
   Search,
   Sparkles,
   Loader2,
+  Map,
 } from 'lucide-react';
 import { SourceControl } from '../SourceControl';
 import type { Thread, ThreadMetadata } from '../../types';
@@ -17,6 +18,7 @@ import { WhatChangedContent } from '../WhatChangedContent';
 import { GitActivityContent } from '../GitActivityContent';
 import { ThreadChainContent } from '../ThreadChainContent';
 import { RelatedThreadsContent } from '../RelatedThreadsContent';
+import { ThreadMapView } from '../ThreadMapView';
 import { ImageViewer } from '../ImageViewer';
 import { LinkedIssueEditor, LinkedIssueBadge } from '../LinkedIssue';
 import { ArtifactNotesList } from '../ArtifactNote';
@@ -124,6 +126,16 @@ export function ThreadDiscovery({
             <span>{summary.chainCount} linked</span>
           </button>
         )}
+        {summary.chainCount > 0 && onOpenThread && (
+          <button
+            className={`summary-chip map ${activeTab === 'map' ? 'active' : ''}`}
+            onClick={() => handleTabClick('map')}
+            title="Thread map visualization"
+          >
+            <Map size={12} />
+            <span>map</span>
+          </button>
+        )}
         {summary.relatedCount > 0 && onOpenThread && (
           <button
             className={`summary-chip related ${activeTab === 'related' ? 'active' : ''}`}
@@ -213,6 +225,12 @@ export function ThreadDiscovery({
             {activeTab === 'git' && gitActivity && <GitActivityContent activity={gitActivity} />}
             {activeTab === 'chain' && chain && onOpenThread && (
               <ThreadChainContent chain={chain} onOpenThread={onOpenThread} />
+            )}
+            {activeTab === 'map' && chain && onOpenThread && (
+              <ThreadMapView
+                chain={chain}
+                onOpenThread={(t) => onOpenThread({ id: t.id, title: t.title } as Thread)}
+              />
             )}
             {activeTab === 'related' && onOpenThread && (
               <RelatedThreadsContent related={related} onOpenThread={onOpenThread} />
