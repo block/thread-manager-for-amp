@@ -1267,7 +1267,7 @@
 }
 
 .terminal-mode-badge .mode-label {
-  text-transform: capitalize;
+  text-transform: none;
 }
 
 .terminal-mode-badge.mode-deep {
@@ -1278,6 +1278,11 @@
 .terminal-mode-badge.mode-rush {
   border-color: var(--accent-orange, #f97316);
   color: var(--accent-orange, #f97316);
+}
+
+.terminal-mode-badge.mode-large {
+  border-color: var(--accent-green, #22c55e);
+  color: var(--accent-green, #22c55e);
 }
 
 .terminal-mode-badge.mode-locked {

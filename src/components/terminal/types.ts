@@ -1,7 +1,7 @@
 import type { Message } from '../../utils/parseMarkdown';
 import type { Thread } from '../../types';
 import type { AgentStatus } from './useTerminalWebSocket';
-import type { AgentMode } from '../../../shared/websocket.js';
+import type { AgentMode, DeepReasoningEffort } from '../../../shared/websocket.js';
 
 export interface UsageInfo {
   contextPercent: number;
@@ -64,6 +64,7 @@ export interface TerminalInputProps {
   searchOpen: boolean;
   workspacePath: string | null;
   agentMode: AgentMode;
+  deepReasoningEffort: DeepReasoningEffort;
   onCycleMode: () => void;
   isModeLocked: boolean;
   hasQueuedMessage: boolean;

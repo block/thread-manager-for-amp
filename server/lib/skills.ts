@@ -122,3 +122,8 @@ export async function getAmpHelp(): Promise<SkillOutput> {
   const stdout = await runAmp(['--help']);
   return { output: stripAnsi(stdout) };
 }
+
+export async function listAgentsMd(): Promise<SkillOutput> {
+  const stdout = await runAmp(['agents-md', 'list']);
+  return { output: stripAnsi(stdout) };
+}

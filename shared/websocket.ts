@@ -23,9 +23,20 @@ export interface ToolInput {
 }
 
 // Agent mode passed with messages to control CLI --mode flag
-export type AgentMode = 'smart' | 'rush' | 'deep';
+export type AgentMode = 'smart' | 'rush' | 'deep' | 'large';
 
-export const AGENT_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep'] as const;
+export const AGENT_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep', 'large'] as const;
+
+// Deep reasoning effort levels (deep, deep², deep³)
+export type DeepReasoningEffort = 'medium' | 'high' | 'xhigh';
+
+export const DEEP_EFFORTS: readonly DeepReasoningEffort[] = ['medium', 'high', 'xhigh'] as const;
+
+export const DEEP_EFFORT_LABELS: Record<DeepReasoningEffort, string> = {
+  medium: 'deep',
+  high: 'deep²',
+  xhigh: 'deep³',
+};
 
 // Client -> Server messages
 export type WsClientMessage =
@@ -34,6 +45,7 @@ export type WsClientMessage =
       content: string;
       image?: { data: string; mediaType: string };
       mode?: AgentMode;
+      deepReasoningEffort?: DeepReasoningEffort;
     }
   | { type: 'cancel' };
 

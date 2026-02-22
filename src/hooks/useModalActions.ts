@@ -17,6 +17,7 @@ export interface UseModalActionsReturn {
   handleSkillInfo: () => void;
   handleReplayThread: (id: string) => void;
   handleCodeReview: () => void;
+  handleShowAgentsMdList: () => Promise<void>;
 }
 
 export function useModalActions(
@@ -186,6 +187,16 @@ export function useModalActions(
     modals.setCodeReviewModal({});
   }, [modals]);
 
+  const handleShowAgentsMdList = useCallback(async () => {
+    try {
+      const result = await apiGet<{ output: string }>('/api/agents-md-list');
+      modals.setOutputModal({ title: 'AGENTS.md Files', content: result.output });
+    } catch (err) {
+      console.error('Failed to list AGENTS.md files:', err);
+      showError('Failed to list AGENTS.md files');
+    }
+  }, [modals, showError]);
+
   return {
     handleShareThread,
     handleShowSkills,
@@ -201,5 +212,6 @@ export function useModalActions(
     handleSkillInfo,
     handleReplayThread,
     handleCodeReview,
+    handleShowAgentsMdList,
   };
 }

@@ -1,5 +1,15 @@
-import { Shield, Volume2, VolumeX, Zap, Rocket, Brain } from 'lucide-react';
+import {
+  Shield,
+  Volume2,
+  VolumeX,
+  Zap,
+  Rocket,
+  Brain,
+  Maximize,
+  FileText,
+} from 'lucide-react';
 import { CATEGORIES } from './categories';
+import { DEEP_EFFORT_LABELS } from '../../shared/websocket.js';
 import type { Command, CommandFactoryContext, CommandHandlers } from './types';
 
 export function createSettingsCommands(
@@ -10,12 +20,15 @@ export function createSettingsCommands(
     soundEnabled,
     toggleSound,
     agentMode,
+    deepReasoningEffort,
     onSetAgentMode,
     onToggleDeepMode,
     activeThreadModeLocked,
     showThinkingBlocks,
     onToggleThinkingBlocks,
   } = context;
+
+  const deepLabel = DEEP_EFFORT_LABELS[deepReasoningEffort];
 
   const modeLocked = activeThreadModeLocked;
 
@@ -54,15 +67,26 @@ export function createSettingsCommands(
     {
       id: 'settings-mode-deep',
       category: CATEGORIES.SETTINGS,
-      label: `set mode: deep${agentMode === 'deep' ? ' (active)' : ''}${modeLocked ? ' (locked)' : ''}`,
+      label: `set mode: deep${agentMode === 'deep' ? ` (${deepLabel})` : ''}${modeLocked ? ' (locked)' : ''}`,
       icon: <Brain size={14} />,
       action: () => onSetAgentMode?.('deep'),
       disabled: modeLocked,
     },
     {
+      id: 'settings-mode-large',
+      category: CATEGORIES.SETTINGS,
+      label: `set mode: large${agentMode === 'large' ? ' (active)' : ''}${modeLocked ? ' (locked)' : ''}`,
+      icon: <Maximize size={14} />,
+      action: () => onSetAgentMode?.('large'),
+      disabled: modeLocked,
+    },
+    {
       id: 'settings-toggle-deep',
       category: CATEGORIES.SETTINGS,
-      label: agentMode === 'deep' ? 'disable deep mode' : 'enable deep mode',
+      label:
+        agentMode === 'deep'
+          ? `cycle deep mode (${deepLabel} → ${deepLabel === 'deep³' ? 'smart' : 'next'})`
+          : 'enable deep mode',
       shortcut: 'Alt+D',
       icon: <Brain size={14} />,
       action: () => onToggleDeepMode?.(),
@@ -75,6 +99,13 @@ export function createSettingsCommands(
       shortcut: 'Alt+T',
       icon: <Brain size={14} />,
       action: () => onToggleThinkingBlocks?.(),
+    },
+    {
+      id: 'agents-md-list',
+      category: CATEGORIES.AMP,
+      label: 'agents-md: list',
+      icon: <FileText size={14} />,
+      action: () => handlers.onShowAgentsMdList?.(),
     },
   ];
 }
