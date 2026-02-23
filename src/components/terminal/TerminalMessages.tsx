@@ -287,8 +287,9 @@ export const TerminalMessages = memo(function TerminalMessages({
   const userMessageIndices = useMemo(() => {
     const map = new Map<string, number>();
     for (let i = 0; i < messages.length; i++) {
-      if (messages[i]?.type === 'user') {
-        map.set(messages[i].id, i);
+      const msg = messages[i];
+      if (msg?.type === 'user') {
+        map.set(msg.id, i);
       }
     }
     return map;
