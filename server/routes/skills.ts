@@ -143,7 +143,8 @@ export async function handleSkillRoutes(
 
   if (pathname === '/api/agents-md-list') {
     try {
-      const result = await listAgentsMd();
+      const workspace = url.searchParams.get('workspace') ?? undefined;
+      const result = await listAgentsMd(workspace);
       return jsonResponse(res, result);
     } catch (err) {
       return sendError(res, 500, (err as Error).message);

@@ -1,13 +1,4 @@
-import {
-  Shield,
-  Volume2,
-  VolumeX,
-  Zap,
-  Rocket,
-  Brain,
-  Maximize,
-  FileText,
-} from 'lucide-react';
+import { Shield, Volume2, VolumeX, Zap, Rocket, Brain, Maximize, FileText } from 'lucide-react';
 import { CATEGORIES } from './categories';
 import { DEEP_EFFORT_LABELS } from '../../shared/websocket.js';
 import type { Command, CommandFactoryContext, CommandHandlers } from './types';

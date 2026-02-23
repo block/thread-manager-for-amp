@@ -1,4 +1,5 @@
 import { join } from 'path';
+import { readdir, stat } from 'fs/promises';
 import { AMP_HOME } from './constants.js';
 import { runAmp, stripAnsi } from './utils.js';
 
@@ -123,7 +124,56 @@ export async function getAmpHelp(): Promise<SkillOutput> {
   return { output: stripAnsi(stdout) };
 }
 
-export async function listAgentsMd(): Promise<SkillOutput> {
-  const stdout = await runAmp(['agents-md', 'list']);
-  return { output: stripAnsi(stdout) };
+export async function listAgentsMd(workspacePath?: string): Promise<SkillOutput> {
+  const files: string[] = [];
+
+  // Scan common locations for AGENTS.md files
+  const searchDirs: string[] = [];
+  if (workspacePath) {
+    searchDirs.push(workspacePath);
+    searchDirs.push(join(workspacePath, '.agents'));
+    searchDirs.push(join(workspacePath, '.config', 'amp'));
+  }
+  const homeConfig = join(AMP_HOME, '.config', 'amp');
+  searchDirs.push(homeConfig);
+
+  for (const dir of searchDirs) {
+    try {
+      const entries = await readdir(dir);
+      for (const entry of entries) {
+        if (/^agents\.md$/i.test(entry)) {
+          files.push(join(dir, entry));
+        }
+      }
+    } catch {
+      // Directory doesn't exist, skip
+    }
+  }
+
+  // Also check workspace root for nested .agents/ directories
+  if (workspacePath) {
+    try {
+      const entries = await readdir(workspacePath, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+          const nested = join(workspacePath, entry.name, 'AGENTS.md');
+          try {
+            await stat(nested);
+            files.push(nested);
+          } catch {
+            // Not found
+          }
+        }
+      }
+    } catch {
+      // Skip
+    }
+  }
+
+  if (files.length === 0) {
+    return { output: 'No AGENTS.md files found.' };
+  }
+
+  const output = `Found ${files.length} AGENTS.md file(s):\n\n${files.map((f) => `  • ${f}`).join('\n')}`;
+  return { output };
 }
