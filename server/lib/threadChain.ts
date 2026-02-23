@@ -38,6 +38,7 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     ancestorIds.unshift(parentId);
     walkId = parentId;
   }
+  const rootId = walkId;
 
   // Build descendants tree (recursive, supports forks)
   function buildDescendantNode(id: string): ThreadChainNode | null {
@@ -107,7 +108,23 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     ? toChainThread(currentThread, commentMap.get(threadId))
     : null;
 
-  return { ancestors, current, descendantsTree };
+  // Build full tree from root (fresh visited set to avoid pruning siblings)
+  function buildFullTree(id: string, treeVisited: Set<string>): ThreadChainNode | null {
+    const t = threadMap.get(id);
+    if (!t || treeVisited.has(id)) return null;
+    treeVisited.add(id);
+    const childIds = parentToChildren.get(id) || [];
+    const children: ThreadChainNode[] = [];
+    for (const childId of childIds) {
+      const node = buildFullTree(childId, treeVisited);
+      if (node) children.push(node);
+    }
+    return { thread: toChainThread(t, commentMap.get(id)), children };
+  }
+
+  const root = buildFullTree(rootId, new Set<string>());
+
+  return { ancestors, current, descendantsTree, root, currentId: threadId };
 }
 
 function toChainThread(t: Thread, comment?: string): ChainThread {

@@ -4,6 +4,7 @@ import type {
   FileChange,
   ThreadGitActivity,
   ThreadChain as ThreadChainType,
+  ThreadChainNode,
   RelatedThread,
   Thread,
   GitStatus,
@@ -13,6 +14,14 @@ import type {
 } from '../../types';
 import type { Message } from '../../utils/parseMarkdown';
 import { shortenPath } from '../../utils/format';
+
+function countTreeNodes(nodes: ThreadChainNode[]): number {
+  let count = 0;
+  for (const node of nodes) {
+    count += 1 + countTreeNodes(node.children);
+  }
+  return count;
+}
 
 type TabId = 'changes' | 'git' | 'chain' | 'related' | 'artifacts' | 'skills' | 'map';
 
@@ -258,9 +267,12 @@ export function useThreadDiscovery({
       .then((data) => {
         if (!signal.aborted) {
           setChain(data);
-          const chainCount = data
-            ? (data.ancestors?.length || 0) + (data.descendantsTree?.length || 0)
-            : 0;
+          let chainCount = 0;
+          if (data?.root) {
+            chainCount = countTreeNodes(data.root.children);
+          } else if (data) {
+            chainCount = (data.ancestors?.length || 0) + (data.descendantsTree?.length || 0);
+          }
           setSummary((prev) => ({ ...prev, chainCount }));
         }
       });
