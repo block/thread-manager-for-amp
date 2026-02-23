@@ -98,6 +98,9 @@ export const ThreadRow = memo(function ThreadRow({
         <ThreadLabelEditor threadId={thread.id} initialLabels={initialLabels} compact />
       </td>
       <td className="thread-time">{thread.lastUpdated}</td>
+      <td className="thread-workspace" title={thread.workspacePath ?? undefined}>
+        {thread.workspace || '—'}
+      </td>
       <td className="thread-context">
         {thread.contextPercent !== undefined ? (
           <span className={thread.contextPercent > 80 ? 'context-warning' : ''}>
