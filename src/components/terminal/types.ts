@@ -68,6 +68,7 @@ export interface TerminalInputProps {
   onCycleMode: () => void;
   isModeLocked: boolean;
   hasQueuedMessage: boolean;
+  userMessageHistory?: string[];
 }
 
 export interface GitInfo {

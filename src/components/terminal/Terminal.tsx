@@ -277,6 +277,11 @@ export function Terminal({
 
   const displayMessages = isReplaying ? replay.replayMessages : messages;
 
+  const userMessageHistory = useMemo(
+    () => messages.filter((m) => m.type === 'user').map((m) => m.content),
+    [messages],
+  );
+
   const minimapItems: MinimapItem[] = useMemo(
     () =>
       displayMessages
@@ -588,6 +593,7 @@ export function Terminal({
         onCycleMode={cycleAgentMode}
         isModeLocked={isModeLocked}
         hasQueuedMessage={!!queuedMsg}
+        userMessageHistory={userMessageHistory}
       />
       <MessageSearchModal
         isOpen={searchOpen}

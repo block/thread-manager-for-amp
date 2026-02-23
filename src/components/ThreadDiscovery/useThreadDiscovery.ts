@@ -141,6 +141,7 @@ export interface UseThreadDiscoveryResult {
   availableSkills: AvailableSkill[];
 
   uncommittedCount: number;
+  workspacePath: string | null;
   showSourceControl: boolean;
   setShowSourceControl: (show: boolean) => void;
   viewingImageIndex: number | null;
@@ -182,6 +183,7 @@ export function useThreadDiscovery({
   const [images, setImages] = useState<ThreadImage[]>([]);
   const [savedArtifacts, setSavedArtifacts] = useState<Artifact[]>([]);
   const [uncommittedCount, setUncommittedCount] = useState(0);
+  const [workspacePath, setWorkspacePath] = useState<string | null>(null);
   const [availableSkillsCount, setAvailableSkillsCount] = useState(0);
   const [availableSkills, setAvailableSkills] = useState<AvailableSkill[]>([]);
   const [loading, setLoading] = useState(true);
@@ -291,6 +293,7 @@ export function useThreadDiscovery({
         if (!signal.aborted) {
           const threadUncommitted = data?.files?.filter((f) => f.touchedByThread).length || 0;
           setUncommittedCount(threadUncommitted);
+          if (data?.workspacePath) setWorkspacePath(data.workspacePath);
         }
       });
     /* eslint-enable @typescript-eslint/no-unnecessary-condition */
@@ -426,6 +429,7 @@ export function useThreadDiscovery({
     availableSkills,
 
     uncommittedCount,
+    workspacePath,
     showSourceControl,
     setShowSourceControl,
     viewingImageIndex,

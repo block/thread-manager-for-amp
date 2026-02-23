@@ -67,6 +67,7 @@ export function ThreadDiscovery({
     availableSkillsCount,
     availableSkills,
     uncommittedCount,
+    workspacePath,
     showSourceControl,
     setShowSourceControl,
     viewingImageIndex,
@@ -206,7 +207,9 @@ export function ThreadDiscovery({
       {activeTab && (
         <div className="discovery-panel">
           <div className="discovery-content">
-            {activeTab === 'changes' && <WhatChangedContent changes={changes} />}
+            {activeTab === 'changes' && (
+              <WhatChangedContent changes={changes} workspacePath={workspacePath} />
+            )}
             {activeTab === 'git' && gitActivity && <GitActivityContent activity={gitActivity} />}
             {activeTab === 'chain' && chain && onOpenThread && (
               <ThreadChainContent chain={chain} onOpenThread={onOpenThread} />
