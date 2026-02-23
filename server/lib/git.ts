@@ -173,7 +173,9 @@ function parseStatusPath(line: string): string {
   const filePath = line.slice(3);
   const status = line.slice(0, 2).trim();
   if (status.startsWith('R')) {
-    const arrowIdx = filePath.indexOf(' -> ');
+    // Git porcelain format: "old name -> new name" — match the last " -> " to handle
+    // filenames that themselves contain " -> "
+    const arrowIdx = filePath.lastIndexOf(' -> ');
     if (arrowIdx !== -1) {
       return filePath.slice(arrowIdx + 4);
     }
@@ -371,6 +373,7 @@ async function resolveActualWorkingDir(
   for (const filePath of touchedFiles.slice(0, 5)) {
     if (!filePath.startsWith('/')) continue;
     const dir = filePath.substring(0, filePath.lastIndexOf('/'));
+    if (!isAbsolute(dir)) continue;
     try {
       const toplevel = (
         await spawnGitAndCapture(['-C', dir, 'rev-parse', '--show-toplevel'])

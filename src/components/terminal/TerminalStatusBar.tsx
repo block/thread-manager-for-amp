@@ -9,10 +9,13 @@ export function TerminalStatusBar({ usage, gitInfo }: TerminalStatusBarProps) {
 
   const copyWorktreePath = useCallback(() => {
     if (!gitInfo?.worktreePath) return;
-    void navigator.clipboard.writeText(gitInfo.worktreePath).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
+    void navigator.clipboard
+      .writeText(gitInfo.worktreePath)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => {});
   }, [gitInfo]);
 
   return (

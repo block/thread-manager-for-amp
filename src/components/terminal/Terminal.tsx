@@ -496,7 +496,7 @@ export function Terminal({
           messageRefs={messageRefs}
           onLoadMore={loadMoreMessages}
           onViewImage={setViewingImage}
-          showThinkingBlocks={showThinkingBlocks && (threadMode || agentMode) === 'deep'}
+          showThinkingBlocks={showThinkingBlocks}
           onEditMessage={handleEditMessage}
           onUndoLastTurn={handleUndoLastTurn}
           onOpenThreadId={handleOpenThreadById}
