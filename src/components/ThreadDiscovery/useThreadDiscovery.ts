@@ -14,7 +14,7 @@ import type {
 import type { Message } from '../../utils/parseMarkdown';
 import { shortenPath } from '../../utils/format';
 
-type TabId = 'changes' | 'git' | 'chain' | 'related' | 'artifacts' | 'skills';
+type TabId = 'changes' | 'git' | 'chain' | 'related' | 'artifacts' | 'skills' | 'map';
 
 interface SessionImage {
   data: string;

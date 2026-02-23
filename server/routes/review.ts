@@ -1,6 +1,11 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { sendError, parseBody, handleRouteError } from '../lib/utils.js';
-import { runReview, streamReview, type ReviewOptions } from '../lib/review.js';
+import { sendError, parseBody, handleRouteError, getParam, jsonResponse } from '../lib/utils.js';
+import {
+  runReview,
+  streamReview,
+  discoverReviewChecks,
+  type ReviewOptions,
+} from '../lib/review.js';
 
 interface ReviewBody {
   workspace?: string;
@@ -15,6 +20,21 @@ export async function handleReviewRoutes(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<boolean> {
+  if (url.pathname === '/api/review-checks') {
+    if (req.method !== 'GET') {
+      return sendError(res, 405, 'Method not allowed');
+    }
+    try {
+      const workspace = getParam(url, 'workspace');
+      const checks = await discoverReviewChecks(workspace);
+      return jsonResponse(res, checks);
+    } catch (err) {
+      const message = (err as Error).message;
+      const status = message.includes('required') ? 400 : 500;
+      return sendError(res, status, message);
+    }
+  }
+
   if (url.pathname !== '/api/review') return false;
 
   if (req.method !== 'POST') {

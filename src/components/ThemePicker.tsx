@@ -8,6 +8,14 @@ import {
   saveTheme,
   type ThemePreset,
 } from '../lib/theme';
+import { apiGet } from '../api/client';
+
+interface CustomThemeData {
+  name: string;
+  bg: string;
+  fg: string;
+  accent: string;
+}
 
 interface ThemePickerProps {
   currentTheme: string;
@@ -19,6 +27,15 @@ export function ThemePicker({ currentTheme, onThemeChange }: ThemePickerProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
+  const [customThemes, setCustomThemes] = useState<ThemePreset[]>([]);
+
+  useEffect(() => {
+    void apiGet<CustomThemeData[]>('/api/custom-themes')
+      .then((data) =>
+        setCustomThemes(data.map((t) => ({ name: t.name, bg: t.bg, fg: t.fg, accent: t.accent }))),
+      )
+      .catch(() => setCustomThemes([]));
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -107,6 +124,29 @@ export function ThemePicker({ currentTheme, onThemeChange }: ThemePickerProps) {
             ))}
           </div>
         </div>
+
+        {customThemes.length > 0 && (
+          <div className="theme-picker-section">
+            <div className="theme-picker-section-label">Custom</div>
+            <div className="theme-picker-grid">
+              {customThemes.map((preset) => (
+                <button
+                  key={preset.name}
+                  className={`theme-picker-item ${currentTheme === preset.name ? 'active' : ''}`}
+                  onClick={() => handleSelect(preset)}
+                  title={preset.name}
+                >
+                  <div className="theme-preview">
+                    <div className="theme-preview-bg" style={{ background: preset.bg }} />
+                    <div className="theme-preview-accent" style={{ background: preset.accent }} />
+                  </div>
+                  <span className="theme-name">{preset.name}</span>
+                  {currentTheme === preset.name && <Check size={14} className="theme-check" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>,
       document.body,
     );

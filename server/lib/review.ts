@@ -1,7 +1,18 @@
 import { spawn } from 'child_process';
 import type { ServerResponse } from 'http';
+import { readdir, readFile } from 'fs/promises';
+import { join } from 'path';
 import { AMP_BIN } from './constants.js';
 import { stripAnsi, runAmp } from './utils.js';
+
+export interface ReviewCheck {
+  name: string;
+  description: string;
+  severity?: string;
+  tools?: string[];
+  globs?: string[];
+  filePath: string;
+}
 
 export interface ReviewOptions {
   workspace: string;
@@ -89,4 +100,64 @@ export function streamReview(options: ReviewOptions, res: ServerResponse): void 
       child.kill('SIGTERM');
     }
   });
+}
+
+export async function discoverReviewChecks(workspace: string): Promise<ReviewCheck[]> {
+  const checksDir = join(workspace, '.agents', 'checks');
+  let entries: string[];
+  try {
+    entries = await readdir(checksDir);
+  } catch {
+    return [];
+  }
+
+  const checks: ReviewCheck[] = [];
+  for (const entry of entries) {
+    if (!entry.endsWith('.md')) continue;
+    const filePath = join(checksDir, entry);
+    try {
+      const content = await readFile(filePath, 'utf-8');
+      const check = parseCheckFrontmatter(content, filePath);
+      if (check) checks.push(check);
+    } catch {
+      // Skip unreadable files
+    }
+  }
+  return checks;
+}
+
+function parseCheckFrontmatter(content: string, filePath: string): ReviewCheck | null {
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match?.[1]) return null;
+
+  const yaml = match[1];
+  const get = (key: string): string | undefined => {
+    const m = yaml.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'));
+    return m?.[1]?.trim();
+  };
+  const getList = (key: string): string[] | undefined => {
+    const idx = yaml.indexOf(`${key}:`);
+    if (idx === -1) return undefined;
+    const items: string[] = [];
+    const lines = yaml.slice(idx).split('\n').slice(1);
+    for (const line of lines) {
+      const itemMatch = line.match(/^\s*-\s+(.+)$/);
+      if (itemMatch?.[1]) items.push(itemMatch[1].trim().replace(/^["']|["']$/g, ''));
+      else break;
+    }
+    return items.length > 0 ? items : undefined;
+  };
+
+  const name = get('name');
+  const description = get('description');
+  if (!name || !description) return null;
+
+  return {
+    name,
+    description,
+    severity: get('severity'),
+    tools: getList('tools'),
+    globs: getList('globs'),
+    filePath,
+  };
 }
