@@ -6,7 +6,7 @@ A local web UI for managing [Amp](https://ampcode.com) AI coding agent threads �
 
 ### Prerequisites
 
-- **Node.js** 25+ (needed to compile native modules like `better-sqlite3` and `node-pty`)
+- **Node.js** 24+ (needed to compile native modules like `better-sqlite3` and `node-pty`)
 - **pnpm** 10+ — install with `npm install -g pnpm`
 - **[Amp CLI](https://ampcode.com)** installed and authenticated (`amp` command available)
 
@@ -37,7 +37,7 @@ When working with multiple Amp threads simultaneously — across repos, features
 
 - **Table view** — sortable, filterable thread listing with bulk operations
 - **Card view** — detailed cards grouped by date
-- **Kanban view** — drag threads between status columns (Active, Blocked, Paused, Done)
+- **Kanban view** — organize threads across status columns (Active, Blocked, Paused, Done)
 - Thread status tracking with blocker relationships between threads
 - Labels and linked issue URLs for organization
 - Handoff support to create continuation threads
@@ -129,19 +129,23 @@ When working with multiple Amp threads simultaneously — across repos, features
 
 ## Keyboard Shortcuts
 
-| Shortcut       | Action                    |
-| -------------- | ------------------------- |
-| `⌘O`           | Command palette           |
-| `⌘N`           | New thread                |
-| `⌘R`           | Refresh threads           |
-| `⌘W`           | Close current thread      |
-| `⌘B`           | Toggle sidebar            |
-| `⌘H`           | Handoff current thread    |
-| `⌘T`           | Open shell terminal       |
-| `j/k` or `↓/↑` | Navigate thread list      |
-| `Enter`        | Open focused thread       |
-| `x`            | Toggle selection          |
-| `Esc`          | Close modal / clear focus |
+| Shortcut          | Action                           |
+| ----------------- | -------------------------------- |
+| `Ctrl/⌘+O`        | Command palette                  |
+| `Alt+N`           | New thread                       |
+| `Ctrl/⌘+R`        | Refresh threads / prompt history |
+| `Ctrl/⌘+W`        | Close current thread             |
+| `Ctrl/⌘+B`        | Toggle sidebar                   |
+| `Ctrl/⌘+H`        | Handoff current thread           |
+| `Ctrl+T`          | Open shell terminal              |
+| `Ctrl+M`          | Thread map                       |
+| `Alt+D`           | Toggle deep mode                 |
+| `Alt+L`           | Toggle layout                    |
+| `Alt+[` / `Alt+]` | Switch tabs                      |
+| `j/k` or `↓/↑`    | Navigate thread list             |
+| `Enter`           | Open focused thread              |
+| `x`               | Toggle selection                 |
+| `Esc`             | Close modal / clear focus        |
 
 ## Scripts
 
@@ -150,7 +154,7 @@ When working with multiple Amp threads simultaneously — across repos, features
 | `pnpm dev`        | Start dev server (Vite frontend + Node backend) |
 | `pnpm build`      | Build for production                            |
 | `pnpm start`      | Build and serve production                      |
-| `pnpm check`      | Lint + typecheck + build                        |
+| `pnpm check`      | Format check + lint + typecheck + build         |
 | `pnpm lint`       | ESLint                                          |
 | `pnpm typecheck`  | TypeScript type check                           |
 | `pnpm test`       | Run tests (Vitest)                              |
@@ -176,7 +180,7 @@ These packages require compilation. Make sure you have:
 
 - **macOS**: Xcode Command Line Tools (`xcode-select --install`)
 - **Linux**: `build-essential`, `python3`
-- Node.js 25+ (check with `node -v`)
+- Node.js 24+ (check with `node -v`)
 
 If builds fail, try: `pnpm rebuild`
 

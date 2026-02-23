@@ -6,7 +6,7 @@ Thank you for your interest in contributing! This project is a local web UI for 
 
 ### Prerequisites
 
-- **Node.js** 25+ (native modules require compilation)
+- **Node.js** 24+ (native modules require compilation)
 - **pnpm** 10+ (`npm install -g pnpm`)
 - **[Amp CLI](https://ampcode.com)** installed and authenticated
 
@@ -27,7 +27,7 @@ Open http://localhost:5173
 2. Create a feature branch: `git checkout -b my-feature`
 3. Make your changes
 4. Run tests: `pnpm test`
-5. Run checks: `pnpm check` (lint + typecheck + build)
+5. Run checks: `pnpm check` (format check + lint + typecheck + build)
 6. Commit with a descriptive message
 7. Open a pull request
 
