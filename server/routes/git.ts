@@ -1,11 +1,22 @@
-import type { ServerResponse } from 'http';
-import { jsonResponse, sendError, getParam } from '../lib/utils.js';
-import { getWorkspaceGitStatus, getWorkspaceGitStatusDirect, getFileDiff } from '../lib/git.js';
+import type { IncomingMessage, ServerResponse } from 'http';
+import {
+  jsonResponse,
+  getParam,
+  parseBody,
+  handleRouteError,
+  BadRequestError,
+} from '../lib/utils.js';
+import {
+  getWorkspaceGitStatus,
+  getWorkspaceGitStatusDirect,
+  getFileDiff,
+  getWorkspaceGitInfo,
+} from '../lib/git.js';
 import { getThreadGitActivity } from '../lib/git-activity.js';
 
 export async function handleGitRoutes(
   url: URL,
-  _req: unknown,
+  req: IncomingMessage,
   res: ServerResponse,
 ): Promise<boolean> {
   const pathname = url.pathname;
@@ -17,9 +28,7 @@ export async function handleGitRoutes(
       const activity = await getThreadGitActivity(threadId, refresh);
       return jsonResponse(res, activity);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      const status = message.includes('required') ? 400 : 500;
-      return sendError(res, status, message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -29,9 +38,7 @@ export async function handleGitRoutes(
       const gitStatus = await getWorkspaceGitStatus(threadId);
       return jsonResponse(res, gitStatus);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      const status = message.includes('required') ? 400 : 500;
-      return sendError(res, status, message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -41,9 +48,26 @@ export async function handleGitRoutes(
       const gitStatus = await getWorkspaceGitStatusDirect(workspacePath);
       return jsonResponse(res, gitStatus);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      const status = message.includes('required') ? 400 : 500;
-      return sendError(res, status, message);
+      return handleRouteError(res, err);
+    }
+  }
+
+  if (pathname === '/api/workspace-git-info') {
+    try {
+      if (req.method === 'POST') {
+        const body = await parseBody<{
+          workspace?: string;
+          touchedFiles?: string[];
+        }>(req);
+        if (!body.workspace) throw new BadRequestError('workspace required');
+        const info = await getWorkspaceGitInfo(body.workspace, body.touchedFiles);
+        return jsonResponse(res, info);
+      }
+      const workspacePath = getParam(url, 'workspace');
+      const info = await getWorkspaceGitInfo(workspacePath);
+      return jsonResponse(res, info);
+    } catch (err) {
+      return handleRouteError(res, err);
     }
   }
 
@@ -54,9 +78,7 @@ export async function handleGitRoutes(
       const diff = await getFileDiff(filePath, workspacePath);
       return jsonResponse(res, diff);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      const status = message.includes('required') ? 400 : 500;
-      return sendError(res, status, message);
+      return handleRouteError(res, err);
     }
   }
 

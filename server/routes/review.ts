@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { sendError, parseBody } from '../lib/utils.js';
+import { sendError, parseBody, handleRouteError } from '../lib/utils.js';
 import { runReview, streamReview, type ReviewOptions } from '../lib/review.js';
 
 interface ReviewBody {
@@ -43,8 +43,6 @@ export async function handleReviewRoutes(
     res.end(JSON.stringify({ output, success: true }));
     return true;
   } catch (err) {
-    const message = (err as Error).message;
-    const status = message.includes('required') ? 400 : 500;
-    return sendError(res, status, message);
+    return handleRouteError(res, err);
   }
 }

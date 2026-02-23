@@ -39,7 +39,7 @@ export type WsClientMessage =
 
 // Server -> Client messages
 export type WsServerMessage =
-  | { type: 'ready'; threadId: string; mode?: AgentMode }
+  | { type: 'ready'; threadId: string; mode?: AgentMode; interrupted?: boolean }
   | {
       type: 'usage';
       contextPercent: number;

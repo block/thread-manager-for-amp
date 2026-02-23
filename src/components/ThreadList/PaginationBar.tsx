@@ -48,10 +48,11 @@ export function PaginationBar({
           <kbd>⌘O</kbd> commands
         </span>
         <span className="hint">
-          <kbd>⌘N</kbd> new
+          <kbd>Alt+N</kbd> new
         </span>
         <span className="hint">
-          <kbd>⌘R</kbd> refresh
+          <kbd>Alt+[</kbd>
+          <kbd>]</kbd> switch
         </span>
       </div>
 
