@@ -1,5 +1,5 @@
 import type { WsClientMessage, ShellClientMessage } from './websocket.js';
-import { AGENT_MODES } from './websocket.js';
+import { AGENT_MODES, DEEP_EFFORTS } from './websocket.js';
 
 /**
  * Runtime type guard for WsClientMessage.
@@ -14,6 +14,13 @@ export function isWsClientMessage(data: unknown): data is WsClientMessage {
     if (typeof obj.content !== 'string') return false;
     if (obj.mode !== undefined) {
       if (typeof obj.mode !== 'string' || !AGENT_MODES.includes(obj.mode as never)) return false;
+    }
+    if (obj.deepReasoningEffort !== undefined) {
+      if (
+        typeof obj.deepReasoningEffort !== 'string' ||
+        !DEEP_EFFORTS.includes(obj.deepReasoningEffort as never)
+      )
+        return false;
     }
     return true;
   }

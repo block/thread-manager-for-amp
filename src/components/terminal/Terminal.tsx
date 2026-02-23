@@ -7,7 +7,7 @@ import { apiGet, apiPatch, apiPost } from '../../api/client';
 import type { ThreadMetadata } from '../../types';
 import type { Message } from '../../utils/parseMarkdown';
 import { extractIssueUrl } from '../../utils/issueTracker';
-import type { AgentMode } from '../../../shared/websocket.js';
+import type { AgentMode, DeepReasoningEffort } from '../../../shared/websocket.js';
 import type { TerminalProps, GitInfo } from './types';
 import { useTerminalWebSocket } from './useTerminalWebSocket';
 import { useTerminalMessages } from './useTerminalMessages';
@@ -41,6 +41,7 @@ export function Terminal({
   const { setStatus: setThreadStatus, clearStatus: clearThreadStatus } = useThreadStatus();
   const {
     agentMode,
+    deepReasoningEffort,
     cycleAgentMode,
     showThinkingBlocks,
     setActiveThreadModeLocked,
@@ -98,6 +99,7 @@ export function Terminal({
     content: string;
     image?: { data: string; mediaType: string };
     mode: AgentMode;
+    deepReasoningEffort?: DeepReasoningEffort;
   } | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -169,7 +171,12 @@ export function Terminal({
     prevRunningRef.current = isRunning || isSending;
 
     if (wasRunning && !isRunning && !isSending && queuedMsg) {
-      wsSendMessage(queuedMsg.content, queuedMsg.image, queuedMsg.mode);
+      wsSendMessage(
+        queuedMsg.content,
+        queuedMsg.image,
+        queuedMsg.mode,
+        queuedMsg.deepReasoningEffort,
+      );
       setQueuedMsg(null);
       setMessages((prev) => prev.map((m) => (m.queued ? { ...m, queued: false } : m)));
     }
@@ -310,7 +317,12 @@ export function Terminal({
 
     // Force-send: empty input + queued message → interrupt and send now
     if (!input.trim() && !pendingImage && queuedMsg && isActive) {
-      wsSendMessage(queuedMsg.content, queuedMsg.image, queuedMsg.mode);
+      wsSendMessage(
+        queuedMsg.content,
+        queuedMsg.image,
+        queuedMsg.mode,
+        queuedMsg.deepReasoningEffort,
+      );
       setQueuedMsg(null);
       setMessages((prev) => prev.map((m) => (m.queued ? { ...m, queued: false } : m)));
       return;
@@ -335,7 +347,12 @@ export function Terminal({
           },
         ];
       });
-      setQueuedMsg({ content: messageText, image: pendingImage || undefined, mode: agentMode });
+      setQueuedMsg({
+        content: messageText,
+        image: pendingImage || undefined,
+        mode: agentMode,
+        deepReasoningEffort: agentMode === 'deep' ? deepReasoningEffort : undefined,
+      });
       if (pendingImage) addSessionImage(pendingImage);
       clearInput();
       return;
@@ -345,7 +362,12 @@ export function Terminal({
       ...prev,
       { id: generateId(), type: 'user', content: messageText, image: pendingImage || undefined },
     ]);
-    wsSendMessage(messageText, pendingImage || undefined, agentMode);
+    wsSendMessage(
+      messageText,
+      pendingImage || undefined,
+      agentMode,
+      agentMode === 'deep' ? deepReasoningEffort : undefined,
+    );
     if (pendingImage) addSessionImage(pendingImage);
     clearInput();
 
@@ -377,6 +399,7 @@ export function Terminal({
     threadId,
     setMetadata,
     agentMode,
+    deepReasoningEffort,
   ]);
 
   const handleEditMessage = useCallback(
@@ -561,6 +584,7 @@ export function Terminal({
         searchOpen={searchOpen}
         workspacePath={thread.workspacePath ?? null}
         agentMode={effectiveMode}
+        deepReasoningEffort={deepReasoningEffort}
         onCycleMode={cycleAgentMode}
         isModeLocked={isModeLocked}
         hasQueuedMessage={!!queuedMsg}

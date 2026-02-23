@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 import { useAppSettings } from '../hooks/useAppSettings';
 import type { ViewMode } from '../types';
-import type { AgentMode } from '../../shared/websocket.js';
+import type { AgentMode, DeepReasoningEffort } from '../../shared/websocket.js';
 
 type TerminalLayout = 'tabs' | 'split' | 'grid';
 
@@ -13,6 +13,7 @@ interface SettingsContextValue {
   currentTheme: string;
   scmRefreshKey: number;
   agentMode: AgentMode;
+  deepReasoningEffort: DeepReasoningEffort;
 
   handleViewModeChange: (mode: ViewMode) => void;
   handleToggleLayout: () => void;

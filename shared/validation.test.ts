@@ -56,6 +56,7 @@ describe('isWsClientMessage', () => {
     expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'smart' })).toBe(true);
     expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'rush' })).toBe(true);
     expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'deep' })).toBe(true);
+    expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'large' })).toBe(true);
   });
 
   it('accepts a message without mode (optional)', () => {
@@ -66,6 +67,49 @@ describe('isWsClientMessage', () => {
     expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'turbo' })).toBe(false);
     expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 123 })).toBe(false);
     expect(isWsClientMessage({ type: 'message', content: 'hello', mode: '' })).toBe(false);
+  });
+
+  it('accepts a message with valid deepReasoningEffort', () => {
+    expect(
+      isWsClientMessage({
+        type: 'message',
+        content: 'hello',
+        mode: 'deep',
+        deepReasoningEffort: 'medium',
+      }),
+    ).toBe(true);
+    expect(
+      isWsClientMessage({
+        type: 'message',
+        content: 'hello',
+        mode: 'deep',
+        deepReasoningEffort: 'high',
+      }),
+    ).toBe(true);
+    expect(
+      isWsClientMessage({
+        type: 'message',
+        content: 'hello',
+        mode: 'deep',
+        deepReasoningEffort: 'xhigh',
+      }),
+    ).toBe(true);
+  });
+
+  it('accepts a message without deepReasoningEffort (optional)', () => {
+    expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'deep' })).toBe(true);
+  });
+
+  it('rejects a message with invalid deepReasoningEffort', () => {
+    expect(
+      isWsClientMessage({ type: 'message', content: 'hello', deepReasoningEffort: 'ultra' }),
+    ).toBe(false);
+    expect(isWsClientMessage({ type: 'message', content: 'hello', deepReasoningEffort: 123 })).toBe(
+      false,
+    );
+    expect(isWsClientMessage({ type: 'message', content: 'hello', deepReasoningEffort: '' })).toBe(
+      false,
+    );
   });
 });
 

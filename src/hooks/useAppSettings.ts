@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { ViewMode } from '../types';
-import type { AgentMode } from '../../shared/websocket.js';
-import { AGENT_MODES } from '../../shared/websocket.js';
+import type { AgentMode, DeepReasoningEffort } from '../../shared/websocket.js';
+import { AGENT_MODES, DEEP_EFFORTS } from '../../shared/websocket.js';
 import {
   applyTheme,
   loadSavedTheme,
@@ -33,6 +33,7 @@ interface UseAppSettingsReturn {
   triggerScmRefresh: () => void;
 
   agentMode: AgentMode;
+  deepReasoningEffort: DeepReasoningEffort;
   handleSetAgentMode: (mode: AgentMode) => void;
   toggleDeepMode: () => void;
   cycleAgentMode: () => void;
@@ -70,6 +71,13 @@ export function useAppSettings(): UseAppSettingsReturn {
   const [agentMode, setAgentMode] = useState<AgentMode>(() => {
     const saved = localStorage.getItem('agentMode');
     return AGENT_MODES.includes(saved as AgentMode) ? (saved as AgentMode) : 'smart';
+  });
+
+  const [deepReasoningEffort, setDeepReasoningEffort] = useState<DeepReasoningEffort>(() => {
+    const saved = localStorage.getItem('deepReasoningEffort');
+    return DEEP_EFFORTS.includes(saved as DeepReasoningEffort)
+      ? (saved as DeepReasoningEffort)
+      : 'medium';
   });
 
   const [showThinkingBlocks, setShowThinkingBlocks] = useState<boolean>(() => {
@@ -118,13 +126,36 @@ export function useAppSettings(): UseAppSettingsReturn {
   const handleSetAgentMode = useCallback((mode: AgentMode) => {
     setAgentMode(mode);
     localStorage.setItem('agentMode', mode);
+    if (mode !== 'deep') {
+      setDeepReasoningEffort('medium');
+      localStorage.setItem('deepReasoningEffort', 'medium');
+    }
   }, []);
 
   const toggleDeepMode = useCallback(() => {
-    setAgentMode((prev) => {
-      const next = prev === 'deep' ? 'smart' : 'deep';
-      localStorage.setItem('agentMode', next);
-      return next;
+    setAgentMode((prevMode) => {
+      if (prevMode !== 'deep') {
+        // Entering deep mode at medium effort
+        localStorage.setItem('agentMode', 'deep');
+        setDeepReasoningEffort('medium');
+        localStorage.setItem('deepReasoningEffort', 'medium');
+        return 'deep';
+      }
+      // Already in deep mode — cycle effort: medium → high → xhigh → back to smart
+      setDeepReasoningEffort((prevEffort) => {
+        const idx = DEEP_EFFORTS.indexOf(prevEffort);
+        if (idx < DEEP_EFFORTS.length - 1) {
+          const nextEffort = DEEP_EFFORTS[idx + 1] ?? 'medium';
+          localStorage.setItem('deepReasoningEffort', nextEffort);
+          return nextEffort;
+        }
+        // At xhigh — cycle back to smart
+        localStorage.setItem('agentMode', 'smart');
+        localStorage.setItem('deepReasoningEffort', 'medium');
+        setAgentMode('smart');
+        return 'medium';
+      });
+      return prevMode;
     });
   }, []);
 
@@ -161,6 +192,7 @@ export function useAppSettings(): UseAppSettingsReturn {
     scmRefreshKey,
     triggerScmRefresh,
     agentMode,
+    deepReasoningEffort,
     handleSetAgentMode,
     toggleDeepMode,
     cycleAgentMode,

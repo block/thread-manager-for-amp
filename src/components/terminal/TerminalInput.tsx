@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import type { TerminalInputProps } from './types';
+import { DEEP_EFFORT_LABELS } from '../../../shared/websocket.js';
 import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
 import { MentionAutocomplete, type MentionAutocompleteHandle } from './MentionAutocomplete';
 
@@ -36,6 +37,7 @@ export function TerminalInput({
   searchOpen,
   workspacePath,
   agentMode,
+  deepReasoningEffort,
   onCycleMode,
   isModeLocked,
   hasQueuedMessage,
@@ -139,6 +141,10 @@ export function TerminalInput({
   const isActive = isSending || isRunning;
   const statusMessage = getStatusMessage(agentStatus);
 
+  const modeLabel = agentMode === 'deep' ? DEEP_EFFORT_LABELS[deepReasoningEffort] : agentMode;
+  const modeIcon =
+    agentMode === 'deep' ? '🧠' : agentMode === 'rush' ? '🚀' : agentMode === 'large' ? '🐘' : '⚡';
+
   return (
     <div className="terminal-input-area">
       {mentionState.active && (
@@ -203,15 +209,13 @@ export function TerminalInput({
         disabled={isModeLocked}
         title={
           isModeLocked
-            ? `Mode: ${agentMode} (locked for this thread)`
-            : `Mode: ${agentMode} (click to change)`
+            ? `Mode: ${modeLabel} (locked for this thread)`
+            : `Mode: ${modeLabel} (click to change)`
         }
-        aria-label={`Agent mode: ${agentMode}${isModeLocked ? ' (locked)' : ''}`}
+        aria-label={`Agent mode: ${modeLabel}${isModeLocked ? ' (locked)' : ''}`}
       >
-        <span className="mode-icon">
-          {agentMode === 'deep' ? '🧠' : agentMode === 'rush' ? '🚀' : '⚡'}
-        </span>
-        <span className="mode-label">{agentMode}</span>
+        <span className="mode-icon">{modeIcon}</span>
+        <span className="mode-label">{modeLabel}</span>
       </button>
       <button
         onClick={onSend}

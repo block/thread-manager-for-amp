@@ -24,6 +24,7 @@ export function useCommands(options: UseCommandsOptions): Command[] {
   const hasActiveThread = !!activeThreadId;
   const {
     agentMode,
+    deepReasoningEffort,
     handleSetAgentMode,
     toggleDeepMode,
     activeThreadModeLocked,
@@ -64,6 +65,7 @@ export function useCommands(options: UseCommandsOptions): Command[] {
       soundEnabled,
       toggleSound,
       agentMode,
+      deepReasoningEffort,
       onSetAgentMode: handleSetAgentMode,
       onToggleDeepMode: toggleDeepMode,
       activeThreadModeLocked,
@@ -84,6 +86,7 @@ export function useCommands(options: UseCommandsOptions): Command[] {
     soundEnabled,
     toggleSound,
     agentMode,
+    deepReasoningEffort,
     handleSetAgentMode,
     toggleDeepMode,
     activeThreadModeLocked,

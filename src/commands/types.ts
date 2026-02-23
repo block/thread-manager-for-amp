@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { AgentMode } from '../../shared/websocket.js';
+import type { AgentMode, DeepReasoningEffort } from '../../shared/websocket.js';
 
 export interface Command {
   id: string;
@@ -51,6 +51,7 @@ export interface UseCommandsOptions {
   onCodeReview?: () => void;
   onOpenPromptHistory?: () => void;
   onUndoLastTurn?: () => void;
+  onShowAgentsMdList?: () => void;
 }
 
 export interface CommandFactoryContext {
@@ -60,6 +61,7 @@ export interface CommandFactoryContext {
   soundEnabled: boolean;
   toggleSound: () => void;
   agentMode: AgentMode;
+  deepReasoningEffort: DeepReasoningEffort;
   onSetAgentMode?: (mode: AgentMode) => void;
   onToggleDeepMode?: () => void;
   activeThreadModeLocked: boolean;
