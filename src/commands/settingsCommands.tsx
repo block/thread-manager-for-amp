@@ -9,6 +9,7 @@ import {
   FileText,
   Info,
   DollarSign,
+  FlaskConical,
 } from 'lucide-react';
 import { CATEGORIES } from './categories';
 import { DEEP_EFFORT_LABELS } from '../../shared/websocket.js';
@@ -41,6 +42,13 @@ export function createSettingsCommands(
       label: 'list',
       icon: <Shield size={14} />,
       action: () => handlers.onShowPermissions?.(),
+    },
+    {
+      id: 'permissions-test',
+      category: CATEGORIES.PERMISSIONS,
+      label: 'test',
+      icon: <FlaskConical size={14} />,
+      action: () => handlers.onPermissionsTest?.(),
     },
 
     {

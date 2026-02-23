@@ -9,7 +9,10 @@ import {
   listTools,
   getMcpStatus,
   listMcp,
+  addMcp,
+  approveMcp,
   listPermissions,
+  testPermission,
   getSettingsPath,
   getAmpHelp,
   listAgentsMd,
@@ -24,6 +27,20 @@ interface SkillAddBody {
 
 interface SkillRemoveBody {
   name?: string;
+}
+
+interface McpAddBody {
+  name?: string;
+  source?: string;
+}
+
+interface McpApproveBody {
+  name?: string;
+}
+
+interface PermissionsTestBody {
+  tool?: string;
+  cmd?: string;
 }
 
 export async function handleSkillRoutes(
@@ -118,12 +135,65 @@ export async function handleSkillRoutes(
     }
   }
 
+  if (pathname === '/api/mcp-add') {
+    if (req.method !== 'POST') {
+      return sendError(res, 405, 'Method not allowed');
+    }
+    try {
+      const body = await parseBody<McpAddBody>(req);
+      const { name, source } = body;
+      if (!name) throw new Error('name required');
+      if (!source) throw new Error('source required');
+      const result = await addMcp(name, source);
+      return jsonResponse(res, result);
+    } catch (err) {
+      const message = (err as Error).message;
+      const status = message.includes('required') ? 400 : 500;
+      return sendError(res, status, message);
+    }
+  }
+
+  if (pathname === '/api/mcp-approve') {
+    if (req.method !== 'POST') {
+      return sendError(res, 405, 'Method not allowed');
+    }
+    try {
+      const body = await parseBody<McpApproveBody>(req);
+      const { name } = body;
+      if (!name) throw new Error('name required');
+      const result = await approveMcp(name);
+      return jsonResponse(res, result);
+    } catch (err) {
+      const message = (err as Error).message;
+      const status = message.includes('required') ? 400 : 500;
+      return sendError(res, status, message);
+    }
+  }
+
   if (pathname === '/api/permissions-list') {
     try {
       const result = await listPermissions();
       return jsonResponse(res, result);
     } catch (err) {
       return handleRouteError(res, err);
+    }
+  }
+
+  if (pathname === '/api/permissions-test') {
+    if (req.method !== 'POST') {
+      return sendError(res, 405, 'Method not allowed');
+    }
+    try {
+      const body = await parseBody<PermissionsTestBody>(req);
+      const { tool, cmd } = body;
+      if (!tool) throw new Error('tool required');
+      if (!cmd) throw new Error('cmd required');
+      const result = await testPermission(tool, cmd);
+      return jsonResponse(res, result);
+    } catch (err) {
+      const message = (err as Error).message;
+      const status = message.includes('required') ? 400 : 500;
+      return sendError(res, status, message);
     }
   }
 
