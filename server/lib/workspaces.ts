@@ -7,6 +7,7 @@ import { join } from 'path';
 import { homedir } from 'os';
 import type { KnownWorkspace } from '../../shared/types.js';
 import { THREADS_DIR } from './threadTypes.js';
+import { parseFileUri } from './utils.js';
 
 interface ThreadListResult {
   threads: Array<{
@@ -69,7 +70,7 @@ export async function getKnownWorkspaces(getThreadsFn: GetThreadsFn): Promise<Kn
 
       for (const tree of trees) {
         const uri = tree.uri || tree.path;
-        const path = uri?.replace('file://', '');
+        const path = parseFileUri(uri);
         if (path && !workspaceMap.has(path)) {
           workspaceMap.set(path, {
             path,

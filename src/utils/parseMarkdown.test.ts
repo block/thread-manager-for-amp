@@ -275,6 +275,48 @@ Hi there`;
     expect(a.map((m) => m.id)).toEqual(b.map((m) => m.id));
   });
 
+  it('extracts toolId from tool_use and tool_result blocks', () => {
+    const md = `# Thread
+
+## Assistant
+
+**Tool Use:** \`handoff\` <!--toolId:toolu_abc123-->
+\`\`\`json
+{"goal": "Continue work"}
+\`\`\`
+
+## User
+
+**Tool Result:** \`toolu_abc123\`
+\`\`\`
+{"newThreadID": "T-new-thread"}
+\`\`\``;
+    const messages = parseMarkdownHistory(md);
+    expect(messages).toHaveLength(2);
+    const toolUse = at(messages, 0);
+    expect(toolUse.type).toBe('tool_use');
+    expect(toolUse.toolId).toBe('toolu_abc123');
+    expect(toolUse.toolName).toBe('handoff');
+    const toolResult = at(messages, 1);
+    expect(toolResult.type).toBe('tool_result');
+    expect(toolResult.toolId).toBe('toolu_abc123');
+  });
+
+  it('parses tool_use without toolId comment (backwards compat)', () => {
+    const md = `# Thread
+
+## Assistant
+
+**Tool Use:** \`Read\`
+\`\`\`json
+{"path": "/tmp/file.ts"}
+\`\`\``;
+    const messages = parseMarkdownHistory(md);
+    expect(messages).toHaveLength(1);
+    expect(at(messages, 0).toolId).toBeUndefined();
+    expect(at(messages, 0).toolName).toBe('Read');
+  });
+
   it('handles section with no content after header', () => {
     const md = `# Thread
 

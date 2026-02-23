@@ -1,5 +1,17 @@
-import { Shield, Settings, Volume2, VolumeX, Zap, Rocket, Brain } from 'lucide-react';
+import {
+  Shield,
+  Volume2,
+  VolumeX,
+  Zap,
+  Rocket,
+  Brain,
+  Maximize,
+  FileText,
+  Info,
+  DollarSign,
+} from 'lucide-react';
 import { CATEGORIES } from './categories';
+import { DEEP_EFFORT_LABELS } from '../../shared/websocket.js';
 import type { Command, CommandFactoryContext, CommandHandlers } from './types';
 
 export function createSettingsCommands(
@@ -10,12 +22,15 @@ export function createSettingsCommands(
     soundEnabled,
     toggleSound,
     agentMode,
+    deepReasoningEffort,
     onSetAgentMode,
     onToggleDeepMode,
     activeThreadModeLocked,
     showThinkingBlocks,
     onToggleThinkingBlocks,
   } = context;
+
+  const deepLabel = DEEP_EFFORT_LABELS[deepReasoningEffort];
 
   const modeLocked = activeThreadModeLocked;
 
@@ -27,28 +42,7 @@ export function createSettingsCommands(
       icon: <Shield size={14} />,
       action: () => handlers.onShowPermissions?.(),
     },
-    {
-      id: 'permissions-open-user',
-      category: CATEGORIES.PERMISSIONS,
-      label: 'open in editor (user)',
-      icon: <Shield size={14} />,
-      action: () => handlers.onOpenPermissionsUser?.(),
-    },
-    {
-      id: 'permissions-open-workspace',
-      category: CATEGORIES.PERMISSIONS,
-      label: 'open in editor (workspace)',
-      icon: <Shield size={14} />,
-      action: () => handlers.onOpenPermissionsWorkspace?.(),
-    },
-    {
-      id: 'settings-open',
-      category: CATEGORIES.SETTINGS,
-      label: 'open in editor',
-      icon: <Settings size={14} />,
-      shortcut: 'Ctrl+,',
-      action: () => handlers.onOpenSettings?.(),
-    },
+
     {
       id: 'settings-toggle-sound',
       category: CATEGORIES.SETTINGS,
@@ -75,15 +69,26 @@ export function createSettingsCommands(
     {
       id: 'settings-mode-deep',
       category: CATEGORIES.SETTINGS,
-      label: `set mode: deep${agentMode === 'deep' ? ' (active)' : ''}${modeLocked ? ' (locked)' : ''}`,
+      label: `set mode: deep${agentMode === 'deep' ? ` (${deepLabel})` : ''}${modeLocked ? ' (locked)' : ''}`,
       icon: <Brain size={14} />,
       action: () => onSetAgentMode?.('deep'),
       disabled: modeLocked,
     },
     {
+      id: 'settings-mode-large',
+      category: CATEGORIES.SETTINGS,
+      label: `set mode: large${agentMode === 'large' ? ' (active)' : ''}${modeLocked ? ' (locked)' : ''}`,
+      icon: <Maximize size={14} />,
+      action: () => onSetAgentMode?.('large'),
+      disabled: modeLocked,
+    },
+    {
       id: 'settings-toggle-deep',
       category: CATEGORIES.SETTINGS,
-      label: agentMode === 'deep' ? 'disable deep mode' : 'enable deep mode',
+      label:
+        agentMode === 'deep'
+          ? `cycle deep mode (${deepLabel} → ${deepLabel === 'deep³' ? 'smart' : 'next'})`
+          : 'enable deep mode',
       shortcut: 'Alt+D',
       icon: <Brain size={14} />,
       action: () => onToggleDeepMode?.(),
@@ -96,6 +101,27 @@ export function createSettingsCommands(
       shortcut: 'Alt+T',
       icon: <Brain size={14} />,
       action: () => onToggleThinkingBlocks?.(),
+    },
+    {
+      id: 'agents-md-list',
+      category: CATEGORIES.AMP,
+      label: 'agents-md: list',
+      icon: <FileText size={14} />,
+      action: () => handlers.onShowAgentsMdList?.(),
+    },
+    {
+      id: 'amp-usage',
+      category: CATEGORIES.AMP,
+      label: 'usage',
+      icon: <DollarSign size={14} />,
+      action: () => handlers.onShowUsage?.(),
+    },
+    {
+      id: 'amp-check-updates',
+      category: CATEGORIES.AMP,
+      label: 'check for updates',
+      icon: <Info size={14} />,
+      action: () => handlers.onCheckForUpdates?.(),
     },
   ];
 }

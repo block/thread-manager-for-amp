@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { AgentMode } from '../../shared/websocket.js';
+import type { AgentMode, DeepReasoningEffort } from '../../shared/websocket.js';
 
 export interface Command {
   id: string;
@@ -32,7 +32,6 @@ export interface UseCommandsOptions {
   onShowMcpStatus?: () => void;
   onShowMcpList?: () => void;
   onShowPermissions?: () => void;
-  onOpenSettings?: () => void;
   onShowHelp?: () => void;
   onThreadMap?: (id: string) => void;
   onArchiveAndClose?: (id: string) => void;
@@ -40,24 +39,22 @@ export interface UseCommandsOptions {
   onSwitchToPrevious?: () => void;
   onSwitchToNext?: () => void;
   onContextAnalyze?: () => void;
-  onOpenPermissionsUser?: () => void;
-  onOpenPermissionsWorkspace?: () => void;
-  onIdeConnect?: () => void;
-  onShowToolbox?: () => void;
   onAddLabel?: (id: string) => void;
   onRemoveLabel?: (id: string) => void;
   onSkillAdd?: () => void;
   onSkillRemove?: () => void;
-  onSkillInvoke?: () => void;
+  onSkillInfo?: () => void;
   onManageBlockers?: (id: string) => void;
   onToggleSidebar?: () => void;
   onOpenShellTerminal?: () => void;
-  onShowTasks?: () => void;
-  onImportTasks?: () => void;
   onReplayThread?: (id: string) => void;
   onCodeReview?: () => void;
   onOpenPromptHistory?: () => void;
   onUndoLastTurn?: () => void;
+  onShowAgentsMdList?: () => void;
+  onSetVisibility?: (id: string, visibility: string) => void;
+  onShowUsage?: () => void;
+  onCheckForUpdates?: () => void;
 }
 
 export interface CommandFactoryContext {
@@ -67,6 +64,7 @@ export interface CommandFactoryContext {
   soundEnabled: boolean;
   toggleSound: () => void;
   agentMode: AgentMode;
+  deepReasoningEffort: DeepReasoningEffort;
   onSetAgentMode?: (mode: AgentMode) => void;
   onToggleDeepMode?: () => void;
   activeThreadModeLocked: boolean;

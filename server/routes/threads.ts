@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { jsonResponse, sendError, getParam, parseBody } from '../lib/utils.js';
+import { jsonResponse, sendError, handleRouteError, getParam, parseBody } from '../lib/utils.js';
 import {
   getThreads,
   searchThreads,
@@ -19,7 +19,9 @@ import {
   listWorkspaceFiles,
 } from '../lib/threads.js';
 import { truncateThreadAtMessage, undoLastTurn } from '../lib/threadCrud.js';
+import { setThreadVisibility } from '../lib/skills.js';
 import { getPromptHistory, addPromptToHistory } from '../lib/promptHistory.js';
+import { analyzeContext } from '../lib/contextAnalyze.js';
 
 export async function handleThreadRoutes(
   url: URL,
@@ -35,7 +37,7 @@ export async function handleThreadRoutes(
       const result = await getThreads({ limit, cursor });
       return jsonResponse(res, result);
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -45,8 +47,7 @@ export async function handleThreadRoutes(
       const results = await searchThreads(query);
       return jsonResponse(res, results);
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -56,8 +57,7 @@ export async function handleThreadRoutes(
       const related = await getRelatedThreads(threadId);
       return jsonResponse(res, related);
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -67,8 +67,7 @@ export async function handleThreadRoutes(
       const chain = await getThreadChain(threadId);
       return jsonResponse(res, chain);
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -78,8 +77,7 @@ export async function handleThreadRoutes(
       const changes = await getThreadChanges(threadId);
       return jsonResponse(res, changes);
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -93,8 +91,7 @@ export async function handleThreadRoutes(
       res.writeHead(200, { 'Content-Type': 'text/plain' });
       res.end(history);
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
     return true;
   }
@@ -105,8 +102,7 @@ export async function handleThreadRoutes(
       const images = await getThreadImages(threadId);
       return jsonResponse(res, images);
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -121,8 +117,7 @@ export async function handleThreadRoutes(
       await archiveThread(threadId);
       return jsonResponse(res, { success: true });
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -137,8 +132,7 @@ export async function handleThreadRoutes(
       const result = await deleteThread(threadId);
       return jsonResponse(res, result);
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -152,7 +146,7 @@ export async function handleThreadRoutes(
       const result = await createThread(workspacePath, body.mode);
       return jsonResponse(res, result);
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -163,8 +157,7 @@ export async function handleThreadRoutes(
       const files = await listWorkspaceFiles(workspace, query);
       return jsonResponse(res, files);
     } catch (err) {
-      const status = (err as Error).message.includes('Invalid workspace') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -173,7 +166,7 @@ export async function handleThreadRoutes(
       const workspaces = await getKnownWorkspaces();
       return jsonResponse(res, workspaces);
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -189,8 +182,7 @@ export async function handleThreadRoutes(
       const result = await handoffThread(threadId, goal);
       return jsonResponse(res, result);
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -207,8 +199,7 @@ export async function handleThreadRoutes(
       await renameThread(threadId, name);
       return jsonResponse(res, { success: true });
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -218,8 +209,7 @@ export async function handleThreadRoutes(
       const result = await getThreadMessages(threadId);
       return jsonResponse(res, result);
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -234,8 +224,7 @@ export async function handleThreadRoutes(
       const result = await shareThread(threadId);
       return jsonResponse(res, result);
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -255,9 +244,7 @@ export async function handleThreadRoutes(
       const result = await truncateThreadAtMessage(body.threadId, body.messageIndex);
       return jsonResponse(res, { success: true, ...result });
     } catch (err) {
-      const msg = (err as Error).message;
-      const status = msg.includes('required') || msg.includes('Invalid') ? 400 : 500;
-      return sendError(res, status, msg);
+      return handleRouteError(res, err);
     }
   }
 
@@ -271,9 +258,17 @@ export async function handleThreadRoutes(
       const result = await undoLastTurn(body.threadId);
       return jsonResponse(res, { success: true, ...result });
     } catch (err) {
-      const msg = (err as Error).message;
-      const status = msg.includes('required') || msg.includes('No user message') ? 400 : 500;
-      return sendError(res, status, msg);
+      return handleRouteError(res, err);
+    }
+  }
+
+  if (pathname === '/api/context-analyze') {
+    try {
+      const threadId = getParam(url, 'threadId');
+      const result = await analyzeContext(threadId);
+      return jsonResponse(res, result);
+    } catch (err) {
+      return handleRouteError(res, err);
     }
   }
 
@@ -284,7 +279,7 @@ export async function handleThreadRoutes(
       const results = await getPromptHistory(query, limit);
       return jsonResponse(res, results);
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -299,8 +294,24 @@ export async function handleThreadRoutes(
       addPromptToHistory(body.text, body.threadId);
       return jsonResponse(res, { success: true });
     } catch (err) {
-      const status = (err as Error).message.includes('required') ? 400 : 500;
-      return sendError(res, status, (err as Error).message);
+      return handleRouteError(res, err);
+    }
+  }
+
+  if (pathname === '/api/thread-set-visibility') {
+    if (req.method !== 'POST') {
+      return sendError(res, 405, 'Method not allowed');
+    }
+    try {
+      const body = await parseBody<{ threadId?: string; visibility?: string }>(req);
+      if (!body.threadId) throw new Error('threadId required');
+      if (!body.visibility) throw new Error('visibility required');
+      const result = await setThreadVisibility(body.threadId, body.visibility);
+      return jsonResponse(res, result);
+    } catch (err) {
+      const msg = (err as Error).message;
+      const status = msg.includes('required') ? 400 : 500;
+      return sendError(res, status, msg);
     }
   }
 

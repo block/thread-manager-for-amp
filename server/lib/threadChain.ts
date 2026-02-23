@@ -1,16 +1,11 @@
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 import type { Thread, ThreadChain, ChainThread, ThreadChainNode } from '../../shared/types.js';
 import { runAmp, stripAnsi } from './utils.js';
 import { getThreads } from './threadCrud.js';
-
-function toChainThread(t: Thread, comment?: string): ChainThread {
-  return {
-    id: t.id,
-    title: t.title,
-    lastUpdated: t.lastUpdated,
-    workspace: t.workspace,
-    ...(comment != null ? { comment } : {}),
-  };
-}
+import { THREADS_DIR, isHandoffRelationship, type ThreadFile } from './threadTypes.js';
+import { callAmpInternalAPI } from './amp-api.js';
+import { getThreadMetadata, updateLinkedIssue } from './database.js';
 
 export async function getThreadChain(threadId: string): Promise<ThreadChain> {
   const { threads } = await getThreads({ limit: 1000 });
@@ -29,20 +24,19 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     }
   }
 
-  // Walk up to collect ancestors (linear path to root)
-  const ancestors: ChainThread[] = [];
+  // Walk up to collect ancestor IDs (linear path to root)
+  const ancestorIds: string[] = [];
   const visited = new Set<string>([threadId]);
-  let currentId = threadId;
+  let walkId = threadId;
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard
   while (true) {
-    const thread = threadMap.get(currentId);
+    const thread = threadMap.get(walkId);
     const parentId = thread?.handoffParentId;
     if (!parentId || visited.has(parentId)) break;
-    const parentThread = threadMap.get(parentId);
-    if (!parentThread) break;
+    if (!threadMap.has(parentId)) break;
     visited.add(parentId);
-    ancestors.unshift(toChainThread(parentThread));
-    currentId = parentId;
+    ancestorIds.unshift(parentId);
+    walkId = parentId;
   }
 
   // Build descendants tree (recursive, supports forks)
@@ -69,10 +63,61 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
     if (node) descendantsTree.push(node);
   }
 
+  // Read handoff comments from thread files for all chain members.
+  // Each thread's `role: "parent"` relationship has the comment describing
+  // what was handed off to the next thread in the chain.
+  const commentMap = new Map<string, string>();
+
+  await Promise.all(
+    [...visited].map(async (id) => {
+      try {
+        const content = await readFile(join(THREADS_DIR, `${id}.json`), 'utf-8');
+        const data = JSON.parse(content) as ThreadFile;
+        for (const rel of data.relationships || []) {
+          if (isHandoffRelationship(rel) && rel.role === 'parent' && rel.comment) {
+            if (visited.has(rel.threadID)) {
+              commentMap.set(id, rel.comment);
+              break;
+            }
+          }
+        }
+      } catch {
+        // Thread file may not exist or be unreadable
+      }
+    }),
+  );
+
+  // Apply comments to descendants tree
+  function applyComments(node: ThreadChainNode): void {
+    const comment = commentMap.get(node.thread.id);
+    if (comment) node.thread.comment = comment;
+    for (const child of node.children) applyComments(child);
+  }
+  for (const node of descendantsTree) applyComments(node);
+
+  const ancestors = ancestorIds
+    .map((id) => {
+      const t = threadMap.get(id);
+      return t ? toChainThread(t, commentMap.get(id)) : null;
+    })
+    .filter((t): t is ChainThread => t != null);
+
   const currentThread = threadMap.get(threadId);
-  const current: ChainThread | null = currentThread ? toChainThread(currentThread) : null;
+  const current: ChainThread | null = currentThread
+    ? toChainThread(currentThread, commentMap.get(threadId))
+    : null;
 
   return { ancestors, current, descendantsTree };
+}
+
+function toChainThread(t: Thread, comment?: string): ChainThread {
+  return {
+    id: t.id,
+    title: t.title,
+    lastUpdated: t.lastUpdated,
+    workspace: t.workspace,
+    ...(comment != null ? { comment } : {}),
+  };
 }
 
 interface HandoffResult {
@@ -89,5 +134,42 @@ export async function handoffThread(
   if (!match) {
     throw new Error('Could not parse new thread ID');
   }
-  return { threadId: match[0] };
+
+  const newThreadId = match[0];
+
+  // Propagate metadata from source thread to new thread (best-effort)
+  await propagateMetadata(threadId, newThreadId);
+
+  return { threadId: newThreadId };
+}
+
+async function propagateMetadata(sourceId: string, targetId: string): Promise<void> {
+  const results = await Promise.allSettled([
+    // Copy labels
+    (async () => {
+      const labels = await callAmpInternalAPI<{ name: string }[]>('getThreadLabels', {
+        thread: sourceId,
+      });
+      if (labels.length > 0) {
+        await callAmpInternalAPI('setThreadLabels', {
+          thread: targetId,
+          labels: labels.map((l) => l.name),
+        });
+      }
+    })(),
+
+    // Copy linked issue URL
+    Promise.resolve().then(() => {
+      const metadata = getThreadMetadata(sourceId);
+      if (metadata.linked_issue_url) {
+        updateLinkedIssue(targetId, metadata.linked_issue_url);
+      }
+    }),
+  ]);
+
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.warn('[handoff] Failed to propagate metadata:', result.reason);
+    }
+  }
 }

@@ -85,6 +85,8 @@ export function getToolIcon(name: string): string {
       return '📊';
     case 'look_at':
       return '👁️';
+    case 'handoff':
+      return '🔀';
     default:
       return '🔧';
   }
@@ -123,6 +125,8 @@ export function getToolLabel(name: string): string {
       return 'Diagram';
     case 'look_at':
       return 'Look at';
+    case 'handoff':
+      return 'Handoff';
     default:
       return name;
   }

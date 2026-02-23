@@ -1,6 +1,7 @@
 import { useState, memo, lazy, Suspense } from 'react';
 import { ChevronDown, ChevronRight, Check, Loader2, XCircle, Ban } from 'lucide-react';
 import { getToolIcon, getToolLabel, shortenPath, type ToolInput } from '../utils/format';
+import type { RunningStatus } from '../../shared/types.js';
 
 const MermaidDiagram = lazy(() =>
   import('./MermaidDiagram').then((m) => ({ default: m.MermaidDiagram })),
@@ -15,6 +16,8 @@ interface ToolBlockProps {
   highlighted?: boolean;
   status?: ToolStatus;
   result?: string;
+  onOpenThreadId?: (threadId: string) => void;
+  handoffThreadStatus?: RunningStatus;
 }
 
 const MAX_CMD_LENGTH = 80;
@@ -60,6 +63,12 @@ function formatShortCommand(
       return desc.length > MAX_DESC_LENGTH
         ? desc.slice(0, MAX_DESC_LENGTH) + '...'
         : desc || 'Subagent task';
+    }
+    case 'handoff': {
+      const goal = typeof input.goal === 'string' ? input.goal : '';
+      return goal.length > MAX_DESC_LENGTH
+        ? goal.slice(0, MAX_DESC_LENGTH) + '...'
+        : goal || 'Handoff thread';
     }
     default:
       return name;
@@ -111,6 +120,7 @@ function formatFullCommand(name: string, input: ToolInput): string | null {
     case 'grep':
     case 'skill':
     case 'look_at':
+    case 'handoff':
       // These tools don't need expanded content
       return null;
     default:
@@ -199,6 +209,8 @@ export const ToolBlock = memo(function ToolBlock({
   highlighted,
   status,
   result,
+  onOpenThreadId,
+  handoffThreadStatus,
 }: ToolBlockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -209,12 +221,69 @@ export const ToolBlock = memo(function ToolBlock({
   const isEditFile = toolName === 'edit_file' && toolInput.old_str && toolInput.new_str;
   const isMermaid = toolName === 'mermaid' && !!toolInput.code;
   const isSubagent = toolName === 'Task';
+  const isHandoff = toolName === 'handoff';
 
   // Only show expand if full command exists and is longer than short version
   const hasExpandable = !!(fullCmd && fullCmd.length > shortCmd.length + 10) || isEditFile;
 
   const icon = getToolIcon(toolName);
   const label = getToolLabel(toolName);
+
+  // Handoff-style display
+  if (isHandoff) {
+    const statusClass = getStatusClass(status);
+    // Parse thread ID from result JSON
+    let threadId: string | null = null;
+    if (result) {
+      const match = result.match(/T-[\w-]+/);
+      threadId = match?.[0] ?? null;
+    }
+    return (
+      <div
+        ref={onRef}
+        className={`tool-block handoff-block ${statusClass} ${highlighted ? 'highlighted' : ''}`}
+      >
+        <div className="tool-block-header">
+          <span className={`subagent-status ${statusClass}`}>
+            <StatusIcon status={status} />
+          </span>
+          <span className="handoff-label">Handoff</span>
+          <span className="handoff-goal">{shortCmd}</span>
+        </div>
+        {threadId && (
+          <div className="handoff-thread-link">
+            ↳{' '}
+            {onOpenThreadId ? (
+              <button
+                className="handoff-thread-btn"
+                onClick={() => onOpenThreadId(threadId)}
+                title="Open this thread"
+              >
+                {threadId}
+              </button>
+            ) : (
+              threadId
+            )}
+            {(() => {
+              const label =
+                handoffThreadStatus === 'running'
+                  ? 'running'
+                  : handoffThreadStatus === 'connected'
+                    ? 'idle'
+                    : 'done';
+              const cls = handoffThreadStatus ?? 'done';
+              return (
+                <span className={`handoff-thread-status handoff-thread-status-${cls}`}>
+                  {handoffThreadStatus === 'running' && <Loader2 size={10} className="spinning" />}
+                  {label}
+                </span>
+              );
+            })()}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // Subagent-style display
   if (isSubagent) {

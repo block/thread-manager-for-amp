@@ -11,15 +11,16 @@ export interface UseModalActionsReturn {
   handleShowPermissions: () => Promise<void>;
   handleShowHelp: () => Promise<void>;
   handleContextAnalyze: (activeThreadId: string | undefined) => void;
-  handleIdeConnect: () => void;
-  handleShowToolbox: () => Promise<void>;
+  handleThreadMap: (id: string) => void;
   handleSkillAdd: () => void;
   handleSkillRemove: () => void;
-  handleSkillInvoke: () => void;
-  handleShowTasks: () => void;
-  handleImportTasks: () => void;
+  handleSkillInfo: () => void;
   handleReplayThread: (id: string) => void;
   handleCodeReview: () => void;
+  handleShowAgentsMdList: () => Promise<void>;
+  handleSetVisibility: (id: string, visibility: string) => Promise<void>;
+  handleShowUsage: () => Promise<void>;
+  handleCheckForUpdates: () => Promise<void>;
 }
 
 export function useModalActions(
@@ -102,32 +103,17 @@ export function useModalActions(
   const handleContextAnalyze = useCallback(
     (activeThreadId: string | undefined) => {
       if (!activeThreadId) return;
-      modals.setOutputModal({
-        title: 'Context Analysis',
-        content:
-          'Context analysis would show token usage breakdown for the current thread.\nThis feature requires integration with thread metadata.',
-      });
+      modals.setContextAnalyzeThreadId(activeThreadId);
     },
     [modals],
   );
 
-  const handleIdeConnect = useCallback(() => {
-    modals.setOutputModal({
-      title: 'IDE Connection',
-      content:
-        'IDE connection is managed automatically by the Amp CLI when running in a terminal.\nThis web interface operates independently.',
-    });
-  }, [modals]);
-
-  const handleShowToolbox = useCallback(async () => {
-    try {
-      const result = await apiGet<{ output: string }>('/api/tools-list');
-      modals.setOutputModal({ title: 'Toolbox', content: result.output });
-    } catch (err) {
-      console.error('Failed to list toolbox:', err);
-      showError('Failed to list toolbox');
-    }
-  }, [modals, showError]);
+  const handleThreadMap = useCallback(
+    (id: string) => {
+      modals.setThreadMapThreadId(id);
+    },
+    [modals],
+  );
 
   const handleSkillAdd = useCallback(() => {
     modals.setInputModal({
@@ -172,12 +158,12 @@ export function useModalActions(
     });
   }, [modals, showError]);
 
-  const handleSkillInvoke = useCallback(() => {
+  const handleSkillInfo = useCallback(() => {
     modals.setInputModal({
-      title: 'Invoke Skill',
+      title: 'Skill Info',
       label: 'Skill name',
-      placeholder: 'Enter skill name to invoke',
-      confirmText: 'Invoke',
+      placeholder: 'Enter skill name',
+      confirmText: 'View',
       onConfirm: async (name: string) => {
         modals.setInputModal(null);
         try {
@@ -187,19 +173,11 @@ export function useModalActions(
           modals.setOutputModal({ title: `Skill: ${name}`, content: result.output });
         } catch (err) {
           console.error('Failed to get skill info:', err);
-          showError(`Failed to invoke skill: ${String(err)}`);
+          showError(`Failed to get skill info: ${String(err)}`);
         }
       },
     });
   }, [modals, showError]);
-
-  const handleShowTasks = useCallback(() => {
-    modals.setTasksModal({ tab: 'list' });
-  }, [modals]);
-
-  const handleImportTasks = useCallback(() => {
-    modals.setTasksModal({ tab: 'import' });
-  }, [modals]);
 
   const handleReplayThread = useCallback(
     (id: string) => {
@@ -212,6 +190,52 @@ export function useModalActions(
     modals.setCodeReviewModal({});
   }, [modals]);
 
+  const handleShowAgentsMdList = useCallback(async () => {
+    try {
+      const result = await apiGet<{ output: string }>('/api/agents-md-list');
+      modals.setOutputModal({ title: 'AGENTS.md Files', content: result.output });
+    } catch (err) {
+      console.error('Failed to list AGENTS.md files:', err);
+      showError('Failed to list AGENTS.md files');
+    }
+  }, [modals, showError]);
+
+  const handleSetVisibility = useCallback(
+    async (id: string, visibility: string) => {
+      try {
+        const result = await apiPost<{ output: string; success: boolean }>(
+          '/api/thread-set-visibility',
+          { threadId: id, visibility },
+        );
+        modals.setOutputModal({ title: 'Visibility Updated', content: result.output });
+      } catch (err) {
+        console.error('Failed to set visibility:', err);
+        showError(`Failed to set visibility: ${String(err)}`);
+      }
+    },
+    [modals, showError],
+  );
+
+  const handleShowUsage = useCallback(async () => {
+    try {
+      const result = await apiGet<{ output: string }>('/api/amp-usage');
+      modals.setOutputModal({ title: 'Amp Usage', content: result.output });
+    } catch (err) {
+      console.error('Failed to get usage:', err);
+      showError('Failed to get usage info');
+    }
+  }, [modals, showError]);
+
+  const handleCheckForUpdates = useCallback(async () => {
+    try {
+      const result = await apiGet<{ output: string }>('/api/amp-version');
+      modals.setOutputModal({ title: 'Amp Version', content: result.output });
+    } catch (err) {
+      console.error('Failed to check version:', err);
+      showError('Failed to check for updates');
+    }
+  }, [modals, showError]);
+
   return {
     handleShareThread,
     handleShowSkills,
@@ -221,14 +245,15 @@ export function useModalActions(
     handleShowPermissions,
     handleShowHelp,
     handleContextAnalyze,
-    handleIdeConnect,
-    handleShowToolbox,
+    handleThreadMap,
     handleSkillAdd,
     handleSkillRemove,
-    handleSkillInvoke,
-    handleShowTasks,
-    handleImportTasks,
+    handleSkillInfo,
     handleReplayThread,
     handleCodeReview,
+    handleShowAgentsMdList,
+    handleSetVisibility,
+    handleShowUsage,
+    handleCheckForUpdates,
   };
 }

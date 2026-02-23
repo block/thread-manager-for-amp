@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Message } from '../../utils/parseMarkdown';
 import type { WsEvent } from '../../types';
-import type { AgentMode } from '../../../shared/websocket.js';
+import type { AgentMode, DeepReasoningEffort } from '../../../shared/websocket.js';
 import type { UsageInfo } from './types';
 import { formatToolUse } from '../../utils/format';
 import { playNotificationSound, isSoundEnabled } from '../../utils/sounds';
@@ -32,6 +32,8 @@ export function useTerminalWebSocket({
   const [threadMode, setThreadMode] = useState<AgentMode | null>(null);
   const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const [, setNoResponseDetected] = useState(false);
+  const [isInterrupted, setIsInterrupted] = useState(false);
+  const [externalUpdateKey, setExternalUpdateKey] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
   const gotResponseRef = useRef(false);
   const wasCancelledRef = useRef(false);
@@ -73,6 +75,9 @@ export function useTerminalWebSocket({
               if (data.mode) {
                 setThreadMode(data.mode);
               }
+              if (data.interrupted) {
+                setIsInterrupted(true);
+              }
               break;
             case 'usage':
               setUsage({
@@ -83,16 +88,20 @@ export function useTerminalWebSocket({
                 estimatedCost: data.estimatedCost,
               });
               break;
-            case 'text':
+            case 'text': {
               setIsSending(false);
               setIsRunning(true);
               setAgentStatus('streaming');
               gotResponseRef.current = true;
-              setMessages((prev) => [
-                ...prev,
-                { id: generateId(), type: 'assistant', content: data.content },
-              ]);
+              const textContent = (data.content || '').trim();
+              if (textContent) {
+                setMessages((prev) => [
+                  ...prev,
+                  { id: generateId(), type: 'assistant', content: textContent },
+                ]);
+              }
               break;
+            }
             case 'thinking':
               setIsSending(false);
               setIsRunning(true);
@@ -199,6 +208,13 @@ export function useTerminalWebSocket({
                 });
               } else if (data.subtype === 'message_queued') {
                 setAgentStatus('queued');
+              } else if (data.subtype === 'thread_updated') {
+                setExternalUpdateKey((prev) => prev + 1);
+              } else if (data.subtype === 'requires_input') {
+                // Agent is blocked waiting for user input (e.g., permission prompt)
+                if (isSoundEnabled()) {
+                  playNotificationSound();
+                }
               }
               break;
             case 'cancelled':
@@ -288,13 +304,19 @@ export function useTerminalWebSocket({
   }, [threadId, reconnectTrigger, setMessages, setUsage, setIsLoading]);
 
   const sendMessage = useCallback(
-    (content: string, image?: { data: string; mediaType: string }, mode?: AgentMode) => {
+    (
+      content: string,
+      image?: { data: string; mediaType: string },
+      mode?: AgentMode,
+      deepReasoningEffort?: DeepReasoningEffort,
+    ) => {
       if (!wsRef.current || !isConnected) return false;
 
       // Reset response tracking
       gotResponseRef.current = false;
       wasCancelledRef.current = false;
       setNoResponseDetected(false);
+      setIsInterrupted(false);
 
       // Use the locked thread mode if set, otherwise use the provided mode
       const effectiveMode = threadMode ?? mode;
@@ -308,6 +330,7 @@ export function useTerminalWebSocket({
           content,
           image: image || undefined,
           mode: effectiveMode || undefined,
+          deepReasoningEffort: effectiveMode === 'deep' ? deepReasoningEffort : undefined,
         }),
       );
 
@@ -338,6 +361,8 @@ export function useTerminalWebSocket({
     isConnected,
     isSending,
     isRunning,
+    isInterrupted,
+    externalUpdateKey,
     agentStatus,
     connectionError,
     threadMode,

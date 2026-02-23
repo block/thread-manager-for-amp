@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Message } from '../../utils/parseMarkdown';
 import type { ThreadImage } from '../../types';
@@ -11,11 +12,21 @@ const MESSAGE_POLL_INTERVAL_MS = 10000;
 interface UseTerminalMessagesOptions {
   threadId: string;
   wsConnected: boolean;
+  refreshKey?: number;
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  isLoading: boolean;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessagesOptions) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function useTerminalMessages({
+  threadId,
+  wsConnected,
+  refreshKey,
+  messages,
+  setMessages,
+  setIsLoading,
+}: UseTerminalMessagesOptions) {
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentOffset, setCurrentOffset] = useState(0);
@@ -38,6 +49,12 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
   useEffect(() => {
     const controller = new AbortController();
     async function loadHistory() {
+      // Clear stale state from previous thread before fetching
+      setMessages([]);
+      setIsLoading(true);
+      setHasMoreMessages(false);
+      setCurrentOffset(0);
+
       try {
         const [markdown, threadImages] = await Promise.all([
           apiGetText(
@@ -92,7 +109,37 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
     return () => {
       controller.abort();
     };
-  }, [threadId]);
+  }, [threadId, setMessages, setIsLoading]);
+
+  // Re-fetch messages when refresh is triggered (e.g. ⌘R)
+  const initialRefreshKey = useRef(refreshKey);
+  useEffect(() => {
+    if (refreshKey === undefined || refreshKey === initialRefreshKey.current) return;
+    initialRefreshKey.current = refreshKey;
+
+    const controller = new AbortController();
+    async function reload() {
+      try {
+        const markdown = await apiGetText(
+          `/api/thread-history?threadId=${encodeURIComponent(threadId)}`,
+          controller.signal,
+        );
+        const totalMatch = markdown.match(/totalMessages:\s*(\d+)/);
+        const totalMessages = totalMatch?.[1] ? parseInt(totalMatch[1], 10) : 0;
+        const refreshedMessages = parseMarkdownHistory(markdown);
+        if (refreshedMessages.length > 0) {
+          setMessages(refreshedMessages);
+          setCurrentOffset(refreshedMessages.length);
+          setHasMoreMessages(refreshedMessages.length < totalMessages);
+        }
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        console.error('Failed to refresh messages:', e);
+      }
+    }
+    void reload();
+    return () => controller.abort();
+  }, [refreshKey, threadId, setMessages]);
 
   const loadMoreMessages = useCallback(async () => {
     if (loadingMore || !hasMoreMessages) return;
@@ -120,7 +167,7 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
       console.error('Failed to load more messages:', e);
     }
     setLoadingMore(false);
-  }, [threadId, currentOffset, loadingMore, hasMoreMessages]);
+  }, [threadId, currentOffset, loadingMore, hasMoreMessages, setMessages]);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -170,13 +217,9 @@ export function useTerminalMessages({ threadId, wsConnected }: UseTerminalMessag
 
     const intervalId = setInterval(pollForNewMessages, MESSAGE_POLL_INTERVAL_MS);
     return () => clearInterval(intervalId);
-  }, [threadId, wsConnected]);
+  }, [threadId, wsConnected, setMessages]);
 
   return {
-    messages,
-    setMessages,
-    isLoading,
-    setIsLoading,
     hasMoreMessages,
     loadingMore,
     loadMoreMessages,

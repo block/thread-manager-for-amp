@@ -11,6 +11,7 @@ import type {
   GitBranch,
   LinkedPR,
 } from '../../shared/types.js';
+import { parseFileUri } from './utils.js';
 
 const CACHE_DIR = join(AMP_HOME, '.local', 'share', 'amp-thread-manager', 'cache', 'thread-git');
 const PR_INDEX_PATH = join(
@@ -600,7 +601,7 @@ export async function getThreadGitActivity(
 
     for (const tree of trees) {
       const workspaceUri = tree.uri || tree.path;
-      const workspacePath = workspaceUri?.replace('file://', '');
+      const workspacePath = parseFileUri(workspaceUri);
       if (!workspacePath) continue;
 
       const workspaceName = tree.displayName || basename(workspacePath);

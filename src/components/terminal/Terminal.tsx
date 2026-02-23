@@ -5,9 +5,10 @@ import { MessageSearchModal } from '../MessageSearchModal';
 import { ImageViewer } from '../ImageViewer';
 import { apiGet, apiPatch, apiPost } from '../../api/client';
 import type { ThreadMetadata } from '../../types';
+import type { Message } from '../../utils/parseMarkdown';
 import { extractIssueUrl } from '../../utils/issueTracker';
-import type { AgentMode } from '../../../shared/websocket.js';
-import type { TerminalProps } from './types';
+import type { AgentMode, DeepReasoningEffort } from '../../../shared/websocket.js';
+import type { TerminalProps, GitInfo } from './types';
 import { useTerminalWebSocket } from './useTerminalWebSocket';
 import { useTerminalMessages } from './useTerminalMessages';
 import { useTerminalState, generateId } from './useTerminalState';
@@ -38,8 +39,14 @@ export function Terminal({
   const { id: threadId, title: threadTitle } = thread;
   const { markAsSeen } = useUnread();
   const { setStatus: setThreadStatus, clearStatus: clearThreadStatus } = useThreadStatus();
-  const { agentMode, cycleAgentMode, showThinkingBlocks, setActiveThreadModeLocked } =
-    useSettingsContext();
+  const {
+    agentMode,
+    deepReasoningEffort,
+    cycleAgentMode,
+    showThinkingBlocks,
+    setActiveThreadModeLocked,
+    scmRefreshKey,
+  } = useSettingsContext();
   const { pendingPromptInsert, setPendingPromptInsert, setConfirmModal } = useModalContext();
 
   const replay = useReplayMode();
@@ -92,25 +99,30 @@ export function Terminal({
     content: string;
     image?: { data: string; mediaType: string };
     mode: AgentMode;
+    deepReasoningEffort?: DeepReasoningEffort;
   } | null>(null);
 
-  const {
-    messages,
-    setMessages,
-    isLoading,
-    setIsLoading,
-    hasMoreMessages,
-    loadingMore,
-    loadMoreMessages,
-    messagesContainerRef,
-    messagesEndRef,
-    messageRefs,
-  } = useTerminalMessages({ threadId, wsConnected });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [gitInfo, setGitInfo] = useState<GitInfo | null>(null);
+
+  // Fetch git branch/worktree info, using touched files to detect the actual working directory
+  useEffect(() => {
+    if (!thread.workspacePath) return;
+    apiPost<GitInfo>('/api/workspace-git-info', {
+      workspace: thread.workspacePath,
+      touchedFiles: thread.touchedFiles,
+    })
+      .then(setGitInfo)
+      .catch(() => setGitInfo(null));
+  }, [thread.workspacePath, thread.touchedFiles]);
 
   const {
     isConnected,
     isSending,
     isRunning,
+    isInterrupted,
+    externalUpdateKey,
     agentStatus,
     connectionError,
     threadMode,
@@ -118,6 +130,23 @@ export function Terminal({
     cancelOperation,
     reconnect,
   } = useTerminalWebSocket({ threadId, setMessages, setUsage, setIsLoading });
+
+  const {
+    hasMoreMessages,
+    loadingMore,
+    loadMoreMessages,
+    messagesContainerRef,
+    messagesEndRef,
+    messageRefs,
+  } = useTerminalMessages({
+    threadId,
+    wsConnected,
+    refreshKey: scmRefreshKey + externalUpdateKey,
+    messages,
+    setMessages,
+    isLoading,
+    setIsLoading,
+  });
 
   // Effective mode: locked thread mode takes priority over global setting
   const effectiveMode = threadMode ?? agentMode;
@@ -142,7 +171,12 @@ export function Terminal({
     prevRunningRef.current = isRunning || isSending;
 
     if (wasRunning && !isRunning && !isSending && queuedMsg) {
-      wsSendMessage(queuedMsg.content, queuedMsg.image, queuedMsg.mode);
+      wsSendMessage(
+        queuedMsg.content,
+        queuedMsg.image,
+        queuedMsg.mode,
+        queuedMsg.deepReasoningEffort,
+      );
       setQueuedMsg(null);
       setMessages((prev) => prev.map((m) => (m.queued ? { ...m, queued: false } : m)));
     }
@@ -283,7 +317,12 @@ export function Terminal({
 
     // Force-send: empty input + queued message → interrupt and send now
     if (!input.trim() && !pendingImage && queuedMsg && isActive) {
-      wsSendMessage(queuedMsg.content, queuedMsg.image, queuedMsg.mode);
+      wsSendMessage(
+        queuedMsg.content,
+        queuedMsg.image,
+        queuedMsg.mode,
+        queuedMsg.deepReasoningEffort,
+      );
       setQueuedMsg(null);
       setMessages((prev) => prev.map((m) => (m.queued ? { ...m, queued: false } : m)));
       return;
@@ -308,7 +347,12 @@ export function Terminal({
           },
         ];
       });
-      setQueuedMsg({ content: messageText, image: pendingImage || undefined, mode: agentMode });
+      setQueuedMsg({
+        content: messageText,
+        image: pendingImage || undefined,
+        mode: agentMode,
+        deepReasoningEffort: agentMode === 'deep' ? deepReasoningEffort : undefined,
+      });
       if (pendingImage) addSessionImage(pendingImage);
       clearInput();
       return;
@@ -318,7 +362,12 @@ export function Terminal({
       ...prev,
       { id: generateId(), type: 'user', content: messageText, image: pendingImage || undefined },
     ]);
-    wsSendMessage(messageText, pendingImage || undefined, agentMode);
+    wsSendMessage(
+      messageText,
+      pendingImage || undefined,
+      agentMode,
+      agentMode === 'deep' ? deepReasoningEffort : undefined,
+    );
     if (pendingImage) addSessionImage(pendingImage);
     clearInput();
 
@@ -350,6 +399,7 @@ export function Terminal({
     threadId,
     setMetadata,
     agentMode,
+    deepReasoningEffort,
   ]);
 
   const handleEditMessage = useCallback(
@@ -411,6 +461,20 @@ export function Terminal({
     });
   }, [threadId, setConfirmModal, setMessages]);
 
+  const handleOpenThreadById = useCallback(
+    (id: string) => {
+      if (!onOpenThread) return;
+      onOpenThread({
+        id,
+        title: id,
+        lastUpdated: '',
+        visibility: 'Private',
+        messages: 0,
+      });
+    },
+    [onOpenThread],
+  );
+
   const content = (
     <div
       ref={containerRef}
@@ -458,6 +522,7 @@ export function Terminal({
           showThinkingBlocks={showThinkingBlocks}
           onEditMessage={handleEditMessage}
           onUndoLastTurn={handleUndoLastTurn}
+          onOpenThreadId={handleOpenThreadById}
         />
         <Minimap
           items={minimapItems}
@@ -468,7 +533,7 @@ export function Terminal({
           onLoadMore={loadMoreMessages}
         />
       </div>
-      {usage && <TerminalStatusBar usage={usage} />}
+      {usage && <TerminalStatusBar usage={usage} gitInfo={gitInfo} />}
       {showContextWarning && (
         <ContextWarning
           threadId={threadId}
@@ -489,6 +554,19 @@ export function Terminal({
           </div>
         </div>
       )}
+      {isInterrupted && !isRunning && !isSending && (
+        <div className="resume-banner">
+          <span>This thread was interrupted. The agent didn't finish responding.</span>
+          <button
+            className="resume-btn"
+            onClick={() =>
+              wsSendMessage('Please continue where you left off.', undefined, effectiveMode)
+            }
+          >
+            Resume
+          </button>
+        </div>
+      )}
       <TerminalInput
         input={input}
         isConnected={isConnected}
@@ -506,6 +584,7 @@ export function Terminal({
         searchOpen={searchOpen}
         workspacePath={thread.workspacePath ?? null}
         agentMode={effectiveMode}
+        deepReasoningEffort={deepReasoningEffort}
         onCycleMode={cycleAgentMode}
         isModeLocked={isModeLocked}
         hasQueuedMessage={!!queuedMsg}

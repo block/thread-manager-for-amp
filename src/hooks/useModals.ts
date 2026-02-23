@@ -27,10 +27,6 @@ export interface ConfirmModalState {
   onConfirm: () => void;
 }
 
-export interface TasksModalState {
-  tab: 'list' | 'import';
-}
-
 export interface CodeReviewModalState {
   workspace?: string;
 }
@@ -61,8 +57,11 @@ export interface UseModalsReturn {
   minimizeShellTerminal: () => void;
   restoreShellTerminal: () => void;
 
-  tasksModal: TasksModalState | null;
-  setTasksModal: (state: TasksModalState | null) => void;
+  contextAnalyzeThreadId: string | null;
+  setContextAnalyzeThreadId: (id: string | null) => void;
+
+  threadMapThreadId: string | null;
+  setThreadMapThreadId: (id: string | null) => void;
 
   replayThreadId: string | null;
   setReplayThreadId: (id: string | null) => void;
@@ -85,7 +84,8 @@ export function useModals(): UseModalsReturn {
   const [workspacePickerOpen, setWorkspacePickerOpen] = useState(false);
   const [blockerThreadId, setBlockerThreadId] = useState<string | null>(null);
   const [shellTerminal, setShellTerminal] = useState<ShellTerminalState | null>(null);
-  const [tasksModal, setTasksModal] = useState<TasksModalState | null>(null);
+  const [contextAnalyzeThreadId, setContextAnalyzeThreadId] = useState<string | null>(null);
+  const [threadMapThreadId, setThreadMapThreadId] = useState<string | null>(null);
   const [replayThreadId, setReplayThreadId] = useState<string | null>(null);
   const [codeReviewModal, setCodeReviewModal] = useState<CodeReviewModalState | null>(null);
   const [promptHistoryOpen, setPromptHistoryOpen] = useState(false);
@@ -126,8 +126,10 @@ export function useModals(): UseModalsReturn {
     closeShellTerminal,
     minimizeShellTerminal,
     restoreShellTerminal,
-    tasksModal,
-    setTasksModal,
+    contextAnalyzeThreadId,
+    setContextAnalyzeThreadId,
+    threadMapThreadId,
+    setThreadMapThreadId,
     replayThreadId,
     setReplayThreadId,
     codeReviewModal,

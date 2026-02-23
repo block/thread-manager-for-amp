@@ -3,6 +3,7 @@ import { readFile, stat } from 'fs/promises';
 import { join, resolve, isAbsolute } from 'path';
 import type { GitStatus, GitFileStatus, FileDiff } from '../../shared/types.js';
 import { THREADS_DIR } from './threadTypes.js';
+import { parseFileUri } from './utils.js';
 
 /**
  * Validates and sanitizes a workspace path to prevent path traversal attacks.
@@ -160,8 +161,26 @@ function spawnGitAndCheckExit(args: string[], cwd?: string): Promise<boolean> {
 function parseStatusLabel(status: string): FileStatusLabel {
   if (status === '??' || status === 'A') return 'added';
   if (status === 'D') return 'deleted';
-  if (status === 'R') return 'renamed';
+  if (status.startsWith('R')) return 'renamed';
   return 'modified';
+}
+
+/**
+ * Extract the file path from a git status --porcelain line.
+ * Handles rename lines like "R  old -> new" by returning the destination path.
+ */
+function parseStatusPath(line: string): string {
+  const filePath = line.slice(3);
+  const status = line.slice(0, 2).trim();
+  if (status.startsWith('R')) {
+    // Git porcelain format: "old name -> new name" — match the last " -> " to handle
+    // filenames that themselves contain " -> "
+    const arrowIdx = filePath.lastIndexOf(' -> ');
+    if (arrowIdx !== -1) {
+      return filePath.slice(arrowIdx + 4);
+    }
+  }
+  return filePath;
 }
 
 interface GitStatusError {
@@ -186,7 +205,8 @@ export async function getWorkspaceGitStatus(threadId: string): Promise<GitStatus
       return { error: 'No workspace found', files: [] };
     }
     const workspaceUri = firstTree.uri;
-    const rawWorkspacePath = workspaceUri.replace('file://', '');
+    const rawWorkspacePath = parseFileUri(workspaceUri);
+    if (!rawWorkspacePath) return { error: 'Invalid workspace URI', files: [] };
     const workspacePath = await validateWorkspacePath(rawWorkspacePath);
     const workspaceName = firstTree.displayName;
 
@@ -211,7 +231,7 @@ export async function getWorkspaceGitStatus(threadId: string): Promise<GitStatus
 
     for (const line of statusLines) {
       const status = line.slice(0, 2).trim();
-      const filePath = line.slice(3);
+      const filePath = parseStatusPath(line);
       const fullPath = join(workspacePath, filePath);
 
       const touchedByThread = touchedFiles.has(fullPath);
@@ -251,7 +271,7 @@ export async function getWorkspaceGitStatusByPath(
 
     for (const line of statusLines) {
       const status = line.slice(0, 2).trim();
-      const filePath = line.slice(3);
+      const filePath = parseStatusPath(line);
       const fullPath = join(workspacePath, filePath);
 
       files.push({
@@ -296,7 +316,7 @@ export async function getWorkspaceGitStatusDirect(
 
     for (const line of statusLines) {
       const status = line.slice(0, 2).trim();
-      const filePath = line.slice(3);
+      const filePath = parseStatusPath(line);
 
       files.push({
         path: filePath,
@@ -319,6 +339,92 @@ export async function getWorkspaceGitStatusDirect(
     const error = e instanceof Error ? e.message : String(e);
     console.error('[git] Failed to get workspace git status:', error);
     return { error, files: [], isGitRepo: false, workspace: inputWorkspacePath };
+  }
+}
+
+export interface WorkspaceGitInfo {
+  branch: string | null;
+  isWorktree: boolean;
+  worktreePath: string | null;
+}
+
+/**
+ * Get git branch/worktree info for a workspace.
+ * If touchedFiles are provided, we find the actual git root from those paths
+ * (the agent may have worked in a worktree different from the launch directory).
+ */
+export async function getWorkspaceGitInfo(
+  inputWorkspacePath: string,
+  touchedFiles?: string[],
+): Promise<WorkspaceGitInfo> {
+  const checkPath = await resolveActualWorkingDir(inputWorkspacePath, touchedFiles);
+  return getGitInfoForPath(checkPath);
+}
+
+async function resolveActualWorkingDir(
+  workspacePath: string,
+  touchedFiles?: string[],
+): Promise<string> {
+  if (!touchedFiles?.length) return workspacePath;
+
+  // Find git toplevel for touched files to detect if agent worked in a worktree
+  const roots = new Map<string, number>();
+  // Sample up to 5 files for efficiency
+  for (const filePath of touchedFiles.slice(0, 5)) {
+    if (!filePath.startsWith('/')) continue;
+    const dir = filePath.substring(0, filePath.lastIndexOf('/'));
+    if (!isAbsolute(dir)) continue;
+    try {
+      const toplevel = (
+        await spawnGitAndCapture(['-C', dir, 'rev-parse', '--show-toplevel'])
+      ).trim();
+      if (toplevel) {
+        roots.set(toplevel, (roots.get(toplevel) || 0) + 1);
+      }
+    } catch {
+      // Not a git dir or doesn't exist
+    }
+  }
+
+  if (roots.size === 0) return workspacePath;
+
+  // Pick the most common git root among touched files
+  let bestRoot = workspacePath;
+  let bestCount = 0;
+  for (const [root, count] of roots) {
+    if (count > bestCount) {
+      bestRoot = root;
+      bestCount = count;
+    }
+  }
+
+  return bestRoot;
+}
+
+async function getGitInfoForPath(dirPath: string): Promise<WorkspaceGitInfo> {
+  try {
+    const checkPath = await validateWorkspacePath(dirPath);
+
+    const isGit = await spawnGitAndCheckExit(['-C', checkPath, 'rev-parse', '--git-dir']);
+    if (!isGit) {
+      return { branch: null, isWorktree: false, worktreePath: null };
+    }
+
+    const [branch, gitDir] = await Promise.all([
+      spawnGitAndCapture(['-C', checkPath, 'branch', '--show-current']),
+      spawnGitAndCapture(['-C', checkPath, 'rev-parse', '--git-dir']),
+    ]);
+
+    const trimmedGitDir = gitDir.trim();
+    const isWorktree = trimmedGitDir.includes('.git/worktrees/');
+
+    return {
+      branch: branch.trim() || null,
+      isWorktree,
+      worktreePath: isWorktree ? checkPath : null,
+    };
+  } catch {
+    return { branch: null, isWorktree: false, worktreePath: null };
   }
 }
 

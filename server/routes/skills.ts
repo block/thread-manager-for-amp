@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { jsonResponse, sendError, getParam, parseBody } from '../lib/utils.js';
+import { jsonResponse, sendError, getParam, parseBody, handleRouteError } from '../lib/utils.js';
 import {
   listSkills,
   getSkillsSummary,
@@ -12,6 +12,9 @@ import {
   listPermissions,
   getSettingsPath,
   getAmpHelp,
+  listAgentsMd,
+  getUsage,
+  getAmpVersion,
 } from '../lib/skills.js';
 
 interface SkillAddBody {
@@ -34,7 +37,7 @@ export async function handleSkillRoutes(
       const result = await listSkills();
       return jsonResponse(res, result);
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -43,7 +46,7 @@ export async function handleSkillRoutes(
       const result = await getSkillsSummary();
       return jsonResponse(res, result);
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -58,9 +61,7 @@ export async function handleSkillRoutes(
       const result = await addSkill(source);
       return jsonResponse(res, result);
     } catch (err) {
-      const message = (err as Error).message;
-      const status = message.includes('required') ? 400 : 500;
-      return sendError(res, status, message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -75,9 +76,7 @@ export async function handleSkillRoutes(
       const result = await removeSkill(name);
       return jsonResponse(res, result);
     } catch (err) {
-      const message = (err as Error).message;
-      const status = message.includes('required') ? 400 : 500;
-      return sendError(res, status, message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -87,9 +86,7 @@ export async function handleSkillRoutes(
       const result = await getSkillInfo(name);
       return jsonResponse(res, result);
     } catch (err) {
-      const message = (err as Error).message;
-      const status = message.includes('required') ? 400 : 500;
-      return sendError(res, status, message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -98,7 +95,7 @@ export async function handleSkillRoutes(
       const result = await listTools();
       return jsonResponse(res, result);
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -107,7 +104,7 @@ export async function handleSkillRoutes(
       const result = await getMcpStatus();
       return jsonResponse(res, result);
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -116,7 +113,7 @@ export async function handleSkillRoutes(
       const result = await listMcp();
       return jsonResponse(res, result);
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -125,7 +122,7 @@ export async function handleSkillRoutes(
       const result = await listPermissions();
       return jsonResponse(res, result);
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
@@ -133,13 +130,41 @@ export async function handleSkillRoutes(
     try {
       return jsonResponse(res, { path: getSettingsPath() });
     } catch (err) {
-      return sendError(res, 500, (err as Error).message);
+      return handleRouteError(res, err);
     }
   }
 
   if (pathname === '/api/amp-help') {
     try {
       const result = await getAmpHelp();
+      return jsonResponse(res, result);
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  }
+
+  if (pathname === '/api/agents-md-list') {
+    try {
+      const workspace = url.searchParams.get('workspace') ?? undefined;
+      const result = await listAgentsMd(workspace);
+      return jsonResponse(res, result);
+    } catch (err) {
+      return sendError(res, 500, (err as Error).message);
+    }
+  }
+
+  if (pathname === '/api/amp-usage') {
+    try {
+      const result = await getUsage();
+      return jsonResponse(res, result);
+    } catch (err) {
+      return sendError(res, 500, (err as Error).message);
+    }
+  }
+
+  if (pathname === '/api/amp-version') {
+    try {
+      const result = await getAmpVersion();
       return jsonResponse(res, result);
     } catch (err) {
       return sendError(res, 500, (err as Error).message);

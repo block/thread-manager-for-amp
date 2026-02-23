@@ -1,7 +1,7 @@
 import type { Message } from '../../utils/parseMarkdown';
 import type { Thread } from '../../types';
 import type { AgentStatus } from './useTerminalWebSocket';
-import type { AgentMode } from '../../../shared/websocket.js';
+import type { AgentMode, DeepReasoningEffort } from '../../../shared/websocket.js';
 
 export interface UsageInfo {
   contextPercent: number;
@@ -44,6 +44,7 @@ export interface TerminalMessagesProps {
   showThinkingBlocks: boolean;
   onEditMessage?: (messageIndex: number, currentText: string) => void;
   onUndoLastTurn?: () => void;
+  onOpenThreadId?: (threadId: string) => void;
 }
 
 export interface TerminalInputProps {
@@ -63,13 +64,21 @@ export interface TerminalInputProps {
   searchOpen: boolean;
   workspacePath: string | null;
   agentMode: AgentMode;
+  deepReasoningEffort: DeepReasoningEffort;
   onCycleMode: () => void;
   isModeLocked: boolean;
   hasQueuedMessage: boolean;
 }
 
+export interface GitInfo {
+  branch: string | null;
+  isWorktree: boolean;
+  worktreePath: string | null;
+}
+
 export interface TerminalStatusBarProps {
   usage: UsageInfo;
+  gitInfo?: GitInfo | null;
 }
 
 export interface ContextWarningProps {

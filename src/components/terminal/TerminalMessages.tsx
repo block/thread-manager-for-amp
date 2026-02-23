@@ -4,6 +4,8 @@ import { ToolBlock, type ToolStatus } from '../ToolBlock';
 import { ToolResult } from '../ToolResult';
 import { MarkdownContent } from '../MarkdownContent';
 import { Timestamp } from '../Timestamp';
+import { useRunningThreadsContext } from '../../contexts/RunningThreadsContext';
+import type { RunningStatus } from '../../../shared/types.js';
 import type { TerminalMessagesProps } from './types';
 import type { Message, AttachedImage } from '../../utils/parseMarkdown';
 
@@ -12,6 +14,7 @@ interface PrecomputedData {
   subagentResultMap: Map<string, string>;
   toolIdToToolName: Map<string, string>;
   toolIdToToolInput: Map<string, Record<string, unknown>>;
+  handoffThreadIdMap: Map<string, string>;
 }
 
 function buildPrecomputedData(messages: Message[]): PrecomputedData {
@@ -19,6 +22,7 @@ function buildPrecomputedData(messages: Message[]): PrecomputedData {
   const subagentResultMap = new Map<string, string>();
   const toolIdToToolName = new Map<string, string>();
   const toolIdToToolInput = new Map<string, Record<string, unknown>>();
+  const handoffThreadIdMap = new Map<string, string>();
 
   // Build tool_result index: toolId → result message
   const toolResultByToolId = new Map<string, Message>();
@@ -74,17 +78,41 @@ function buildPrecomputedData(messages: Message[]): PrecomputedData {
       }
       toolStatusMap.set(key, status);
 
-      // Subagent result lookup
-      if (msg.toolName === 'Task' && msg.toolId) {
-        const result = toolResultByToolId.get(msg.toolId);
-        if (result) {
-          subagentResultMap.set(msg.id, result.content);
+      // Subagent / handoff result lookup
+      if (msg.toolName === 'Task' || msg.toolName === 'handoff') {
+        let resultContent: string | undefined;
+        if (msg.toolId) {
+          const result = toolResultByToolId.get(msg.toolId);
+          if (result) {
+            resultContent = result.content;
+            subagentResultMap.set(msg.id, resultContent);
+          }
+        } else {
+          // History fallback: no toolId linkage, check next message
+          const next = messages[i + 1];
+          if (next?.type === 'tool_result') {
+            resultContent = next.content;
+            subagentResultMap.set(msg.id, resultContent);
+          }
+        }
+        // Extract handoff thread ID from result
+        if (msg.toolName === 'handoff' && resultContent) {
+          const match = resultContent.match(/T-[\w-]+/);
+          if (match) {
+            handoffThreadIdMap.set(msg.id, match[0]);
+          }
         }
       }
     }
   }
 
-  return { toolStatusMap, subagentResultMap, toolIdToToolName, toolIdToToolInput };
+  return {
+    toolStatusMap,
+    subagentResultMap,
+    toolIdToToolName,
+    toolIdToToolInput,
+    handoffThreadIdMap,
+  };
 }
 
 const ThinkingBlock = memo(function ThinkingBlock({
@@ -133,6 +161,8 @@ interface MessageItemProps {
   showUndoAction?: boolean;
   onEdit?: () => void;
   onUndo?: () => void;
+  onOpenThreadId?: (threadId: string) => void;
+  handoffThreadStatus?: RunningStatus;
 }
 
 const MessageItem = memo(function MessageItem({
@@ -149,6 +179,8 @@ const MessageItem = memo(function MessageItem({
   showUndoAction,
   onEdit,
   onUndo,
+  onOpenThreadId,
+  handoffThreadStatus,
 }: MessageItemProps) {
   if (msg.type === 'thinking') {
     if (!showThinkingBlocks) return null;
@@ -170,6 +202,8 @@ const MessageItem = memo(function MessageItem({
         highlighted={highlighted}
         status={toolStatus}
         result={toolResultContent}
+        onOpenThreadId={onOpenThreadId}
+        handoffThreadStatus={handoffThreadStatus}
       />
     );
   }
@@ -177,8 +211,12 @@ const MessageItem = memo(function MessageItem({
   if (msg.type === 'tool_result') {
     const resolvedToolName = toolName || msg.toolName;
 
-    // Hide tool_result for subagents - shown inline in ToolBlock
-    if (resolvedToolName === 'Task') {
+    // Hide tool_result for subagents and handoffs - shown inline in ToolBlock
+    if (resolvedToolName === 'Task' || resolvedToolName === 'handoff') {
+      return null;
+    }
+    // Also detect handoff results from history (no toolId linkage) by content
+    if (!resolvedToolName && msg.content.includes('"newThreadID"')) {
       return null;
     }
     if (resolvedToolName === 'look_at') {
@@ -198,6 +236,9 @@ const MessageItem = memo(function MessageItem({
       />
     );
   }
+
+  // Skip empty assistant/system messages (e.g. after stripping thinking blocks)
+  if (msg.type === 'assistant' && !msg.content.trim() && !msg.image) return null;
 
   return (
     <div
@@ -272,8 +313,10 @@ export const TerminalMessages = memo(function TerminalMessages({
   showThinkingBlocks,
   onEditMessage,
   onUndoLastTurn,
+  onOpenThreadId,
 }: TerminalMessagesProps) {
   const precomputed = useMemo(() => buildPrecomputedData(messages), [messages]);
+  const runningThreads = useRunningThreadsContext();
 
   // Find the index of the last user message for undo button placement
   const lastUserMessageId = useMemo(() => {
@@ -287,8 +330,9 @@ export const TerminalMessages = memo(function TerminalMessages({
   const userMessageIndices = useMemo(() => {
     const map = new Map<string, number>();
     for (let i = 0; i < messages.length; i++) {
-      if (messages[i]?.type === 'user') {
-        map.set(messages[i].id, i);
+      const msg = messages[i];
+      if (msg?.type === 'user') {
+        map.set(msg.id, i);
       }
     }
     return map;
@@ -334,6 +378,7 @@ export const TerminalMessages = memo(function TerminalMessages({
       {messages.map((msg) => {
         const isLastUser = msg.id === lastUserMessageId;
         const userIdx = userMessageIndices.get(msg.id);
+        const handoffThreadId = precomputed.handoffThreadIdMap.get(msg.id);
         return (
           <MessageItem
             key={msg.id}
@@ -358,6 +403,10 @@ export const TerminalMessages = memo(function TerminalMessages({
                 : undefined
             }
             onUndo={isLastUser ? onUndoLastTurn : undefined}
+            onOpenThreadId={onOpenThreadId}
+            handoffThreadStatus={
+              handoffThreadId ? runningThreads[handoffThreadId]?.status : undefined
+            }
           />
         );
       })}

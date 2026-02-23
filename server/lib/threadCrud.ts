@@ -3,7 +3,7 @@ import type { Stats } from 'fs';
 import { join } from 'path';
 import { AMP_HOME } from './constants.js';
 import { calculateThreadCost } from '../../shared/cost.js';
-import { formatRelativeTime, runAmp } from './utils.js';
+import { formatRelativeTime, parseFileUri, runAmp } from './utils.js';
 import { deleteThreadData } from './database.js';
 import { getKnownWorkspaces as getKnownWorkspacesImpl } from './workspaces.js';
 import type {
@@ -116,7 +116,7 @@ export async function getThreads({
           const trees = data.env?.initial?.trees || [];
           const workspace = trees[0]?.displayName || null;
           const workspaceUri = trees[0]?.uri || null;
-          const workspacePath = workspaceUri ? workspaceUri.replace('file://', '') : null;
+          const workspacePath = parseFileUri(workspaceUri);
           const repoUrl = trees[0]?.repository?.url || null;
           let repo: string | null = null;
           if (repoUrl) {
