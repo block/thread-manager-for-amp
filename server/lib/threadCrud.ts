@@ -127,18 +127,19 @@ export async function getThreads({
           // Extract handoff relationships
           const relationships = data.relationships || [];
           let handoffParentId: string | null = null;
-          let handoffChildId: string | null = null;
+          const handoffChildIds: string[] = [];
           for (const rel of relationships) {
             if (isHandoffRelationship(rel)) {
               if (rel.role === 'child') {
                 // "I am the child" → threadID is my parent
                 handoffParentId = rel.threadID;
               } else {
-                // "I am the parent" → threadID is my child (use last one seen)
-                handoffChildId = rel.threadID;
+                // "I am the parent" → threadID is my child
+                handoffChildIds.push(rel.threadID);
               }
             }
           }
+          const uniqueChildIds = [...new Set(handoffChildIds)];
 
           // Extract touched files from tool uses
           const touchedFiles = new Set<string>();
@@ -167,7 +168,7 @@ export async function getThreads({
             repo,
             touchedFiles: [...touchedFiles],
             handoffParentId,
-            handoffChildId,
+            handoffChildIds: uniqueChildIds,
           };
         } catch (e) {
           const error = e as Error;
