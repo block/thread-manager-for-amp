@@ -52,6 +52,9 @@ export interface UseCommandsOptions {
   onOpenPromptHistory?: () => void;
   onUndoLastTurn?: () => void;
   onShowAgentsMdList?: () => void;
+  onSetVisibility?: (id: string, visibility: string) => void;
+  onShowUsage?: () => void;
+  onCheckForUpdates?: () => void;
 }
 
 export interface CommandFactoryContext {

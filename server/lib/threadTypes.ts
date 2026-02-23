@@ -78,7 +78,7 @@ export interface ThreadEnv {
 
 export interface ThreadFile {
   title?: string;
-  visibility?: 'Private' | 'Public' | 'Workspace';
+  visibility?: 'Private' | 'Public' | 'Workspace' | 'Unlisted' | 'Group';
   created?: number; // Unix timestamp in milliseconds
   agentMode?: string;
   messages?: ThreadMessage[];

@@ -6,7 +6,7 @@ export interface Thread {
   title: string;
   lastUpdated: string;
   lastUpdatedDate?: string;
-  visibility: 'Private' | 'Public' | 'Workspace';
+  visibility: 'Private' | 'Public' | 'Workspace' | 'Unlisted' | 'Group';
   messages: number;
   model?: string;
   contextPercent?: number;

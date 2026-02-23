@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Search,
   Play,
+  Eye,
 } from 'lucide-react';
 import { CATEGORIES } from './categories';
 import type { Command, CommandFactoryContext, CommandHandlers } from './types';
@@ -66,6 +67,46 @@ export function createThreadCommands(
       label: 'share',
       icon: <Share2 size={14} />,
       action: () => activeThreadId && handlers.onShareThread?.(activeThreadId),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-visibility-private',
+      category: CATEGORIES.THREAD,
+      label: 'set visibility: private',
+      icon: <Eye size={14} />,
+      action: () => activeThreadId && handlers.onSetVisibility?.(activeThreadId, 'Private'),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-visibility-unlisted',
+      category: CATEGORIES.THREAD,
+      label: 'set visibility: unlisted',
+      icon: <Eye size={14} />,
+      action: () => activeThreadId && handlers.onSetVisibility?.(activeThreadId, 'Unlisted'),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-visibility-workspace',
+      category: CATEGORIES.THREAD,
+      label: 'set visibility: workspace',
+      icon: <Eye size={14} />,
+      action: () => activeThreadId && handlers.onSetVisibility?.(activeThreadId, 'Workspace'),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-visibility-group',
+      category: CATEGORIES.THREAD,
+      label: 'set visibility: group',
+      icon: <Eye size={14} />,
+      action: () => activeThreadId && handlers.onSetVisibility?.(activeThreadId, 'Group'),
+      disabled: !hasActiveThread,
+    },
+    {
+      id: 'thread-visibility-public',
+      category: CATEGORIES.THREAD,
+      label: 'set visibility: public',
+      icon: <Eye size={14} />,
+      action: () => activeThreadId && handlers.onSetVisibility?.(activeThreadId, 'Public'),
       disabled: !hasActiveThread,
     },
     {
