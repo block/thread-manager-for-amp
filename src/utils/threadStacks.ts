@@ -1,4 +1,5 @@
 import type { Thread, ThreadStack, ThreadStackTopology } from '../types';
+import { buildHandoffGraph } from '../../shared/utils';
 
 export interface ThreadListEntry {
   kind: 'thread' | 'stack';
@@ -42,27 +43,7 @@ function dfsDescendants(
 }
 
 export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
-  const threadMap = new Map<string, Thread>();
-  for (const t of threads) {
-    threadMap.set(t.id, t);
-  }
-
-  // Build bidirectional links (only for threads in our current list)
-  // A parent can have multiple children (fan-out handoffs)
-  const parentToChildren = new Map<string, string[]>();
-  const childToParent = new Map<string, string>();
-
-  for (const t of threads) {
-    if (t.handoffParentId && threadMap.has(t.handoffParentId)) {
-      childToParent.set(t.id, t.handoffParentId);
-      const existing = parentToChildren.get(t.handoffParentId);
-      if (existing) {
-        existing.push(t.id);
-      } else {
-        parentToChildren.set(t.handoffParentId, [t.id]);
-      }
-    }
-  }
+  const { threadMap, childToParent, parentToChildren } = buildHandoffGraph(threads);
 
   // Collect all members of each tree, using the root as head
   const inStack = new Set<string>();
@@ -163,7 +144,6 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
         thread: root,
         stack: {
           head: root,
-          ancestors: descendants,
           descendants,
           lastActiveDate: lastActiveDateStr,
           topology,

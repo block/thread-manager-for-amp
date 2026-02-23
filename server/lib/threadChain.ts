@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import type { Thread, ThreadChain, ChainThread, ThreadChainNode } from '../../shared/types.js';
+import { buildHandoffGraph } from '../../shared/utils.js';
 import { runAmp, stripAnsi } from './utils.js';
 import { getThreads } from './threadCrud.js';
 import { THREADS_DIR, isHandoffRelationship, type ThreadFile } from './threadTypes.js';
@@ -9,20 +10,7 @@ import { getThreadMetadata, updateLinkedIssue } from './database.js';
 
 export async function getThreadChain(threadId: string): Promise<ThreadChain> {
   const { threads } = await getThreads({ limit: 1000 });
-  const threadMap = new Map(threads.map((t) => [t.id, t]));
-
-  // Build parent-to-children index from all threads' handoffParentId
-  const parentToChildren = new Map<string, string[]>();
-  for (const t of threads) {
-    if (t.handoffParentId && threadMap.has(t.handoffParentId)) {
-      const existing = parentToChildren.get(t.handoffParentId);
-      if (existing) {
-        existing.push(t.id);
-      } else {
-        parentToChildren.set(t.handoffParentId, [t.id]);
-      }
-    }
-  }
+  const { threadMap, parentToChildren } = buildHandoffGraph(threads);
 
   // Walk up to collect ancestor IDs (linear path to root)
   const ancestorIds: string[] = [];
