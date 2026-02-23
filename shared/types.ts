@@ -112,7 +112,9 @@ export interface ThreadStackTopology {
 
 export interface ThreadStack {
   head: Thread;
-  ancestors: Thread[]; // ordered from newest to oldest (head's parent first)
+  ancestors: Thread[]; // @deprecated - use descendants instead (kept for backward compat)
+  descendants: Thread[]; // tree-ordered via DFS from root's children
+  lastActiveDate?: string; // most recent lastUpdatedDate across all members
   topology?: ThreadStackTopology;
 }
 

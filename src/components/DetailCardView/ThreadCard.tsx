@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { ThreadStatusBadge } from '../ThreadStatusBadge';
 import { LinkedIssueBadge } from '../LinkedIssue';
-import type { Thread, ThreadMetadata, ThreadStatus } from '../../types';
+import type { Thread, ThreadMetadata, ThreadStatus, ThreadStackTopology } from '../../types';
 
 function formatRelativeTime(dateStr: string): string {
   const date = new Date(dateStr);
@@ -42,7 +42,18 @@ export interface ThreadCardProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   isStackChild?: boolean;
-  stackAncestors?: Thread[];
+  stackDescendants?: Thread[];
+  topology?: ThreadStackTopology;
+}
+
+function getCardDepth(nodeId: string, topology: ThreadStackTopology): number {
+  let depth = 0;
+  let current = nodeId;
+  while (topology.childToParent[current]) {
+    depth++;
+    current = topology.childToParent[current];
+  }
+  return Math.max(0, depth - 1);
 }
 
 function getFilename(path: string): string {
@@ -61,7 +72,8 @@ export function ThreadCard({
   isExpanded,
   onToggleExpand,
   isStackChild,
-  stackAncestors,
+  stackDescendants,
+  topology,
 }: ThreadCardProps) {
   const meta = metadata[thread.id];
   const status = meta?.status || 'active';
@@ -180,35 +192,35 @@ export function ThreadCard({
         )}
       </div>
 
-      {hasStack && isExpanded && stackAncestors && stackAncestors.length > 0 && (
+      {hasStack && isExpanded && stackDescendants && stackDescendants.length > 0 && (
         <div className="stack-ancestors">
-          {stackAncestors.map((ancestor) => {
-            const ancestorMeta = metadata[ancestor.id];
+          {stackDescendants.map((desc) => {
+            const descMeta = metadata[desc.id];
+            const depth = topology ? getCardDepth(desc.id, topology) : 0;
             return (
               <div
-                key={ancestor.id}
-                className={`detail-card stack-child status-${ancestorMeta?.status || 'active'}`}
-                onClick={() => onContinue(ancestor)}
+                key={desc.id}
+                className={`detail-card stack-child status-${descMeta?.status || 'active'}`}
+                style={depth > 0 ? { marginLeft: depth * 12 } : undefined}
+                onClick={() => onContinue(desc)}
               >
                 <div className="detail-card-header">
                   <ThreadStatusBadge
-                    threadId={ancestor.id}
-                    status={ancestorMeta?.status || 'active'}
-                    onStatusChange={(s) => onStatusChange?.(ancestor.id, s)}
+                    threadId={desc.id}
+                    status={descMeta?.status || 'active'}
+                    onStatusChange={(s) => onStatusChange?.(desc.id, s)}
                     compact
                   />
                 </div>
-                <h3 className="detail-card-title">{ancestor.title}</h3>
+                <h3 className="detail-card-title">{desc.title}</h3>
                 <div className="detail-card-meta">
-                  <span className="detail-card-time">
-                    {formatRelativeTime(ancestor.lastUpdated)}
-                  </span>
-                  {ancestor.cost !== undefined && (
+                  <span className="detail-card-time">{formatRelativeTime(desc.lastUpdated)}</span>
+                  {desc.cost !== undefined && (
                     <span
                       className="detail-card-stat cost"
                       title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data"
                     >
-                      ~${ancestor.cost.toFixed(2)}
+                      ~${desc.cost.toFixed(2)}
                     </span>
                   )}
                 </div>
