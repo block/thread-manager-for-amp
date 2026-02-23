@@ -127,6 +127,7 @@ export function Terminal({
     connectionError,
     threadMode,
     sendMessage: wsSendMessage,
+    sendShellExec,
     cancelOperation,
     reconnect,
   } = useTerminalWebSocket({ threadId, setMessages, setUsage, setIsLoading });
@@ -299,6 +300,10 @@ export function Terminal({
               preview = msg.content.slice(0, 25).replace(/\n/g, ' ');
             }
             type = 'tool';
+          } else if (msg.type === 'shell_result') {
+            label = msg.shellIncognito ? '$$ Shell' : '$ Shell';
+            preview = (msg.shellCommand || '').slice(0, 25);
+            type = 'tool';
           } else if (msg.type === 'error') {
             label = 'Error';
             preview = msg.content.slice(0, 25);
@@ -335,6 +340,24 @@ export function Terminal({
 
     if ((!input.trim() && !pendingImage) || !isConnected) return;
     const messageText = input.trim() || 'Analyze this image';
+
+    // Detect inline shell mode: $$ (incognito) or $ (context)
+    const shellMatch = messageText.match(/^(\$\$?)\s+(.+)/s);
+    if (shellMatch && !pendingImage) {
+      const incognito = shellMatch[1] === '$$';
+      const command = shellMatch[2] ?? '';
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: generateId(),
+          type: 'user' as const,
+          content: messageText,
+        },
+      ]);
+      sendShellExec(command, incognito);
+      clearInput();
+      return;
+    }
 
     // Queue client-side if agent is busy
     if (isActive) {
@@ -398,6 +421,7 @@ export function Terminal({
     queuedMsg,
     setMessages,
     wsSendMessage,
+    sendShellExec,
     addSessionImage,
     clearInput,
     metadata,

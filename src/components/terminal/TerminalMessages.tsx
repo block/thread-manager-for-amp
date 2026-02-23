@@ -1,5 +1,13 @@
 import { memo, useMemo, useCallback, useState } from 'react';
-import { Loader2, ChevronRight, ChevronDown, Brain, Pencil, Undo2 } from 'lucide-react';
+import {
+  Loader2,
+  ChevronRight,
+  ChevronDown,
+  Brain,
+  Pencil,
+  Undo2,
+  TerminalSquare,
+} from 'lucide-react';
 import { ToolBlock, type ToolStatus } from '../ToolBlock';
 import { ToolResult } from '../ToolResult';
 import { MarkdownContent } from '../MarkdownContent';
@@ -239,6 +247,30 @@ const MessageItem = memo(function MessageItem({
 
   // Skip empty assistant/system messages (e.g. after stripping thinking blocks)
   if (msg.type === 'assistant' && !msg.content.trim() && !msg.image) return null;
+
+  if (msg.type === 'shell_result') {
+    const isIncognito = msg.shellIncognito;
+    const exitOk = msg.shellExitCode === 0;
+    return (
+      <div
+        ref={(el) => registerRef(msg.id, el)}
+        className={`chat-message chat-message-shell ${isIncognito ? 'shell-incognito' : ''} ${highlighted ? 'highlighted' : ''}`}
+      >
+        <div className="chat-avatar">
+          <TerminalSquare size={16} />
+        </div>
+        <div className="chat-bubble">
+          <div className="chat-header">
+            <span className="chat-sender shell-prefix">{isIncognito ? '$$' : '$'}</span>
+            <code className="shell-command-text">{msg.shellCommand}</code>
+            {!exitOk && <span className="shell-exit-code">exit {msg.shellExitCode}</span>}
+            {isIncognito && <span className="shell-incognito-badge">incognito</span>}
+          </div>
+          {msg.content && <pre className="shell-output">{msg.content}</pre>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

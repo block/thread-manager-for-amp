@@ -29,6 +29,12 @@ export function isWsClientMessage(data: unknown): data is WsClientMessage {
     return true;
   }
 
+  if (obj.type === 'shell_exec') {
+    if (typeof obj.command !== 'string') return false;
+    if (typeof obj.incognito !== 'boolean') return false;
+    return true;
+  }
+
   return false;
 }
 

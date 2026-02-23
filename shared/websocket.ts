@@ -47,7 +47,8 @@ export type WsClientMessage =
       mode?: AgentMode;
       deepReasoningEffort?: DeepReasoningEffort;
     }
-  | { type: 'cancel' };
+  | { type: 'cancel' }
+  | { type: 'shell_exec'; command: string; incognito: boolean };
 
 // Server -> Client messages
 export type WsServerMessage =
@@ -67,7 +68,8 @@ export type WsServerMessage =
   | { type: 'error'; content: string }
   | { type: 'done'; code: number }
   | { type: 'system'; subtype: string }
-  | { type: 'cancelled' };
+  | { type: 'cancelled' }
+  | { type: 'shell_result'; command: string; output: string; exitCode: number; incognito: boolean };
 
 // Alias for backward compatibility with frontend
 export type WsEvent = WsServerMessage;

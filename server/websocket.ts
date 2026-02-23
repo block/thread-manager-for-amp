@@ -1,4 +1,4 @@
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, execFile, ChildProcess } from 'child_process';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { watchFile, unwatchFile, type StatWatcher } from 'fs';
 import { join } from 'path';
@@ -529,6 +529,9 @@ async function spawnAmpOnSession(
 
 const VALID_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep', 'large'];
 
+// Shell command execution timeout (30 seconds)
+const SHELL_EXEC_TIMEOUT_MS = 30_000;
+
 interface InitResult {
   mode?: AgentMode;
   hasMessages: boolean;
@@ -601,6 +604,54 @@ function stopFileWatcher(session: ThreadSession): void {
   session.fileWatcher = undefined;
 }
 
+// ── Inline shell execution ($, $$) ──────────────────────────────────────
+
+async function getSessionWorkspacePath(session: ThreadSession): Promise<string | null> {
+  try {
+    const threadData = JSON.parse(
+      await readFile(join(THREADS_DIR, `${session.threadId}.json`), 'utf-8'),
+    ) as ThreadFile;
+    const uri = threadData.env?.initial?.trees?.[0]?.uri;
+    return uri ? uri.replace('file://', '') : null;
+  } catch {
+    return null;
+  }
+}
+
+function executeShellCommand(
+  session: ThreadSession,
+  command: string,
+  incognito: boolean,
+  cwd: string | null,
+): void {
+  const shell = process.env.SHELL || '/bin/sh';
+  const child = execFile(
+    shell,
+    ['-c', command],
+    {
+      cwd: cwd || undefined,
+      env: { ...process.env, TERM: 'dumb' },
+      timeout: SHELL_EXEC_TIMEOUT_MS,
+      maxBuffer: 1024 * 1024, // 1 MB
+    },
+    (error, stdout, stderr) => {
+      const output = (stdout || '') + (stderr ? `\n${stderr}` : '');
+      let exitCode = 0;
+      if (error) {
+        const errWithCode = error as NodeJS.ErrnoException & { code?: string | number };
+        exitCode = typeof errWithCode.code === 'number' ? errWithCode.code : 1;
+      }
+      sendToSession(session, {
+        type: 'shell_result',
+        command,
+        output: output.slice(0, 50000),
+        exitCode,
+        incognito,
+      });
+    },
+  );
+  void child;
+}
 // ── Disconnect handling ─────────────────────────────────────────────────
 
 function startGracePeriod(session: ThreadSession, reason: string): void {
@@ -759,6 +810,10 @@ export function setupWebSocket(server: Server): WebSocketServer {
         ).catch((err: unknown) => {
           console.error(`[WS] spawnAmp error for thread ${threadId}:`, err);
           sendToSession(session, { type: 'error', content: 'Failed to process message' });
+        });
+      } else if (parsed.type === 'shell_exec') {
+        void getSessionWorkspacePath(session).then((cwd) => {
+          executeShellCommand(session, parsed.command, parsed.incognito, cwd);
         });
       } else if (parsed.type === 'cancel') {
         if (session.child) {

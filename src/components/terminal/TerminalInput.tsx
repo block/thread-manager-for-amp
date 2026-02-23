@@ -146,6 +146,7 @@ export function TerminalInput({
       onInputChange('');
       return;
     }
+
     if (e.ctrlKey && e.key === 'v') {
       try {
         const clipboardItems = await navigator.clipboard.read();
@@ -176,6 +177,13 @@ export function TerminalInput({
 
   const isActive = isSending || isRunning;
   const statusMessage = getStatusMessage(agentStatus);
+
+  // Detect shell mode prefix for visual indicator
+  const shellMode = input.trimStart().startsWith('$$')
+    ? 'incognito'
+    : input.trimStart().startsWith('$') && input.trimStart().length > 1
+      ? 'context'
+      : null;
 
   const modeLabel = agentMode === 'deep' ? DEEP_EFFORT_LABELS[deepReasoningEffort] : agentMode;
   const modeIcon =
@@ -213,6 +221,18 @@ export function TerminalInput({
           >
             ×
           </button>
+        </div>
+      )}
+      {shellMode && (
+        <div
+          className={`shell-mode-indicator ${shellMode === 'incognito' ? 'shell-incognito' : ''}`}
+        >
+          <span className="shell-mode-prefix">{shellMode === 'incognito' ? '$$' : '$'}</span>
+          <span className="shell-mode-label">
+            {shellMode === 'incognito'
+              ? 'Shell (incognito — output hidden from agent)'
+              : 'Shell (output added to agent context)'}
+          </span>
         </div>
       )}
       <textarea
