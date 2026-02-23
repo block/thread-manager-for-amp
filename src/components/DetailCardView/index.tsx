@@ -131,7 +131,8 @@ export function DetailCardView({
             stackSize={stackSize}
             isExpanded={isExpanded}
             onToggleExpand={() => toggleStackExpand(entry.thread.id)}
-            stackAncestors={entry.stack?.ancestors}
+            stackDescendants={entry.stack?.descendants}
+            topology={entry.stack?.topology}
           />
         );
       })}

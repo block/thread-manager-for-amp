@@ -14,7 +14,8 @@ import { useThreadListSelection } from './useThreadListSelection';
 import { useThreadListKeyboard } from './useThreadListKeyboard';
 import { PAGE_SIZE } from './constants';
 import type { ThreadListProps, BulkAction } from './types';
-import { buildThreadStacks, getStackSize } from '../../utils/threadStacks';
+import { buildThreadStacks, getStackSize, getLastActiveThread } from '../../utils/threadStacks';
+import { StackTree } from './StackTree';
 import { CostInfoTip } from '../CostInfoTip';
 
 // Re-exports for external consumers
@@ -91,11 +92,20 @@ export const ThreadList = memo(function ThreadList({
     for (const entry of paginatedEntries) {
       result.push(entry.thread);
       if (entry.kind === 'stack' && entry.stack && expandedStacks.has(entry.thread.id)) {
-        result.push(...entry.stack.ancestors);
+        result.push(...entry.stack.descendants);
       }
     }
     return result;
   }, [paginatedEntries, expandedStacks]);
+
+  // Build thread map for StackTree (all threads by id)
+  const threadMapForStacks = useMemo(() => {
+    const map = new Map<string, Thread>();
+    for (const t of threads) {
+      map.set(t.id, t);
+    }
+    return map;
+  }, [threads]);
 
   const { selectedIds, toggleSelect, selectAll, clearSelection, isAllSelected, isSomeSelected } =
     useThreadListSelection({ threads, paginatedThreads });
@@ -236,6 +246,8 @@ export const ThreadList = memo(function ThreadList({
               {paginatedEntries.map((entry) => {
                 const stackSize = getStackSize(entry);
                 const isExpanded = expandedStacks.has(entry.thread.id);
+                const lastActiveThread =
+                  entry.kind === 'stack' ? getLastActiveThread(entry) : undefined;
 
                 return (
                   <React.Fragment key={entry.thread.id}>
@@ -253,26 +265,23 @@ export const ThreadList = memo(function ThreadList({
                       stackSize={stackSize}
                       isExpanded={isExpanded}
                       onToggleExpand={() => toggleStackExpand(entry.thread.id)}
+                      displayLastUpdated={lastActiveThread?.lastUpdated}
                     />
-                    {entry.kind === 'stack' &&
-                      entry.stack &&
-                      isExpanded &&
-                      entry.stack.ancestors.map((ancestor) => (
-                        <ThreadRow
-                          key={ancestor.id}
-                          thread={ancestor}
-                          metadata={metadata[ancestor.id]}
-                          initialLabels={threadLabelObjects?.[ancestor.id]}
-                          selected={selectedIds.has(ancestor.id)}
-                          focused={focusedThreadId === ancestor.id}
-                          onContinue={onContinue}
-                          onArchive={setArchiveTarget}
-                          onDelete={setDeleteTarget}
-                          onStatusChange={onStatusChange}
-                          onSelect={toggleSelect}
-                          isStackChild
-                        />
-                      ))}
+                    {entry.kind === 'stack' && entry.stack?.topology && isExpanded && (
+                      <StackTree
+                        topology={entry.stack.topology}
+                        threadMap={threadMapForStacks}
+                        metadata={metadata}
+                        threadLabelObjects={threadLabelObjects}
+                        selectedIds={selectedIds}
+                        focusedThreadId={focusedThreadId}
+                        onContinue={onContinue}
+                        onArchive={setArchiveTarget}
+                        onDelete={setDeleteTarget}
+                        onStatusChange={onStatusChange}
+                        onSelect={toggleSelect}
+                      />
+                    )}
                   </React.Fragment>
                 );
               })}

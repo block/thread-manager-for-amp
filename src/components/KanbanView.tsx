@@ -1,7 +1,24 @@
 import { memo, useMemo, useState, useCallback } from 'react';
 import { ExternalLink, GitBranch, ChevronRight, ChevronDown, Layers } from 'lucide-react';
 import type { Thread, ThreadMetadata, ThreadStatus } from '../types';
-import { buildThreadStacks, getStackSize, type ThreadListEntry } from '../utils/threadStacks';
+import {
+  buildThreadStacks,
+  getStackSize,
+  getLastActiveThread,
+  type ThreadListEntry,
+} from '../utils/threadStacks';
+
+function getDepth(nodeId: string, topology: import('../types').ThreadStackTopology): number {
+  let depth = 0;
+  let current = nodeId;
+  while (topology.childToParent[current]) {
+    depth++;
+    current = topology.childToParent[current];
+  }
+  // Subtract 1 because root is depth 0 and its children are depth 1,
+  // but root is already shown as the head card
+  return Math.max(0, depth - 1);
+}
 
 interface KanbanCardProps {
   thread: Thread;
@@ -13,8 +30,10 @@ interface KanbanCardProps {
   stackSize?: number;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
-  stackAncestors?: Thread[];
+  stackDescendants?: Thread[];
+  topology?: import('../types').ThreadStackTopology;
   allMetadata?: Record<string, ThreadMetadata>;
+  displayLastUpdated?: string;
 }
 
 const KanbanCard = memo(function KanbanCard({
@@ -26,8 +45,10 @@ const KanbanCard = memo(function KanbanCard({
   stackSize,
   isExpanded,
   onToggleExpand,
-  stackAncestors,
+  stackDescendants,
+  topology,
   allMetadata,
+  displayLastUpdated,
 }: KanbanCardProps) {
   const hasStack = stackSize && stackSize > 1;
 
@@ -69,7 +90,7 @@ const KanbanCard = memo(function KanbanCard({
           )}
         </div>
         <div className="kanban-card-meta">
-          <span className="kanban-card-time">{thread.lastUpdated}</span>
+          <span className="kanban-card-time">{displayLastUpdated || thread.lastUpdated}</span>
           {thread.contextPercent !== undefined && (
             <span className={`kanban-card-context ${thread.contextPercent > 80 ? 'warning' : ''}`}>
               {thread.contextPercent}%
@@ -104,31 +125,31 @@ const KanbanCard = memo(function KanbanCard({
         </div>
       </div>
 
-      {hasStack && isExpanded && stackAncestors && stackAncestors.length > 0 && (
+      {hasStack && isExpanded && stackDescendants && stackDescendants.length > 0 && (
         <div className="kanban-stack-ancestors">
-          {stackAncestors.map((ancestor) => {
-            const ancestorMeta = allMetadata?.[ancestor.id];
-            const ancestorStatus = ancestorMeta?.status || 'active';
+          {stackDescendants.map((desc) => {
+            const descMeta = allMetadata?.[desc.id];
+            const descStatus = descMeta?.status || 'active';
+            const depth = topology ? getDepth(desc.id, topology) : 0;
             return (
               <div
-                key={ancestor.id}
-                className={`kanban-card stack-child status-${ancestorStatus}`}
+                key={desc.id}
+                className={`kanban-card stack-child status-${descStatus}`}
+                style={depth > 0 ? { marginLeft: depth * 12 } : undefined}
                 role="button"
                 tabIndex={0}
-                onClick={() => onContinue(ancestor)}
+                onClick={() => onContinue(desc)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onContinue(ancestor);
+                    onContinue(desc);
                   }
                 }}
               >
-                <div className="kanban-card-title">{ancestor.title}</div>
+                <div className="kanban-card-title">{desc.title}</div>
                 <div className="kanban-card-meta">
-                  <span className="kanban-card-time">{ancestor.lastUpdated}</span>
-                  <span className={`kanban-card-status status-${ancestorStatus}`}>
-                    {ancestorStatus}
-                  </span>
+                  <span className="kanban-card-time">{desc.lastUpdated}</span>
+                  <span className={`kanban-card-status status-${descStatus}`}>{descStatus}</span>
                 </div>
               </div>
             );
@@ -187,7 +208,10 @@ export const KanbanView = memo(function KanbanView({
     };
 
     for (const entry of entries) {
-      const status = metadata[entry.thread.id]?.status || 'active';
+      // Use last active thread's status for column placement so stacks
+      // appear in the column matching their most recent activity
+      const activeThread = getLastActiveThread(entry);
+      const status = metadata[activeThread.id]?.status || 'active';
       result[status].push(entry);
     }
 
@@ -232,6 +256,7 @@ export const KanbanView = memo(function KanbanView({
             {columnData[status].map((entry) => {
               const stackSize = getStackSize(entry);
               const isExpanded = expandedStacks.has(entry.thread.id);
+              const lastActive = entry.kind === 'stack' ? getLastActiveThread(entry) : undefined;
 
               return (
                 <KanbanCard
@@ -244,8 +269,10 @@ export const KanbanView = memo(function KanbanView({
                   stackSize={stackSize}
                   isExpanded={isExpanded}
                   onToggleExpand={() => toggleStackExpand(entry.thread.id)}
-                  stackAncestors={entry.stack?.ancestors}
+                  stackDescendants={entry.stack?.descendants}
+                  topology={entry.stack?.topology}
                   allMetadata={metadata}
+                  displayLastUpdated={lastActive?.lastUpdated}
                 />
               );
             })}

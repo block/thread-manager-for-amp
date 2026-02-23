@@ -19,7 +19,7 @@ export interface Thread {
   autoInvoke?: boolean;
   // Handoff relationship IDs (derived from relationships for quick access)
   handoffParentId?: string | null;
-  handoffChildId?: string | null;
+  handoffChildIds?: string[];
 }
 
 export interface RelatedThread {
@@ -49,10 +49,15 @@ export interface ChainThread {
   comment?: string;
 }
 
+export interface ThreadChainNode {
+  thread: ChainThread;
+  children: ThreadChainNode[];
+}
+
 export interface ThreadChain {
   ancestors: ChainThread[];
   current: ChainThread | null;
-  descendants: ChainThread[];
+  descendantsTree: ThreadChainNode[];
 }
 
 export interface FileEdit {
@@ -99,9 +104,17 @@ export type SortField = 'lastUpdated' | 'title' | 'messages' | 'status' | 'conte
 export type SortDirection = 'asc' | 'desc';
 
 // Thread stacking (for grouping handoff chains)
+export interface ThreadStackTopology {
+  rootId: string;
+  childToParent: Record<string, string>;
+  parentToChildren: Record<string, string[]>;
+}
+
 export interface ThreadStack {
   head: Thread;
-  ancestors: Thread[]; // ordered from newest to oldest (head's parent first)
+  descendants: Thread[]; // tree-ordered via DFS from root's children
+  lastActiveDate?: string; // most recent lastUpdatedDate across all members
+  topology?: ThreadStackTopology;
 }
 
 export interface ThreadsResult {

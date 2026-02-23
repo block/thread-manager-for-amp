@@ -257,7 +257,7 @@ export function useThreadDiscovery({
         if (!signal.aborted) {
           setChain(data);
           const chainCount = data
-            ? (data.ancestors?.length || 0) + (data.descendants?.length || 0)
+            ? (data.ancestors?.length || 0) + (data.descendantsTree?.length || 0)
             : 0;
           setSummary((prev) => ({ ...prev, chainCount }));
         }

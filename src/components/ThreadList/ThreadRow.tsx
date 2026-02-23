@@ -30,6 +30,8 @@ export const ThreadRow = memo(function ThreadRow({
   isExpanded,
   onToggleExpand,
   isStackChild,
+  stackDepth,
+  displayLastUpdated,
 }: ThreadRowProps) {
   const hasStack = stackSize && stackSize > 1;
 
@@ -87,7 +89,14 @@ export const ThreadRow = memo(function ThreadRow({
               <span className="stack-count">{stackSize}</span>
             </button>
           )}
-          {isStackChild && <span className="stack-indent" />}
+          {isStackChild && (
+            <span
+              className="stack-indent"
+              style={
+                stackDepth && stackDepth > 1 ? { marginLeft: (stackDepth - 1) * 16 } : undefined
+              }
+            />
+          )}
           <span className="thread-title-text">{thread.title}</span>
           {metadata?.linked_issue_url && (
             <LinkedIssueBadge url={metadata.linked_issue_url} compact />
@@ -97,7 +106,7 @@ export const ThreadRow = memo(function ThreadRow({
       <td className="thread-labels" onClick={(e) => e.stopPropagation()}>
         <ThreadLabelEditor threadId={thread.id} initialLabels={initialLabels} compact />
       </td>
-      <td className="thread-time">{thread.lastUpdated}</td>
+      <td className="thread-time">{displayLastUpdated || thread.lastUpdated}</td>
       <td className="thread-context">
         {thread.contextPercent !== undefined ? (
           <span className={thread.contextPercent > 80 ? 'context-warning' : ''}>

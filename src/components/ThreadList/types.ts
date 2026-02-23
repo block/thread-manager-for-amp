@@ -37,4 +37,6 @@ export interface ThreadRowProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   isStackChild?: boolean;
+  stackDepth?: number;
+  displayLastUpdated?: string;
 }

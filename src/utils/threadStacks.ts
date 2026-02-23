@@ -1,4 +1,5 @@
-import type { Thread, ThreadStack } from '../types';
+import type { Thread, ThreadStack, ThreadStackTopology } from '../types';
+import { buildHandoffGraph } from '../../shared/utils';
 
 export interface ThreadListEntry {
   kind: 'thread' | 'stack';
@@ -6,30 +7,45 @@ export interface ThreadListEntry {
   stack?: ThreadStack;
 }
 
+function parseDate(dateStr: string | undefined): number {
+  if (!dateStr) return 0;
+  const t = Date.parse(dateStr);
+  return Number.isFinite(t) ? t : 0;
+}
+
+/** DFS walk from a node's children, producing tree-ordered Thread[] (excludes the node itself). */
+function dfsDescendants(
+  nodeId: string,
+  parentToChildrenMap: Record<string, string[]>,
+  threadMap: Map<string, Thread>,
+  visited: Set<string>,
+): Thread[] {
+  const result: Thread[] = [];
+  const childIds = parentToChildrenMap[nodeId];
+  if (!childIds) return result;
+
+  // Sort children by lastUpdatedDate desc for deterministic ordering
+  const sorted = [...childIds].sort((a, b) => {
+    const ta = threadMap.get(a);
+    const tb = threadMap.get(b);
+    return parseDate(tb?.lastUpdatedDate) - parseDate(ta?.lastUpdatedDate);
+  });
+
+  for (const childId of sorted) {
+    if (visited.has(childId)) continue;
+    const child = threadMap.get(childId);
+    if (!child) continue;
+    visited.add(childId);
+    result.push(child);
+    result.push(...dfsDescendants(childId, parentToChildrenMap, threadMap, visited));
+  }
+  return result;
+}
+
 export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
-  const threadMap = new Map<string, Thread>();
-  for (const t of threads) {
-    threadMap.set(t.id, t);
-  }
+  const { threadMap, childToParent, parentToChildren } = buildHandoffGraph(threads);
 
-  // Build bidirectional links (only for threads in our current list)
-  // A parent can have multiple children (fan-out handoffs)
-  const parentToChildren = new Map<string, string[]>();
-  const childToParent = new Map<string, string>();
-
-  for (const t of threads) {
-    if (t.handoffParentId && threadMap.has(t.handoffParentId)) {
-      childToParent.set(t.id, t.handoffParentId);
-      const existing = parentToChildren.get(t.handoffParentId);
-      if (existing) {
-        existing.push(t.id);
-      } else {
-        parentToChildren.set(t.handoffParentId, [t.id]);
-      }
-    }
-  }
-
-  // Collect all members of each tree, picking the most recently updated as head
+  // Collect all members of each tree, using the root as head
   const inStack = new Set<string>();
   const entries: ThreadListEntry[] = [];
 
@@ -68,35 +84,85 @@ export function buildThreadStacks(threads: Thread[]): ThreadListEntry[] {
       }
     }
 
-    // Pick the most recently updated thread as head
-    chainMembers.sort((a, b) => {
-      const dateA = new Date(a.lastUpdatedDate || 0).getTime();
-      const dateB = new Date(b.lastUpdatedDate || 0).getTime();
-      return dateB - dateA;
-    });
-
-    const head = chainMembers[0];
-    if (!head) continue;
-    const ancestors = chainMembers.slice(1);
-
     // Mark all as processed
     for (const member of chainMembers) {
       inStack.add(member.id);
     }
 
-    if (ancestors.length > 0) {
+    // Find root: the member with no parent in this stack
+    let root: Thread | undefined;
+    for (const member of chainMembers) {
+      if (!childToParent.has(member.id)) {
+        root = member;
+        break;
+      }
+    }
+    if (!root) {
+      root = chainMembers[0];
+    }
+    if (!root) continue;
+
+    if (chainMembers.length > 1) {
+      // Build topology restricted to this stack's members
+      const childToParentLocal: Record<string, string> = {};
+      const parentToChildrenLocal: Record<string, string[]> = {};
+
+      for (const member of chainMembers) {
+        const pid = childToParent.get(member.id);
+        if (pid && visited.has(pid)) {
+          childToParentLocal[member.id] = pid;
+          if (!parentToChildrenLocal[pid]) {
+            parentToChildrenLocal[pid] = [];
+          }
+          parentToChildrenLocal[pid].push(member.id);
+        }
+      }
+
+      const topology: ThreadStackTopology = {
+        rootId: root.id,
+        childToParent: childToParentLocal,
+        parentToChildren: parentToChildrenLocal,
+      };
+
+      // Compute lastActiveDate (max lastUpdatedDate across all members)
+      let maxDate = 0;
+      let lastActiveDateStr: string | undefined;
+      for (const member of chainMembers) {
+        const d = parseDate(member.lastUpdatedDate);
+        if (d > maxDate) {
+          maxDate = d;
+          lastActiveDateStr = member.lastUpdatedDate;
+        }
+      }
+
+      // Build tree-ordered descendants via DFS from root (excludes root)
+      const dfsVisited = new Set<string>([root.id]);
+      const descendants = dfsDescendants(root.id, parentToChildrenLocal, threadMap, dfsVisited);
+
       entries.push({
         kind: 'stack',
-        thread: head,
-        stack: { head, ancestors },
+        thread: root,
+        stack: {
+          head: root,
+          descendants,
+          lastActiveDate: lastActiveDateStr,
+          topology,
+        },
       });
     } else {
       entries.push({
         kind: 'thread',
-        thread: head,
+        thread: root,
       });
     }
   }
+
+  // Re-sort entries by lastActiveDate desc so active stacks float to top
+  entries.sort((a, b) => {
+    const dateA = a.stack?.lastActiveDate ?? a.thread.lastUpdatedDate;
+    const dateB = b.stack?.lastActiveDate ?? b.thread.lastUpdatedDate;
+    return parseDate(dateB) - parseDate(dateA);
+  });
 
   return entries;
 }
@@ -109,7 +175,7 @@ export function flattenEntries(
   for (const entry of entries) {
     result.push(entry.thread);
     if (entry.kind === 'stack' && entry.stack && expandedStackIds.has(entry.thread.id)) {
-      result.push(...entry.stack.ancestors);
+      result.push(...entry.stack.descendants);
     }
   }
   return result;
@@ -117,7 +183,22 @@ export function flattenEntries(
 
 export function getStackSize(entry: ThreadListEntry): number {
   if (entry.kind === 'stack' && entry.stack) {
-    return 1 + entry.stack.ancestors.length;
+    return 1 + entry.stack.descendants.length;
   }
   return 1;
+}
+
+/** Get the most recently updated thread in a stack (for kanban column placement, status display). */
+export function getLastActiveThread(entry: ThreadListEntry): Thread {
+  if (entry.kind !== 'stack' || !entry.stack) return entry.thread;
+  let best = entry.thread;
+  let bestDate = parseDate(best.lastUpdatedDate);
+  for (const d of entry.stack.descendants) {
+    const date = parseDate(d.lastUpdatedDate);
+    if (date > bestDate) {
+      best = d;
+      bestDate = date;
+    }
+  }
+  return best;
 }
