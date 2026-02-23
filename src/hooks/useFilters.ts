@@ -137,6 +137,8 @@ export function useFilters({ threads, metadata }: UseFiltersOptions): UseFilters
         cmp = (a.contextPercent ?? 0) - (b.contextPercent ?? 0);
       } else if (sortField === 'cost') {
         cmp = (a.cost ?? 0) - (b.cost ?? 0);
+      } else if (sortField === 'workspace') {
+        cmp = (a.workspace ?? '').localeCompare(b.workspace ?? '');
       } else {
         cmp = 0;
       }

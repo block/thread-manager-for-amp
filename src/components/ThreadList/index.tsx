@@ -214,6 +214,14 @@ export const ThreadList = memo(function ThreadList({
                   Updated
                 </SortHeader>
                 <SortHeader
+                  field="workspace"
+                  currentField={sortField}
+                  direction={sortDirection}
+                  onSort={onSort}
+                >
+                  Workspace
+                </SortHeader>
+                <SortHeader
                   field="contextPercent"
                   currentField={sortField}
                   direction={sortDirection}

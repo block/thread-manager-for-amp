@@ -95,7 +95,14 @@ export interface FileDiff {
   error?: string;
 }
 
-export type SortField = 'lastUpdated' | 'title' | 'messages' | 'status' | 'contextPercent' | 'cost';
+export type SortField =
+  | 'lastUpdated'
+  | 'title'
+  | 'messages'
+  | 'status'
+  | 'contextPercent'
+  | 'cost'
+  | 'workspace';
 export type SortDirection = 'asc' | 'desc';
 
 // Thread stacking (for grouping handoff chains)
