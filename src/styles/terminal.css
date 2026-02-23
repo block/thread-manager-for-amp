@@ -267,6 +267,67 @@
   border-color: rgba(172, 7, 122, 0.3);
 }
 
+/* Shell result messages */
+.chat-message-shell {
+  align-self: flex-start;
+}
+
+.chat-message-shell .chat-avatar {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.chat-message-shell .chat-bubble {
+  background: rgba(30, 30, 40, 0.8);
+  border-color: var(--border);
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+}
+
+.chat-message-shell.shell-incognito {
+  opacity: 0.6;
+}
+
+.chat-message-shell .shell-prefix {
+  color: var(--accent-green, #4ade80);
+  font-weight: 600;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+}
+
+.chat-message-shell .shell-command-text {
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.chat-message-shell .shell-exit-code {
+  color: var(--accent-pink, #f472b6);
+  font-size: 0.75rem;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+}
+
+.chat-message-shell .shell-incognito-badge {
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chat-message-shell .shell-output {
+  margin: 6px 0 0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
 .chat-header {
   display: flex;
   align-items: center;
@@ -1123,6 +1184,36 @@
   background: var(--bg-tertiary);
   border-radius: 3px;
   border: 1px solid var(--border);
+}
+
+/* Shell mode indicator in input area */
+.shell-mode-indicator {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--accent-green, #4ade80);
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+}
+
+.shell-mode-indicator.shell-incognito {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-tertiary);
+}
+
+.shell-mode-prefix {
+  font-weight: 700;
+}
+
+.shell-mode-label {
+  font-family: var(--font-sans, inherit);
+  font-weight: 400;
 }
 
 .pending-image-preview {

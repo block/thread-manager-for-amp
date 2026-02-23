@@ -217,6 +217,19 @@ export function useTerminalWebSocket({
                 }
               }
               break;
+            case 'shell_result':
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: generateId(),
+                  type: 'shell_result' as const,
+                  content: data.output,
+                  shellCommand: data.command,
+                  shellExitCode: data.exitCode,
+                  shellIncognito: data.incognito,
+                },
+              ]);
+              break;
             case 'cancelled':
               setIsSending(false);
               setIsRunning(false);
@@ -346,6 +359,15 @@ export function useTerminalWebSocket({
     [isConnected, threadMode],
   );
 
+  const sendShellExec = useCallback(
+    (command: string, incognito: boolean) => {
+      if (!wsRef.current || !isConnected) return false;
+      wsRef.current.send(JSON.stringify({ type: 'shell_exec', command, incognito }));
+      return true;
+    },
+    [isConnected],
+  );
+
   const cancelOperation = useCallback(() => {
     if (wsRef.current && (isSending || isRunning)) {
       wsRef.current.send(JSON.stringify({ type: 'cancel' }));
@@ -368,6 +390,7 @@ export function useTerminalWebSocket({
     threadMode,
     setIsSending,
     sendMessage,
+    sendShellExec,
     cancelOperation,
     reconnect,
     generateId,

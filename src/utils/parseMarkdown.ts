@@ -7,7 +7,15 @@ export interface AttachedImage {
 
 export interface Message {
   id: string;
-  type: 'user' | 'assistant' | 'system' | 'tool_use' | 'tool_result' | 'error' | 'thinking';
+  type:
+    | 'user'
+    | 'assistant'
+    | 'system'
+    | 'tool_use'
+    | 'tool_result'
+    | 'error'
+    | 'thinking'
+    | 'shell_result';
   content: string;
   toolName?: string;
   toolId?: string;
@@ -18,6 +26,9 @@ export interface Message {
   timestamp?: string; // ISO date string
   interrupted?: boolean;
   queued?: boolean;
+  shellCommand?: string;
+  shellExitCode?: number;
+  shellIncognito?: boolean;
 }
 
 // Parse a section into individual message blocks
