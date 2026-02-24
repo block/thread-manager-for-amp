@@ -1,9 +1,18 @@
 import { MermaidDiagram } from './MermaidDiagram';
-import type { ThreadChain, ChainThread } from '../types';
+import type { ThreadChain, ChainThread, ThreadChainNode } from '../types';
 
 interface ThreadMapViewProps {
   chain: ThreadChain;
   onOpenThread?: (thread: { id: string; title: string }) => void;
+}
+
+function flattenDescendants(nodes: ThreadChainNode[]): ChainThread[] {
+  const result: ChainThread[] = [];
+  for (const node of nodes) {
+    result.push(node.thread);
+    result.push(...flattenDescendants(node.children));
+  }
+  return result;
 }
 
 function sanitizeLabel(text: string): string {
@@ -20,11 +29,12 @@ function nodeId(id: string): string {
 
 function buildMermaidCode(chain: ThreadChain): string {
   const lines: string[] = ['flowchart TD'];
+  const descendants = flattenDescendants(chain.descendantsTree);
 
   const allNodes: ChainThread[] = [
     ...chain.ancestors,
     ...(chain.current ? [chain.current] : []),
-    ...chain.descendants,
+    ...descendants,
   ];
 
   if (allNodes.length === 0) return '';
@@ -61,8 +71,8 @@ function buildMermaidCode(chain: ThreadChain): string {
   }
 
   // Current -> descendants
-  if (chain.current && chain.descendants.length > 0) {
-    for (const desc of chain.descendants) {
+  if (chain.current && descendants.length > 0) {
+    for (const desc of descendants) {
       const label = desc.comment ? ` -->|"${sanitizeLabel(desc.comment)}"| ` : ' --> ';
       lines.push(`    ${nodeId(chain.current.id)}${label}${nodeId(desc.id)}`);
     }
@@ -80,7 +90,7 @@ function buildMermaidCode(chain: ThreadChain): string {
   if (chain.current) {
     lines.push(`    class ${nodeId(chain.current.id)} current`);
   }
-  for (const desc of chain.descendants) {
+  for (const desc of descendants) {
     lines.push(`    class ${nodeId(desc.id)} descendant`);
   }
 
@@ -90,10 +100,11 @@ function buildMermaidCode(chain: ThreadChain): string {
 export function ThreadMapView({ chain, onOpenThread }: ThreadMapViewProps) {
   const mermaidCode = buildMermaidCode(chain);
 
+  const descendants = flattenDescendants(chain.descendantsTree);
   const allNodes: ChainThread[] = [
     ...chain.ancestors,
     ...(chain.current ? [chain.current] : []),
-    ...chain.descendants,
+    ...descendants,
   ];
 
   if (!mermaidCode || allNodes.length === 0) {
