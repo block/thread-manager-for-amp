@@ -140,7 +140,10 @@ export function useFilters({ threads, metadata }: UseFiltersOptions): UseFilters
       } else if (sortField === 'workspace') {
         cmp = (a.workspace ?? '').localeCompare(b.workspace ?? '');
       } else {
-        cmp = 0;
+        // lastUpdated — compare ISO date strings
+        const aDate = a.lastUpdatedDate ?? '';
+        const bDate = b.lastUpdatedDate ?? '';
+        cmp = aDate < bDate ? -1 : aDate > bDate ? 1 : 0;
       }
       return sortDirection === 'asc' ? cmp : -cmp;
     });
