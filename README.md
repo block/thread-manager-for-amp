@@ -2,6 +2,26 @@
 
 A local web UI for managing [Amp](https://ampcode.com) AI coding agent threads — monitor, interact with, and organize multiple concurrent agent sessions from your browser.
 
+## Screenshots
+
+### Thread List
+
+Sortable, filterable table view with bulk operations, labels, and status tracking.
+
+![Thread list view](public/screenshots/thread-list.png)
+
+### Thread Detail
+
+Conversation view with rich message rendering, syntax highlighting, and a minimap for navigation.
+
+![Thread detail view](public/screenshots/thread-detail.png)
+
+### Kanban Board
+
+Organize threads across status columns — Active, Blocked, Paused, and Done.
+
+![Kanban board view](public/screenshots/kanban-board.png)
+
 ## Quick Start
 
 ### Prerequisites
