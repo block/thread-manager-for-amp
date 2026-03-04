@@ -45,6 +45,9 @@ describe('getThreadChain', () => {
     expect(chain.ancestors).toEqual([]);
     expect(chain.current?.id).toBe('solo');
     expect(chain.descendantsTree).toEqual([]);
+    expect(chain.currentId).toBe('solo');
+    expect(chain.root?.thread.id).toBe('solo');
+    expect(chain.root?.children).toEqual([]);
   });
 
   it('returns linear ancestors for a simple chain', async () => {
@@ -145,6 +148,39 @@ describe('getThreadChain', () => {
     expect(chain.current).toBeNull();
     expect(chain.ancestors).toEqual([]);
     expect(chain.descendantsTree).toEqual([]);
+  });
+
+  it('full tree includes sibling branches when queried from a leaf', async () => {
+    // root → mid → [child-a → grandchild, child-b]
+    // Query from child-b: root tree should include child-a branch
+    mockedGetThreads.mockResolvedValue({
+      threads: [
+        makeThread({ id: 'root' }),
+        makeThread({ id: 'mid', handoffParentId: 'root' }),
+        makeThread({ id: 'child-a', handoffParentId: 'mid' }),
+        makeThread({ id: 'child-b', handoffParentId: 'mid' }),
+        makeThread({ id: 'grandchild', handoffParentId: 'child-a' }),
+      ],
+      nextCursor: null,
+      hasMore: false,
+    });
+
+    const chain = await getThreadChain('child-b');
+    expect(chain.currentId).toBe('child-b');
+
+    // root tree should contain ALL threads
+    expect(chain.root).toBeDefined();
+    expect(chain.root?.thread.id).toBe('root');
+    const allIds = chain.root ? collectNodeIds([chain.root]) : [];
+    expect(allIds).toContain('root');
+    expect(allIds).toContain('mid');
+    expect(allIds).toContain('child-a');
+    expect(allIds).toContain('child-b');
+    expect(allIds).toContain('grandchild');
+    expect(allIds).toHaveLength(5);
+
+    // ancestors (linear) should only have root and mid
+    expect(chain.ancestors.map((a) => a.id)).toEqual(['root', 'mid']);
   });
 
   it('tree contains all descendants in a complex fork', async () => {

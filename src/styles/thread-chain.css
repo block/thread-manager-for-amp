@@ -69,6 +69,16 @@
   border-left: 3px solid var(--accent-yellow);
 }
 
+.chain-item.is-current .chain-current-marker {
+  background: rgba(255, 42, 109, 0.15);
+  border: 1px solid var(--accent-pink);
+  border-left: 3px solid var(--accent-pink);
+}
+
+.chain-item.is-current .chain-label {
+  color: var(--accent-pink);
+}
+
 .chain-current-marker {
   display: flex;
   flex-direction: column;

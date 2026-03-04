@@ -1,4 +1,4 @@
-import { ChevronRight, GitFork } from 'lucide-react';
+import { GitFork } from 'lucide-react';
 import type { ThreadChain, ThreadChainNode, ChainThread, Thread } from '../types';
 
 interface ThreadChainContentProps {
@@ -6,46 +6,53 @@ interface ThreadChainContentProps {
   onOpenThread: (thread: Thread) => void;
 }
 
-function DescendantNodes({
+function TreeNodes({
   nodes,
   depth,
+  currentId,
   onClickThread,
 }: {
   nodes: ThreadChainNode[];
   depth: number;
+  currentId?: string;
   onClickThread: (t: ChainThread) => void;
 }) {
   return (
     <>
-      {nodes.map((node) => (
-        <div key={node.thread.id}>
-          <div
-            className="chain-item descendant"
-            style={depth > 0 ? { marginLeft: depth * 16 } : undefined}
-          >
-            {depth > 0 && nodes.length > 1 && <GitFork size={10} className="chain-fork-icon" />}
-            <button className="chain-thread-btn" onClick={() => onClickThread(node.thread)}>
-              <span className="chain-label">↓ To</span>
-              <span className="chain-title">{node.thread.title}</span>
-              {node.thread.comment && (
-                <span className="chain-comment">"{node.thread.comment}"</span>
+      {nodes.map((node) => {
+        const isCurrent = node.thread.id === currentId;
+        return (
+          <div key={node.thread.id}>
+            <div
+              className={`chain-item${isCurrent ? ' is-current' : ''}`}
+              style={depth > 0 ? { marginLeft: depth * 16 } : undefined}
+            >
+              {depth > 0 && nodes.length > 1 && <GitFork size={10} className="chain-fork-icon" />}
+              {isCurrent ? (
+                <div className="chain-current-marker">
+                  <span className="chain-label">Current</span>
+                  <span className="chain-title">{node.thread.title}</span>
+                </div>
+              ) : (
+                <button className="chain-thread-btn" onClick={() => onClickThread(node.thread)}>
+                  <span className="chain-title">{node.thread.title}</span>
+                  {node.thread.comment && (
+                    <span className="chain-comment">"{node.thread.comment}"</span>
+                  )}
+                </button>
               )}
-            </button>
-          </div>
-          {node.children.length > 0 && (
-            <>
-              <div className="chain-connector">
-                <ChevronRight size={12} />
-              </div>
-              <DescendantNodes
+            </div>
+            {node.children.length > 0 && (
+              <TreeNodes
                 nodes={node.children}
                 depth={depth + 1}
+                currentId={currentId}
                 onClickThread={onClickThread}
               />
-            </>
-          )}
-        </div>
-      ))}
+            )}
+          </div>
+        );
+      })}
     </>
   );
 }
@@ -62,39 +69,40 @@ export function ThreadChainContent({ chain, onOpenThread }: ThreadChainContentPr
     });
   };
 
+  if (chain.root) {
+    return (
+      <div className="discovery-chain">
+        <div className="thread-chain-list">
+          <TreeNodes
+            nodes={[chain.root]}
+            depth={0}
+            currentId={chain.currentId}
+            onClickThread={handleClick}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback for old API responses without root
   return (
     <div className="discovery-chain">
       <div className="thread-chain-list">
-        {chain.ancestors.map((t, i) => (
-          <div key={t.id} className="chain-item ancestor">
+        {chain.ancestors.map((t) => (
+          <div key={t.id} className="chain-item">
             <button className="chain-thread-btn" onClick={() => handleClick(t)}>
-              <span className="chain-label">↑ From</span>
               <span className="chain-title">{t.title}</span>
-              {t.comment && <span className="chain-comment">"{t.comment}"</span>}
             </button>
-            {(i < chain.ancestors.length - 1 || chain.current) && (
-              <div className="chain-connector">
-                <ChevronRight size={12} />
-              </div>
-            )}
           </div>
         ))}
-
         {chain.current && (
-          <div className="chain-item current">
+          <div className="chain-item is-current">
             <div className="chain-current-marker">
               <span className="chain-label">Current</span>
               <span className="chain-title">{chain.current.title}</span>
             </div>
-            {chain.descendantsTree.length > 0 && (
-              <div className="chain-connector">
-                <ChevronRight size={12} />
-              </div>
-            )}
           </div>
         )}
-
-        <DescendantNodes nodes={chain.descendantsTree} depth={0} onClickThread={handleClick} />
       </div>
     </div>
   );
