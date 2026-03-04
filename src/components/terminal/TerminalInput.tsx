@@ -2,8 +2,25 @@ import { useRef, useState, useCallback } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import type { TerminalInputProps } from './types';
 import { DEEP_EFFORT_LABELS } from '../../../shared/websocket.js';
+import { MAX_ATTACHED_IMAGES, MAX_IMAGE_SIZE_BYTES } from '../../../shared/constants.js';
 import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
 import { MentionAutocomplete, type MentionAutocompleteHandle } from './MentionAutocomplete';
+
+function readFileAsBase64(
+  file: Blob,
+  mediaType: string,
+): Promise<{ data: string; mediaType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.split(',')[1] ?? '';
+      resolve({ data: base64, mediaType });
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+}
 
 function getStatusMessage(agentStatus: string): string {
   switch (agentStatus) {
@@ -26,14 +43,14 @@ export function TerminalInput({
   isSending,
   isRunning,
   agentStatus,
-  pendingImage,
+  pendingImages,
   inputRef,
   onInputChange,
   onSend,
   onCancel: _onCancel,
   onClose,
   onPendingImageRemove,
-  onPendingImageSet,
+  onPendingImageAdd,
   searchOpen,
   workspacePath,
   agentMode,
@@ -47,6 +64,8 @@ export function TerminalInput({
   const autocompleteRef = useRef<MentionAutocompleteHandle>(null);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const dragCounterRef = useRef(0);
+  const [isDragOver, setIsDragOver] = useState(false);
   const savedInputRef = useRef('');
   const { mentionState, closeMention, selectMention } = useMentionAutocomplete(
     input,
@@ -60,23 +79,17 @@ export function TerminalInput({
   }, [inputRef]);
 
   const handlePaste = (e: React.ClipboardEvent) => {
-    const items = e.clipboardData.items;
-    for (const item of items) {
+    const imageFiles: File[] = [];
+    for (const item of e.clipboardData.items) {
       if (item.type.startsWith('image/')) {
-        e.preventDefault();
         const file = item.getAsFile();
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          const base64 = dataUrl.split(',')[1] ?? '';
-          const mediaType = item.type;
-          onPendingImageSet({ data: base64, mediaType });
-        };
-        reader.readAsDataURL(file);
-        return;
+        if (file && file.size <= MAX_IMAGE_SIZE_BYTES) imageFiles.push(file);
       }
+    }
+    if (imageFiles.length === 0) return;
+    e.preventDefault();
+    for (const file of imageFiles) {
+      void readFileAsBase64(file, file.type).then(onPendingImageAdd);
     }
   };
 
@@ -123,7 +136,7 @@ export function TerminalInput({
       e.preventDefault();
       setHistoryIndex(-1);
       // Allow force-send of queued message even with empty input
-      if (hasQueuedMessage || input.trim() || pendingImage) {
+      if (hasQueuedMessage || input.trim() || pendingImages.length > 0) {
         onSend();
       }
     }
@@ -131,8 +144,8 @@ export function TerminalInput({
       if (isSending || isRunning) {
         // Let global handler deal with cancel
         return;
-      } else if (pendingImage) {
-        onPendingImageRemove();
+      } else if (pendingImages.length > 0) {
+        onPendingImageRemove(pendingImages.length - 1);
       } else {
         onClose();
       }
@@ -155,13 +168,9 @@ export function TerminalInput({
           if (imageType) {
             e.preventDefault();
             const blob = await item.getType(imageType);
-            const reader = new FileReader();
-            reader.onload = () => {
-              const dataUrl = reader.result as string;
-              const base64 = dataUrl.split(',')[1] ?? '';
-              onPendingImageSet({ data: base64, mediaType: imageType });
-            };
-            reader.readAsDataURL(blob);
+            if (blob.size <= MAX_IMAGE_SIZE_BYTES) {
+              void readFileAsBase64(blob, imageType).then(onPendingImageAdd);
+            }
             return;
           }
         }
@@ -170,6 +179,40 @@ export function TerminalInput({
       }
     }
   };
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setIsDragOver(false);
+      for (const file of e.dataTransfer.files) {
+        if (file.type.startsWith('image/') && file.size <= MAX_IMAGE_SIZE_BYTES) {
+          void readFileAsBase64(file, file.type).then(onPendingImageAdd);
+        }
+      }
+    },
+    [onPendingImageAdd],
+  );
 
   const handleMentionSelect = (value: string) => {
     selectMention(value, onInputChange);
@@ -190,7 +233,13 @@ export function TerminalInput({
     agentMode === 'deep' ? '🧠' : agentMode === 'rush' ? '🚀' : agentMode === 'large' ? '🐘' : '⚡';
 
   return (
-    <div className="terminal-input-area">
+    <div
+      className={`terminal-input-area${isDragOver ? ' drag-over' : ''}`}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {mentionState.active && (
         <MentionAutocomplete
           ref={autocompleteRef}
@@ -208,19 +257,26 @@ export function TerminalInput({
           <span className="terminal-status-hint">Esc to cancel</span>
         </div>
       )}
-      {pendingImage && (
-        <div className="pending-image-preview">
-          <img
-            src={`data:${pendingImage.mediaType};base64,${pendingImage.data}`}
-            alt="Pending attachment"
-          />
-          <button
-            className="pending-image-remove"
-            onClick={onPendingImageRemove}
-            title="Remove image"
-          >
-            ×
-          </button>
+      {pendingImages.length > 0 && (
+        <div className="pending-images-preview">
+          {pendingImages.map((img, i) => (
+            <div key={i} className="pending-image-item">
+              <img
+                src={`data:${img.mediaType};base64,${img.data}`}
+                alt={`Pending attachment ${i + 1}`}
+              />
+              <button
+                className="pending-image-remove"
+                onClick={() => onPendingImageRemove(i)}
+                title="Remove image"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          {pendingImages.length >= MAX_ATTACHED_IMAGES && (
+            <span className="pending-images-limit">Maximum {MAX_ATTACHED_IMAGES} images</span>
+          )}
         </div>
       )}
       {shellMode && (
@@ -251,7 +307,7 @@ export function TerminalInput({
         placeholder={
           !isConnected
             ? 'Connecting...'
-            : pendingImage
+            : pendingImages.length > 0
               ? 'Add a message or press Enter to send...'
               : 'Type @ for files, @@ for threads...'
         }
@@ -276,7 +332,9 @@ export function TerminalInput({
       </button>
       <button
         onClick={onSend}
-        disabled={!isConnected || (!input.trim() && !pendingImage && !hasQueuedMessage)}
+        disabled={
+          !isConnected || (!input.trim() && pendingImages.length === 0 && !hasQueuedMessage)
+        }
         className={`terminal-send ${isActive && input.trim() ? 'will-cancel' : ''} ${hasQueuedMessage && !input.trim() ? 'will-cancel' : ''}`}
         title={
           hasQueuedMessage && !input.trim()

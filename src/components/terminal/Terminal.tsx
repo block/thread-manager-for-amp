@@ -71,7 +71,7 @@ export function Terminal({
     activeMinimapId,
     usage,
     searchOpen,
-    pendingImage,
+    pendingImages,
     sessionImages,
     viewingImage,
     metadata,
@@ -81,12 +81,12 @@ export function Terminal({
     setInput,
     setUsage,
     setMetadata,
-    setPendingImage,
     setViewingImage,
     openSearch,
     closeSearch,
     dismissContextWarning,
-    clearPendingImage,
+    addPendingImage,
+    removePendingImage,
     closeViewingImage,
     addSessionImage,
     clearInput,
@@ -97,7 +97,7 @@ export function Terminal({
   const [wsConnected, setWsConnected] = useState(false);
   const [queuedMsg, setQueuedMsg] = useState<{
     content: string;
-    image?: { data: string; mediaType: string };
+    images?: Array<{ data: string; mediaType: string }>;
     mode: AgentMode;
     deepReasoningEffort?: DeepReasoningEffort;
   } | null>(null);
@@ -174,7 +174,7 @@ export function Terminal({
     if (wasRunning && !isRunning && !isSending && queuedMsg) {
       wsSendMessage(
         queuedMsg.content,
-        queuedMsg.image,
+        queuedMsg.images,
         queuedMsg.mode,
         queuedMsg.deepReasoningEffort,
       );
@@ -326,10 +326,10 @@ export function Terminal({
     const isActive = isSending || isRunning;
 
     // Force-send: empty input + queued message → interrupt and send now
-    if (!input.trim() && !pendingImage && queuedMsg && isActive) {
+    if (!input.trim() && pendingImages.length === 0 && queuedMsg && isActive) {
       wsSendMessage(
         queuedMsg.content,
-        queuedMsg.image,
+        queuedMsg.images,
         queuedMsg.mode,
         queuedMsg.deepReasoningEffort,
       );
@@ -338,12 +338,13 @@ export function Terminal({
       return;
     }
 
-    if ((!input.trim() && !pendingImage) || !isConnected) return;
-    const messageText = input.trim() || 'Analyze this image';
+    if ((!input.trim() && pendingImages.length === 0) || !isConnected) return;
+    const messageText =
+      input.trim() || (pendingImages.length === 1 ? 'Analyze this image' : 'Analyze these images');
 
     // Detect inline shell mode: $$ (incognito) or $ (context)
     const shellMatch = messageText.match(/^(\$\$?)\s+(.+)/s);
-    if (shellMatch && !pendingImage) {
+    if (shellMatch && pendingImages.length === 0) {
       const incognito = shellMatch[1] === '$$';
       const command = shellMatch[2] ?? '';
       setMessages((prev) => [
@@ -370,33 +371,38 @@ export function Terminal({
             id: generateId(),
             type: 'user' as const,
             content: messageText,
-            image: pendingImage || undefined,
+            images: pendingImages.length > 0 ? pendingImages : undefined,
             queued: true,
           },
         ];
       });
       setQueuedMsg({
         content: messageText,
-        image: pendingImage || undefined,
+        images: pendingImages.length > 0 ? pendingImages : undefined,
         mode: agentMode,
         deepReasoningEffort: agentMode === 'deep' ? deepReasoningEffort : undefined,
       });
-      if (pendingImage) addSessionImage(pendingImage);
+      pendingImages.forEach((img) => addSessionImage(img));
       clearInput();
       return;
     }
 
     setMessages((prev) => [
       ...prev,
-      { id: generateId(), type: 'user', content: messageText, image: pendingImage || undefined },
+      {
+        id: generateId(),
+        type: 'user',
+        content: messageText,
+        images: pendingImages.length > 0 ? pendingImages : undefined,
+      },
     ]);
     wsSendMessage(
       messageText,
-      pendingImage || undefined,
+      pendingImages.length > 0 ? pendingImages : undefined,
       agentMode,
       agentMode === 'deep' ? deepReasoningEffort : undefined,
     );
-    if (pendingImage) addSessionImage(pendingImage);
+    pendingImages.forEach((img) => addSessionImage(img));
     clearInput();
 
     // Record prompt in history (fire-and-forget)
@@ -414,7 +420,7 @@ export function Terminal({
     }
   }, [
     input,
-    pendingImage,
+    pendingImages,
     isConnected,
     isSending,
     isRunning,
@@ -602,14 +608,14 @@ export function Terminal({
         isSending={isSending}
         isRunning={isRunning}
         agentStatus={queuedMsg ? 'queued' : agentStatus}
-        pendingImage={pendingImage}
+        pendingImages={pendingImages}
         inputRef={inputRef}
         onInputChange={setInput}
         onSend={handleSendMessage}
         onCancel={cancelOperation}
         onClose={onClose}
-        onPendingImageRemove={clearPendingImage}
-        onPendingImageSet={setPendingImage}
+        onPendingImageRemove={removePendingImage}
+        onPendingImageAdd={addPendingImage}
         searchOpen={searchOpen}
         workspacePath={thread.workspacePath ?? null}
         agentMode={effectiveMode}

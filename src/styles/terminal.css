@@ -1156,6 +1156,12 @@
   border-top: 1px solid var(--border);
 }
 
+.terminal-input-area.drag-over {
+  outline: 2px dashed var(--accent-magenta);
+  outline-offset: -2px;
+  background: rgba(255, 0, 128, 0.05);
+}
+
 .terminal-status-indicator {
   width: 100%;
   display: flex;
@@ -1216,7 +1222,7 @@
   font-weight: 400;
 }
 
-.pending-image-preview {
+.pending-images-preview {
   width: 100%;
   display: flex;
   align-items: flex-start;
@@ -1226,23 +1232,38 @@
   border: 1px solid var(--accent-magenta);
   border-radius: 6px;
   margin-bottom: 4px;
+  flex-wrap: wrap;
 }
 
-.pending-image-preview img {
-  max-width: 120px;
-  max-height: 80px;
+.pending-image-item {
+  position: relative;
+  display: inline-flex;
+}
+
+.pending-image-item img {
+  max-width: 100px;
+  max-height: 70px;
   object-fit: contain;
   border-radius: 4px;
+  border: 1px solid var(--border);
 }
 
 .pending-image-remove {
-  padding: 4px 8px;
-  background: transparent;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 50%;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 12px;
   line-height: 1;
   transition: all 0.15s;
 }
@@ -1253,9 +1274,22 @@
   color: white;
 }
 
-/* Chat image attachment in messages */
-.chat-image-attachment {
+.pending-images-limit {
+  font-size: 11px;
+  color: var(--text-muted);
+  align-self: center;
+  font-style: italic;
+}
+
+/* Chat image attachments in messages */
+.chat-image-attachments {
   margin-bottom: 8px;
+}
+
+.chat-image-attachments.multi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .chat-image-attachment img {
@@ -1265,6 +1299,11 @@
   border-radius: 6px;
   border: 1px solid var(--border);
   cursor: pointer;
+}
+
+.chat-image-attachments.multi .chat-image-attachment img {
+  max-width: 180px;
+  max-height: 120px;
 }
 
 .chat-image-attachment img:hover {

@@ -43,7 +43,7 @@ export type WsClientMessage =
   | {
       type: 'message';
       content: string;
-      image?: { data: string; mediaType: string };
+      images?: Array<{ data: string; mediaType: string }>;
       mode?: AgentMode;
       deepReasoningEffort?: DeepReasoningEffort;
     }

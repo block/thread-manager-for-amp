@@ -246,7 +246,8 @@ const MessageItem = memo(function MessageItem({
   }
 
   // Skip empty assistant/system messages (e.g. after stripping thinking blocks)
-  if (msg.type === 'assistant' && !msg.content.trim() && !msg.image) return null;
+  if (msg.type === 'assistant' && !msg.content.trim() && (!msg.images || msg.images.length === 0))
+    return null;
 
   if (msg.type === 'shell_result') {
     const isIncognito = msg.shellIncognito;
@@ -289,13 +290,17 @@ const MessageItem = memo(function MessageItem({
           {msg.queued && <span className="chat-queued-badge">queued</span>}
           {msg.timestamp && <Timestamp date={msg.timestamp} className="chat-timestamp" />}
         </div>
-        {msg.image && (
-          <div className="chat-image-attachment">
-            <img
-              src={`data:${msg.image.mediaType};base64,${msg.image.data}`}
-              alt="Attached"
-              onClick={() => msg.image && onViewImage(msg.image)}
-            />
+        {msg.images && msg.images.length > 0 && (
+          <div className={`chat-image-attachments${msg.images.length > 1 ? ' multi' : ''}`}>
+            {msg.images.map((img, i) => (
+              <div key={i} className="chat-image-attachment">
+                <img
+                  src={`data:${img.mediaType};base64,${img.data}`}
+                  alt={`Attached ${i + 1}`}
+                  onClick={() => onViewImage(img)}
+                />
+              </div>
+            ))}
           </div>
         )}
         <div className="chat-content">

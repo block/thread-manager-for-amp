@@ -21,7 +21,7 @@ export interface Message {
   toolId?: string;
   toolInput?: ToolInput;
   success?: boolean;
-  image?: AttachedImage;
+  images?: AttachedImage[];
   isContextLimit?: boolean;
   timestamp?: string; // ISO date string
   interrupted?: boolean;

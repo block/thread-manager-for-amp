@@ -33,7 +33,7 @@ const PING_INTERVAL_MS = 25_000;
 
 interface PendingMessage {
   content: string;
-  image: ThreadImage | null;
+  images: ThreadImage[];
   mode?: string;
   deepReasoningEffort?: string;
 }
@@ -318,7 +318,7 @@ function handleStreamEvent(session: ThreadSession, event: AmpStreamEvent): void 
 async function spawnAmpOnSession(
   session: ThreadSession,
   message: string,
-  image: ThreadImage | null = null,
+  images: ThreadImage[] = [],
   mode?: string,
   deepReasoningEffort?: string,
 ): Promise<void> {
@@ -331,7 +331,7 @@ async function spawnAmpOnSession(
     const composed = interruptedMsg
       ? `[The user sent this message but interrupted before you could respond:]\n${interruptedMsg}\n\n[The user then sent this follow-up message:]\n${message}`
       : message;
-    session.pendingMessage = { content: composed, image, mode, deepReasoningEffort };
+    session.pendingMessage = { content: composed, images, mode, deepReasoningEffort };
     session.child.kill('SIGINT');
     sendToSession(session, { type: 'system', subtype: 'interrupting' });
     return;
@@ -340,7 +340,7 @@ async function spawnAmpOnSession(
   // Serialization guard: prevent the async gap race where two rapid messages
   // both pass the session.child check before either spawns.
   if (session.processing) {
-    session.pendingMessage = { content: message, image, mode, deepReasoningEffort };
+    session.pendingMessage = { content: message, images, mode, deepReasoningEffort };
     sendToSession(session, { type: 'system', subtype: 'message_queued' });
     return;
   }
@@ -361,30 +361,42 @@ async function spawnAmpOnSession(
     const resolved = await resolveMessageReferences(message, workspacePath);
     let finalMessage = resolved.message;
 
-    if (image) {
+    if (images.length > 0) {
       try {
         const threadArtifactsDir = join(ARTIFACTS_DIR, session.threadId);
         await mkdir(threadArtifactsDir, { recursive: true });
 
-        const ext = image.mediaType.split('/')[1] || 'png';
-        const filename = `${Date.now()}.${ext}`;
-        const imagePath = join(threadArtifactsDir, filename);
-        const imageBuffer = Buffer.from(image.data, 'base64');
-        await writeFile(imagePath, imageBuffer);
+        const imagePaths: string[] = [];
+        for (let i = 0; i < images.length; i++) {
+          const img = images[i];
+          if (!img) continue;
+          const ext = img.mediaType.split('/')[1] || 'png';
+          const filename = `${Date.now()}-${i}.${ext}`;
+          const imagePath = join(threadArtifactsDir, filename);
+          const imageBuffer = Buffer.from(img.data, 'base64');
+          await writeFile(imagePath, imageBuffer);
 
-        createArtifact({
-          threadId: session.threadId,
-          type: 'image',
-          title: `Uploaded image ${filename}`,
-          content: null,
-          filePath: imagePath,
-          mediaType: image.mediaType,
-        });
+          createArtifact({
+            threadId: session.threadId,
+            type: 'image',
+            title: `Uploaded image ${filename}`,
+            content: null,
+            filePath: imagePath,
+            mediaType: img.mediaType,
+          });
 
-        finalMessage = `First, analyze this image: ${imagePath}\n\nThen respond to: ${message}`;
+          imagePaths.push(imagePath);
+        }
+
+        if (imagePaths.length === 1) {
+          finalMessage = `First, analyze this image: ${imagePaths[0]}\n\nThen respond to: ${message}`;
+        } else {
+          const imageList = imagePaths.map((p, i) => `Image ${i + 1}: ${p}`).join('\n');
+          finalMessage = `First, analyze these images:\n${imageList}\n\nThen respond to: ${message}`;
+        }
       } catch (e) {
-        console.error('[TERM] Failed to save image:', e);
-        sendToSession(session, { type: 'error', content: 'Failed to process image' });
+        console.error('[TERM] Failed to save images:', e);
+        sendToSession(session, { type: 'error', content: 'Failed to process images' });
       }
     }
 
@@ -508,7 +520,7 @@ async function spawnAmpOnSession(
         void spawnAmpOnSession(
           session,
           pending.content,
-          pending.image,
+          pending.images,
           pending.mode,
           pending.deepReasoningEffort,
         ).catch((err: unknown) => {
@@ -798,13 +810,16 @@ export function setupWebSocket(server: Server): WebSocketServer {
       }
 
       if (parsed.type === 'message' && parsed.content) {
-        const image = parsed.image
-          ? ({ data: parsed.image.data, mediaType: parsed.image.mediaType } as ThreadImage)
-          : null;
+        const images: ThreadImage[] = Array.isArray(parsed.images)
+          ? parsed.images.map((img: { data: string; mediaType: string }) => ({
+              data: img.data,
+              mediaType: img.mediaType,
+            }))
+          : [];
         void spawnAmpOnSession(
           session,
           parsed.content,
-          image,
+          images,
           parsed.mode,
           parsed.deepReasoningEffort,
         ).catch((err: unknown) => {
