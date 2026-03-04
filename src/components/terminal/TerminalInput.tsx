@@ -26,14 +26,14 @@ export function TerminalInput({
   isSending,
   isRunning,
   agentStatus,
-  pendingImage,
+  pendingImages,
   inputRef,
   onInputChange,
   onSend,
   onCancel: _onCancel,
   onClose,
   onPendingImageRemove,
-  onPendingImageSet,
+  onPendingImageAdd,
   searchOpen,
   workspacePath,
   agentMode,
@@ -47,6 +47,7 @@ export function TerminalInput({
   const autocompleteRef = useRef<MentionAutocompleteHandle>(null);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isDragOver, setIsDragOver] = useState(false);
   const savedInputRef = useRef('');
   const { mentionState, closeMention, selectMention } = useMentionAutocomplete(
     input,
@@ -61,21 +62,23 @@ export function TerminalInput({
 
   const handlePaste = (e: React.ClipboardEvent) => {
     const items = e.clipboardData.items;
+    let hasImage = false;
     for (const item of items) {
       if (item.type.startsWith('image/')) {
-        e.preventDefault();
+        if (!hasImage) {
+          e.preventDefault();
+          hasImage = true;
+        }
         const file = item.getAsFile();
-        if (!file) return;
-
+        if (!file) continue;
         const reader = new FileReader();
         reader.onload = () => {
           const dataUrl = reader.result as string;
           const base64 = dataUrl.split(',')[1] ?? '';
           const mediaType = item.type;
-          onPendingImageSet({ data: base64, mediaType });
+          onPendingImageAdd({ data: base64, mediaType });
         };
         reader.readAsDataURL(file);
-        return;
       }
     }
   };
@@ -123,7 +126,7 @@ export function TerminalInput({
       e.preventDefault();
       setHistoryIndex(-1);
       // Allow force-send of queued message even with empty input
-      if (hasQueuedMessage || input.trim() || pendingImage) {
+      if (hasQueuedMessage || input.trim() || pendingImages.length > 0) {
         onSend();
       }
     }
@@ -131,8 +134,8 @@ export function TerminalInput({
       if (isSending || isRunning) {
         // Let global handler deal with cancel
         return;
-      } else if (pendingImage) {
-        onPendingImageRemove();
+      } else if (pendingImages.length > 0) {
+        onPendingImageRemove(pendingImages.length - 1);
       } else {
         onClose();
       }
@@ -159,7 +162,7 @@ export function TerminalInput({
             reader.onload = () => {
               const dataUrl = reader.result as string;
               const base64 = dataUrl.split(',')[1] ?? '';
-              onPendingImageSet({ data: base64, mediaType: imageType });
+              onPendingImageAdd({ data: base64, mediaType: imageType });
             };
             reader.readAsDataURL(blob);
             return;
@@ -170,6 +173,41 @@ export function TerminalInput({
       }
     }
   };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.some((t) => t === 'Files')) {
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+      const files = Array.from(e.dataTransfer.files);
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const dataUrl = reader.result as string;
+            const base64 = dataUrl.split(',')[1] ?? '';
+            onPendingImageAdd({ data: base64, mediaType: file.type });
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    },
+    [onPendingImageAdd],
+  );
 
   const handleMentionSelect = (value: string) => {
     selectMention(value, onInputChange);
@@ -190,7 +228,12 @@ export function TerminalInput({
     agentMode === 'deep' ? '🧠' : agentMode === 'rush' ? '🚀' : agentMode === 'large' ? '🐘' : '⚡';
 
   return (
-    <div className="terminal-input-area">
+    <div
+      className={`terminal-input-area${isDragOver ? ' drag-over' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {mentionState.active && (
         <MentionAutocomplete
           ref={autocompleteRef}
@@ -208,19 +251,26 @@ export function TerminalInput({
           <span className="terminal-status-hint">Esc to cancel</span>
         </div>
       )}
-      {pendingImage && (
-        <div className="pending-image-preview">
-          <img
-            src={`data:${pendingImage.mediaType};base64,${pendingImage.data}`}
-            alt="Pending attachment"
-          />
-          <button
-            className="pending-image-remove"
-            onClick={onPendingImageRemove}
-            title="Remove image"
-          >
-            ×
-          </button>
+      {pendingImages.length > 0 && (
+        <div className="pending-images-preview">
+          {pendingImages.map((img, i) => (
+            <div key={i} className="pending-image-item">
+              <img
+                src={`data:${img.mediaType};base64,${img.data}`}
+                alt={`Pending attachment ${i + 1}`}
+              />
+              <button
+                className="pending-image-remove"
+                onClick={() => onPendingImageRemove(i)}
+                title="Remove image"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          {pendingImages.length >= 5 && (
+            <span className="pending-images-limit">Maximum 5 images</span>
+          )}
         </div>
       )}
       {shellMode && (
@@ -251,7 +301,7 @@ export function TerminalInput({
         placeholder={
           !isConnected
             ? 'Connecting...'
-            : pendingImage
+            : pendingImages.length > 0
               ? 'Add a message or press Enter to send...'
               : 'Type @ for files, @@ for threads...'
         }
@@ -276,7 +326,9 @@ export function TerminalInput({
       </button>
       <button
         onClick={onSend}
-        disabled={!isConnected || (!input.trim() && !pendingImage && !hasQueuedMessage)}
+        disabled={
+          !isConnected || (!input.trim() && pendingImages.length === 0 && !hasQueuedMessage)
+        }
         className={`terminal-send ${isActive && input.trim() ? 'will-cancel' : ''} ${hasQueuedMessage && !input.trim() ? 'will-cancel' : ''}`}
         title={
           hasQueuedMessage && !input.trim()

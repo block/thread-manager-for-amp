@@ -32,8 +32,8 @@ export function useTerminalState({ thread }: UseTerminalStateOptions) {
   });
   const [contextWarningDismissed, setContextWarningDismissed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [pendingImage, setPendingImage] = useState<{ data: string; mediaType: string } | null>(
-    null,
+  const [pendingImages, setPendingImages] = useState<Array<{ data: string; mediaType: string }>>(
+    [],
   );
   const [sessionImages, setSessionImages] = useState<Array<{ data: string; mediaType: string }>>(
     [],
@@ -50,8 +50,16 @@ export function useTerminalState({ thread }: UseTerminalStateOptions) {
   const openSearch = useCallback(() => setSearchOpen(true), []);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const dismissContextWarning = useCallback(() => setContextWarningDismissed(true), []);
-  const clearPendingImage = useCallback(() => setPendingImage(null), []);
+  const clearPendingImages = useCallback(() => setPendingImages([]), []);
   const closeViewingImage = useCallback(() => setViewingImage(null), []);
+
+  const addPendingImage = useCallback((image: { data: string; mediaType: string }) => {
+    setPendingImages((prev) => (prev.length >= 5 ? prev : [...prev, image]));
+  }, []);
+
+  const removePendingImage = useCallback((index: number) => {
+    setPendingImages((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   const addSessionImage = useCallback((image: { data: string; mediaType: string }) => {
     setSessionImages((prev) => [...prev, image]);
@@ -59,7 +67,7 @@ export function useTerminalState({ thread }: UseTerminalStateOptions) {
 
   const clearInput = useCallback(() => {
     setInput('');
-    setPendingImage(null);
+    setPendingImages([]);
   }, []);
 
   const scrollToMessage = useCallback(
@@ -90,7 +98,7 @@ export function useTerminalState({ thread }: UseTerminalStateOptions) {
     usage,
     contextWarningDismissed,
     searchOpen,
-    pendingImage,
+    pendingImages,
     sessionImages,
     viewingImage,
     metadata,
@@ -105,14 +113,16 @@ export function useTerminalState({ thread }: UseTerminalStateOptions) {
     setActiveMinimapId,
     setUsage,
     setMetadata,
-    setPendingImage,
+    setPendingImages,
     setViewingImage,
 
     // Actions
     openSearch,
     closeSearch,
     dismissContextWarning,
-    clearPendingImage,
+    clearPendingImages,
+    addPendingImage,
+    removePendingImage,
     closeViewingImage,
     addSessionImage,
     clearInput,

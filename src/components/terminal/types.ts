@@ -53,14 +53,14 @@ export interface TerminalInputProps {
   isSending: boolean;
   isRunning: boolean;
   agentStatus: AgentStatus;
-  pendingImage: { data: string; mediaType: string } | null;
+  pendingImages: Array<{ data: string; mediaType: string }>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onCancel: () => void;
   onClose: () => void;
-  onPendingImageRemove: () => void;
-  onPendingImageSet: (image: { data: string; mediaType: string }) => void;
+  onPendingImageRemove: (index: number) => void;
+  onPendingImageAdd: (image: { data: string; mediaType: string }) => void;
   searchOpen: boolean;
   workspacePath: string | null;
   agentMode: AgentMode;

@@ -319,7 +319,7 @@ export function useTerminalWebSocket({
   const sendMessage = useCallback(
     (
       content: string,
-      image?: { data: string; mediaType: string },
+      images?: Array<{ data: string; mediaType: string }>,
       mode?: AgentMode,
       deepReasoningEffort?: DeepReasoningEffort,
     ) => {
@@ -341,7 +341,7 @@ export function useTerminalWebSocket({
         JSON.stringify({
           type: 'message',
           content,
-          image: image || undefined,
+          images: images && images.length > 0 ? images : undefined,
           mode: effectiveMode || undefined,
           deepReasoningEffort: effectiveMode === 'deep' ? deepReasoningEffort : undefined,
         }),

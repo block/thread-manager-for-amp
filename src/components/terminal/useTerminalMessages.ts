@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import type { Message } from '../../utils/parseMarkdown';
+import type { Message, AttachedImage } from '../../utils/parseMarkdown';
 import type { ThreadImage } from '../../types';
 import { parseMarkdownHistory } from '../../utils/parseMarkdown';
 import { apiGetText, apiGet } from '../../api/client';
@@ -77,18 +77,28 @@ export function useTerminalMessages({
         const historyMessages = parseMarkdownHistory(markdown);
         if (historyMessages.length > 0) {
           for (const msg of historyMessages) {
-            if (msg.type === 'user' && !msg.image) {
-              const pathMatch = msg.content.match(
-                /artifacts\/[^/]+\/\d+\.(png|jpg|jpeg|gif|webp)/i,
+            if (msg.type === 'user' && (!msg.images || msg.images.length === 0)) {
+              // Match all image artifact paths in the message
+              const pathMatches = Array.from(
+                msg.content.matchAll(/artifacts\/[^/]+\/\d+(?:-\d+)?\.(png|jpg|jpeg|gif|webp)/gi),
               );
-              if (pathMatch) {
-                const matchedImage = threadImages.find((img) =>
-                  img.sourcePath?.includes(pathMatch[0]),
-                );
-                if (matchedImage) {
-                  msg.image = { data: matchedImage.data, mediaType: matchedImage.mediaType };
+              if (pathMatches.length > 0) {
+                const matched: AttachedImage[] = [];
+                for (const m of pathMatches) {
+                  const matchedImage = threadImages.find((img) => img.sourcePath?.includes(m[0]));
+                  if (matchedImage) {
+                    matched.push({ data: matchedImage.data, mediaType: matchedImage.mediaType });
+                  }
+                }
+                if (matched.length > 0) {
+                  msg.images = matched;
+                  // Clean up both single and multi-image prefixes
                   msg.content = msg.content
                     .replace(/First, analyze this image: [^\n]+\n+Then respond to: /g, '')
+                    .replace(
+                      /First, analyze these images:\n(?:Image \d+: [^\n]+\n?)+\n+Then respond to: /g,
+                      '',
+                    )
                     .trim();
                 }
               }
