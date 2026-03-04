@@ -3,6 +3,7 @@ import type { ThreadMetadata } from '../../types';
 import type { Message } from '../../utils/parseMarkdown';
 import type { UsageInfo } from './types';
 import { DEFAULT_MAX_CONTEXT_TOKENS } from '../../constants';
+import { MAX_ATTACHED_IMAGES } from '../../../shared/constants.js';
 export { generateId } from '../../../shared/utils.js';
 
 interface UseTerminalStateOptions {
@@ -54,7 +55,7 @@ export function useTerminalState({ thread }: UseTerminalStateOptions) {
   const closeViewingImage = useCallback(() => setViewingImage(null), []);
 
   const addPendingImage = useCallback((image: { data: string; mediaType: string }) => {
-    setPendingImages((prev) => (prev.length >= 5 ? prev : [...prev, image]));
+    setPendingImages((prev) => (prev.length >= MAX_ATTACHED_IMAGES ? prev : [...prev, image]));
   }, []);
 
   const removePendingImage = useCallback((index: number) => {

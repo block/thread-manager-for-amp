@@ -2,8 +2,25 @@ import { useRef, useState, useCallback } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import type { TerminalInputProps } from './types';
 import { DEEP_EFFORT_LABELS } from '../../../shared/websocket.js';
+import { MAX_ATTACHED_IMAGES, MAX_IMAGE_SIZE_BYTES } from '../../../shared/constants.js';
 import { useMentionAutocomplete } from '../../hooks/useMentionAutocomplete';
 import { MentionAutocomplete, type MentionAutocompleteHandle } from './MentionAutocomplete';
+
+function readFileAsBase64(
+  file: Blob,
+  mediaType: string,
+): Promise<{ data: string; mediaType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.split(',')[1] ?? '';
+      resolve({ data: base64, mediaType });
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+}
 
 function getStatusMessage(agentStatus: string): string {
   switch (agentStatus) {
@@ -47,6 +64,7 @@ export function TerminalInput({
   const autocompleteRef = useRef<MentionAutocompleteHandle>(null);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const dragCounterRef = useRef(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const savedInputRef = useRef('');
   const { mentionState, closeMention, selectMention } = useMentionAutocomplete(
@@ -61,25 +79,17 @@ export function TerminalInput({
   }, [inputRef]);
 
   const handlePaste = (e: React.ClipboardEvent) => {
-    const items = e.clipboardData.items;
-    let hasImage = false;
-    for (const item of items) {
+    const imageFiles: File[] = [];
+    for (const item of e.clipboardData.items) {
       if (item.type.startsWith('image/')) {
-        if (!hasImage) {
-          e.preventDefault();
-          hasImage = true;
-        }
         const file = item.getAsFile();
-        if (!file) continue;
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          const base64 = dataUrl.split(',')[1] ?? '';
-          const mediaType = item.type;
-          onPendingImageAdd({ data: base64, mediaType });
-        };
-        reader.readAsDataURL(file);
+        if (file && file.size <= MAX_IMAGE_SIZE_BYTES) imageFiles.push(file);
       }
+    }
+    if (imageFiles.length === 0) return;
+    e.preventDefault();
+    for (const file of imageFiles) {
+      void readFileAsBase64(file, file.type).then(onPendingImageAdd);
     }
   };
 
@@ -158,13 +168,9 @@ export function TerminalInput({
           if (imageType) {
             e.preventDefault();
             const blob = await item.getType(imageType);
-            const reader = new FileReader();
-            reader.onload = () => {
-              const dataUrl = reader.result as string;
-              const base64 = dataUrl.split(',')[1] ?? '';
-              onPendingImageAdd({ data: base64, mediaType: imageType });
-            };
-            reader.readAsDataURL(blob);
+            if (blob.size <= MAX_IMAGE_SIZE_BYTES) {
+              void readFileAsBase64(blob, imageType).then(onPendingImageAdd);
+            }
             return;
           }
         }
@@ -174,35 +180,34 @@ export function TerminalInput({
     }
   };
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer.types.some((t) => t === 'Files')) {
+    dragCounterRef.current++;
+    if (e.dataTransfer.types.includes('Files')) {
       setIsDragOver(true);
     }
   }, []);
 
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+    }
   }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      e.stopPropagation();
+      dragCounterRef.current = 0;
       setIsDragOver(false);
-      const files = Array.from(e.dataTransfer.files);
-      for (const file of files) {
-        if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const dataUrl = reader.result as string;
-            const base64 = dataUrl.split(',')[1] ?? '';
-            onPendingImageAdd({ data: base64, mediaType: file.type });
-          };
-          reader.readAsDataURL(file);
+      for (const file of e.dataTransfer.files) {
+        if (file.type.startsWith('image/') && file.size <= MAX_IMAGE_SIZE_BYTES) {
+          void readFileAsBase64(file, file.type).then(onPendingImageAdd);
         }
       }
     },
@@ -230,6 +235,7 @@ export function TerminalInput({
   return (
     <div
       className={`terminal-input-area${isDragOver ? ' drag-over' : ''}`}
+      onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -268,8 +274,8 @@ export function TerminalInput({
               </button>
             </div>
           ))}
-          {pendingImages.length >= 5 && (
-            <span className="pending-images-limit">Maximum 5 images</span>
+          {pendingImages.length >= MAX_ATTACHED_IMAGES && (
+            <span className="pending-images-limit">Maximum {MAX_ATTACHED_IMAGES} images</span>
           )}
         </div>
       )}
