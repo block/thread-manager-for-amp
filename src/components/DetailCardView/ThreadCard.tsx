@@ -142,12 +142,18 @@ export function ThreadCard({
               {thread.contextPercent}%
             </span>
           )}
-          {thread.cost !== undefined && (
+          {(thread.actualCost ?? thread.cost) !== undefined && (
             <span
               className="detail-card-stat cost"
-              title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data"
+              title={
+                thread.actualCost
+                  ? 'Actual cost from Amp'
+                  : 'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data'
+              }
             >
-              ~${thread.cost.toFixed(2)}
+              {thread.actualCost
+                ? `$${thread.actualCost.toFixed(2)}`
+                : `~$${(thread.cost ?? 0).toFixed(2)}`}
             </span>
           )}
         </div>
@@ -203,12 +209,18 @@ export function ThreadCard({
                   <span className="detail-card-time">
                     {formatRelativeTime(ancestor.lastUpdated)}
                   </span>
-                  {ancestor.cost !== undefined && (
+                  {(ancestor.actualCost ?? ancestor.cost) !== undefined && (
                     <span
                       className="detail-card-stat cost"
-                      title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data"
+                      title={
+                        ancestor.actualCost
+                          ? 'Actual cost from Amp'
+                          : 'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data'
+                      }
                     >
-                      ~${ancestor.cost.toFixed(2)}
+                      {ancestor.actualCost
+                        ? `$${ancestor.actualCost.toFixed(2)}`
+                        : `~$${(ancestor.cost ?? 0).toFixed(2)}`}
                     </span>
                   )}
                 </div>

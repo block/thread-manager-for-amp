@@ -4,6 +4,7 @@ import {
   type UseThreadActionsReturn,
   type UseThreadActionsOptions,
 } from '../hooks/useThreadActions';
+import { useActualCosts } from '../hooks/useActualCosts';
 import type { Thread, ThreadMetadata, ThreadStatus } from '../types';
 
 type MetadataMap = Record<string, ThreadMetadata>;
@@ -43,8 +44,19 @@ export function ThreadProvider({
   loading,
   error,
 }: ThreadProviderProps) {
+  const actualCosts = useActualCosts();
+
+  const threadsWithCosts = useMemo(
+    () =>
+      threads.map((t) => {
+        const actualCost = actualCosts[t.id];
+        return actualCost !== undefined ? { ...t, actualCost } : t;
+      }),
+    [threads, actualCosts],
+  );
+
   const threadActions = useThreadActions({
-    threads,
+    threads: threadsWithCosts,
     refetch,
     removeThread,
     updateStatus,
@@ -58,7 +70,7 @@ export function ThreadProvider({
   const value = useMemo<ThreadContextValue>(
     () => ({
       ...threadActions,
-      threads,
+      threads: threadsWithCosts,
       metadata,
       loading,
       error,
@@ -69,7 +81,7 @@ export function ThreadProvider({
     }),
     [
       threadActions,
-      threads,
+      threadsWithCosts,
       metadata,
       loading,
       error,

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Info } from 'lucide-react';
 
 const TOOLTIP_TEXT =
-  'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data';
+  'Cost shown without ~ prefix is the actual cost from Amp. Cost with ~ is estimated and may differ from actual billing.';
 
 export function CostInfoTip() {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);

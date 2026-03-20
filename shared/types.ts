@@ -12,6 +12,7 @@ export interface Thread {
   contextPercent?: number;
   maxContextTokens?: number;
   cost?: number;
+  actualCost?: number;
   workspace?: string | null;
   workspacePath?: string | null;
   repo?: string | null;
