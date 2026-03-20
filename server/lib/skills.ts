@@ -199,6 +199,11 @@ export async function getUsage(): Promise<SkillOutput> {
   return { output: stripAnsi(stdout) };
 }
 
+export async function getThreadUsage(threadId: string): Promise<SkillOutput> {
+  const stdout = await runAmp(['threads', 'usage', threadId]);
+  return { output: stripAnsi(stdout) };
+}
+
 export async function getAmpVersion(): Promise<SkillOutput> {
   const stdout = await runAmp(['--version']);
   return { output: stripAnsi(stdout) };

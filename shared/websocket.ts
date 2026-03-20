@@ -23,9 +23,15 @@ export interface ToolInput {
 }
 
 // Agent mode passed with messages to control CLI --mode flag
-export type AgentMode = 'smart' | 'rush' | 'deep' | 'large';
+export type AgentMode = 'smart' | 'rush' | 'deep' | 'large' | 'free';
 
-export const AGENT_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep', 'large'] as const;
+export const AGENT_MODES: readonly AgentMode[] = [
+  'smart',
+  'rush',
+  'deep',
+  'large',
+  'free',
+] as const;
 
 // Deep reasoning effort levels (deep, deep², deep³)
 export type DeepReasoningEffort = 'medium' | 'high' | 'xhigh';

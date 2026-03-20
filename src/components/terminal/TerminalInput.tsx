@@ -230,7 +230,15 @@ export function TerminalInput({
 
   const modeLabel = agentMode === 'deep' ? DEEP_EFFORT_LABELS[deepReasoningEffort] : agentMode;
   const modeIcon =
-    agentMode === 'deep' ? '🧠' : agentMode === 'rush' ? '🚀' : agentMode === 'large' ? '🐘' : '⚡';
+    agentMode === 'deep'
+      ? '🧠'
+      : agentMode === 'rush'
+        ? '🚀'
+        : agentMode === 'large'
+          ? '🐘'
+          : agentMode === 'free'
+            ? '🎁'
+            : '⚡';
 
   return (
     <div

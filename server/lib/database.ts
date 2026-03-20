@@ -51,6 +51,15 @@ function createDatabase(dbPath: string): DatabaseType {
     // Column already exists
   }
 
+  // Migration: Add actual_cost and cost_fetched_at columns
+  try {
+    instance.exec(`ALTER TABLE thread_metadata ADD COLUMN actual_cost REAL`);
+    instance.exec(`ALTER TABLE thread_metadata ADD COLUMN cost_fetched_at INTEGER`);
+    console.warn('📦 Added actual_cost columns');
+  } catch {
+    // Columns already exist
+  }
+
   instance.exec(`
     CREATE TABLE IF NOT EXISTS artifacts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,6 +111,8 @@ interface ThreadMetadataRow {
   status: ThreadStatus;
   goal: string | null;
   linked_issue_url: string | null;
+  actual_cost: number | null;
+  cost_fetched_at: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -175,6 +186,12 @@ interface Statements {
   recordPrompt: Statement<{ text: string; thread_id: string; created_at: number | null }>;
   deletePromptByText: Statement<[string]>;
   promptHistoryCount: Statement<[], { count: number }>;
+  updateActualCost: Statement<{
+    thread_id: string;
+    actual_cost: number;
+    cost_fetched_at: number;
+  }>;
+  getStaleActualCosts: Statement<[number, number], { thread_id: string }>;
 }
 
 function prepareStatements(instance: DatabaseType): Statements {
@@ -300,6 +317,21 @@ function prepareStatements(instance: DatabaseType): Statements {
     promptHistoryCount: instance.prepare(`
       SELECT count(*) as count FROM prompt_history
     `),
+
+    updateActualCost: instance.prepare(`
+      INSERT INTO thread_metadata (thread_id, actual_cost, cost_fetched_at, updated_at)
+      VALUES (@thread_id, @actual_cost, @cost_fetched_at, unixepoch())
+      ON CONFLICT(thread_id) DO UPDATE SET
+        actual_cost = @actual_cost,
+        cost_fetched_at = @cost_fetched_at,
+        updated_at = unixepoch()
+    `),
+
+    getStaleActualCosts: instance.prepare(`
+      SELECT thread_id FROM thread_metadata
+      WHERE actual_cost IS NOT NULL AND cost_fetched_at < ?
+      LIMIT ?
+    `),
   };
 }
 
@@ -328,6 +360,8 @@ export function getThreadMetadata(threadId: string): ThreadMetadataWithBlockers 
       status: 'active',
       goal: null,
       linked_issue_url: null,
+      actual_cost: null,
+      cost_fetched_at: null,
       created_at: 0,
       updated_at: 0,
     };
@@ -579,6 +613,32 @@ export function searchPromptHistory(query: string, limit = 50): PromptHistoryRow
     return stmts.recentPromptHistory.all(limit);
   }
   return stmts.searchPromptHistory.all(query.trim(), limit);
+}
+
+// Actual cost functions
+
+export function updateActualCost(threadId: string, cost: number): void {
+  getStatements().updateActualCost.run({
+    thread_id: threadId,
+    actual_cost: cost,
+    cost_fetched_at: Math.floor(Date.now() / 1000),
+  });
+}
+
+export function getActualCost(threadId: string): number | null {
+  const row = getStatements().getMetadata.get(threadId);
+  return row?.actual_cost ?? null;
+}
+
+export function getAllActualCosts(): Record<string, number> {
+  const all = getStatements().getAllMetadata.all();
+  const costs: Record<string, number> = {};
+  for (const row of all) {
+    if (row.actual_cost != null) {
+      costs[row.thread_id] = row.actual_cost;
+    }
+  }
+  return costs;
 }
 
 export function initDatabase(dbPath: string): void {

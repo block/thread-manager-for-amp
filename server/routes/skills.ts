@@ -17,9 +17,11 @@ import {
   getAmpHelp,
   listAgentsMd,
   getUsage,
+  getThreadUsage,
   getAmpVersion,
   getCustomThemes,
 } from '../lib/skills.js';
+import { getActualCost } from '../lib/database.js';
 
 interface SkillAddBody {
   source?: string;
@@ -230,6 +232,23 @@ export async function handleSkillRoutes(
       return jsonResponse(res, result);
     } catch (err) {
       return sendError(res, 500, (err as Error).message);
+    }
+  }
+
+  if (pathname === '/api/thread-usage') {
+    if (req.method !== 'GET') return sendError(res, 405, 'Method not allowed');
+    try {
+      const threadId = getParam(url, 'threadId');
+      // Return cached cost instantly if available, otherwise fetch from CLI
+      const cached = getActualCost(threadId);
+      if (cached !== null) {
+        const detailsUrl = `https://ampcode.com/threads/${threadId}/usage`;
+        return jsonResponse(res, { output: `$${cached.toFixed(2)}\nDetails: ${detailsUrl}` });
+      }
+      const result = await getThreadUsage(threadId);
+      return jsonResponse(res, result);
+    } catch (err) {
+      return handleRouteError(res, err);
     }
   }
 

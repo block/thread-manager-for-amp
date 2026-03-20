@@ -57,6 +57,7 @@ export interface UseCommandsOptions {
   onShowAgentsMdList?: () => void;
   onSetVisibility?: (id: string, visibility: string) => void;
   onShowUsage?: () => void;
+  onShowThreadUsage?: () => void;
   onCheckForUpdates?: () => void;
 }
 

@@ -22,6 +22,8 @@ import { truncateThreadAtMessage, undoLastTurn } from '../lib/threadCrud.js';
 import { setThreadVisibility } from '../lib/skills.js';
 import { getPromptHistory, addPromptToHistory } from '../lib/promptHistory.js';
 import { analyzeContext } from '../lib/contextAnalyze.js';
+import { getAllActualCosts } from '../lib/database.js';
+import { enqueueCostFetch } from '../lib/costFetcher.js';
 
 export async function handleThreadRoutes(
   url: URL,
@@ -35,6 +37,10 @@ export async function handleThreadRoutes(
       const limit = parseInt(url.searchParams.get('limit') || '50', 10);
       const cursor = url.searchParams.get('cursor') || null;
       const result = await getThreads({ limit, cursor });
+
+      // Trigger background actual cost fetching for visible threads
+      enqueueCostFetch(result.threads.map((t: { id: string }) => t.id));
+
       return jsonResponse(res, result);
     } catch (err) {
       return handleRouteError(res, err);
@@ -312,6 +318,15 @@ export async function handleThreadRoutes(
       const msg = (err as Error).message;
       const status = msg.includes('required') ? 400 : 500;
       return sendError(res, status, msg);
+    }
+  }
+
+  if (pathname === '/api/thread-costs') {
+    try {
+      const costs = getAllActualCosts();
+      return jsonResponse(res, costs);
+    } catch (err) {
+      return handleRouteError(res, err);
     }
   }
 

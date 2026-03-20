@@ -27,12 +27,12 @@ mkdir -p "$SNAPSHOT_DIR"
   echo "=== amp --help ==="
   amp --help 2>&1 || true
   echo ""
-  for cmd in threads tools tasks review skill permissions mcp usage; do
+  for cmd in threads tools version review skill permissions mcp usage; do
     echo "=== amp $cmd --help ==="
     amp "$cmd" --help 2>&1 || true
     echo ""
   done
-  for sub in new continue list search share rename archive delete handoff markdown replay; do
+  for sub in new continue list usage search share rename archive delete handoff markdown; do
     echo "=== amp threads $sub --help ==="
     amp threads "$sub" --help 2>&1 || true
     echo ""
@@ -45,6 +45,11 @@ mkdir -p "$SNAPSHOT_DIR"
   for sub in add list remove doctor approve; do
     echo "=== amp mcp $sub --help ==="
     amp mcp "$sub" --help 2>&1 || true
+    echo ""
+  done
+  for sub in login logout status; do
+    echo "=== amp mcp oauth $sub --help ==="
+    amp mcp oauth "$sub" --help 2>&1 || true
     echo ""
   done
 } > "$SNAPSHOT"

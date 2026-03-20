@@ -111,14 +111,20 @@ export const ThreadRow = memo(function ThreadRow({
         )}
       </td>
       <td
-        className={`thread-cost${thread.cost && thread.cost >= 50 ? ' cost-warning' : ''}`}
+        className={`thread-cost${(thread.actualCost ?? thread.cost ?? 0) >= 50 ? ' cost-warning' : ''}`}
         title={
-          thread.cost
-            ? 'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data'
-            : undefined
+          thread.actualCost
+            ? `Actual cost from Amp`
+            : thread.cost
+              ? 'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data'
+              : undefined
         }
       >
-        {thread.cost ? `~$${thread.cost.toFixed(2)}` : '—'}
+        {thread.actualCost
+          ? `$${thread.actualCost.toFixed(2)}`
+          : thread.cost
+            ? `~$${thread.cost.toFixed(2)}`
+            : '—'}
       </td>
       <td className="thread-actions" onClick={(e) => e.stopPropagation()}>
         <a

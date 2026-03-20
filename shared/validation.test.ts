@@ -57,6 +57,7 @@ describe('isWsClientMessage', () => {
     expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'rush' })).toBe(true);
     expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'deep' })).toBe(true);
     expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'large' })).toBe(true);
+    expect(isWsClientMessage({ type: 'message', content: 'hello', mode: 'free' })).toBe(true);
   });
 
   it('accepts a message without mode (optional)', () => {

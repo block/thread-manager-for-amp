@@ -1415,6 +1415,11 @@
   color: var(--accent-green, #22c55e);
 }
 
+.terminal-mode-badge.mode-free {
+  border-color: var(--accent-cyan, #06b6d4);
+  color: var(--accent-cyan, #06b6d4);
+}
+
 .terminal-mode-badge.mode-locked {
   opacity: 0.7;
   cursor: default;

@@ -75,12 +75,18 @@ const KanbanCard = memo(function KanbanCard({
               {thread.contextPercent}%
             </span>
           )}
-          {thread.cost !== undefined && (
+          {(thread.actualCost ?? thread.cost) !== undefined && (
             <span
               className="kanban-card-cost"
-              title="Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data"
+              title={
+                thread.actualCost
+                  ? 'Actual cost from Amp'
+                  : 'Estimated cost — may differ from actual billing due to subagent, oracle, and other tool usage not fully tracked in thread data'
+              }
             >
-              ~${thread.cost.toFixed(2)}
+              {thread.actualCost
+                ? `$${thread.actualCost.toFixed(2)}`
+                : `~$${(thread.cost ?? 0).toFixed(2)}`}
             </span>
           )}
         </div>
