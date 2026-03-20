@@ -80,6 +80,7 @@ export interface GitInfo {
 export interface TerminalStatusBarProps {
   usage: UsageInfo;
   gitInfo?: GitInfo | null;
+  actualCost?: number;
 }
 
 export interface ContextWarningProps {

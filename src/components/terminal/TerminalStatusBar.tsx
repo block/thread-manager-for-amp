@@ -3,7 +3,7 @@ import { GitBranch } from 'lucide-react';
 import { CostInfoTip } from '../CostInfoTip';
 import type { TerminalStatusBarProps } from './types';
 
-export function TerminalStatusBar({ usage, gitInfo }: TerminalStatusBarProps) {
+export function TerminalStatusBar({ usage, gitInfo, actualCost }: TerminalStatusBarProps) {
   const contextPct = usage.contextPercent >= 0 ? usage.contextPercent : null;
   const [copied, setCopied] = useState(false);
 
@@ -53,9 +53,11 @@ export function TerminalStatusBar({ usage, gitInfo }: TerminalStatusBarProps) {
       </div>
       <div className="status-item">
         <span className="status-label">
-          Est. Cost <CostInfoTip />
+          {actualCost != null ? 'Cost' : 'Est. Cost'} <CostInfoTip />
         </span>
-        <span className="status-value">~${usage.estimatedCost}</span>
+        <span className="status-value">
+          {actualCost != null ? `$${actualCost.toFixed(2)}` : `~$${usage.estimatedCost}`}
+        </span>
       </div>
     </div>
   );

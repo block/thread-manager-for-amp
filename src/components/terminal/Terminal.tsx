@@ -568,7 +568,9 @@ export function Terminal({
           onLoadMore={loadMoreMessages}
         />
       </div>
-      {usage && <TerminalStatusBar usage={usage} gitInfo={gitInfo} />}
+      {usage && (
+        <TerminalStatusBar usage={usage} gitInfo={gitInfo} actualCost={thread.actualCost} />
+      )}
       {showContextWarning && (
         <ContextWarning
           threadId={threadId}
