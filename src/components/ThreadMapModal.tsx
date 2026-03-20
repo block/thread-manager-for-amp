@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { X, GitBranch, ChevronDown } from 'lucide-react';
 import { BaseModal } from './BaseModal';
 import { Timestamp } from './Timestamp';
 import { apiGet } from '../api/client';
+import type { ThreadChain, ChainThread, ThreadChainNode } from '../types';
 
 interface ThreadMapModalProps {
   isOpen: boolean;
@@ -11,18 +12,13 @@ interface ThreadMapModalProps {
   onOpenThread?: (threadId: string) => void;
 }
 
-interface ChainThread {
-  id: string;
-  title: string;
-  lastUpdated: string;
-  workspace?: string;
-  comment?: string;
-}
-
-interface ThreadChain {
-  ancestors: ChainThread[];
-  current: ChainThread | null;
-  descendants: ChainThread[];
+function flattenTree(nodes: ThreadChainNode[]): ChainThread[] {
+  const result: ChainThread[] = [];
+  for (const node of nodes) {
+    result.push(node.thread);
+    result.push(...flattenTree(node.children));
+  }
+  return result;
 }
 
 function truncateComment(comment: string, maxLen = 120): string {
@@ -71,7 +67,8 @@ export function ThreadMapModal({ isOpen, onClose, threadId, onOpenThread }: Thre
     [onOpenThread],
   );
 
-  const hasChain = chain && (chain.ancestors.length > 0 || chain.descendants.length > 0);
+  const descendants = useMemo(() => (chain ? flattenTree(chain.descendantsTree) : []), [chain]);
+  const hasChain = chain && (chain.ancestors.length > 0 || descendants.length > 0);
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} title="Thread Map" className="thread-map-modal">
@@ -140,14 +137,14 @@ export function ThreadMapModal({ isOpen, onClose, threadId, onOpenThread }: Thre
                     )}
                   </span>
                 </div>
-                {chain.current.comment && chain.descendants.length > 0 && (
+                {chain.current.comment && descendants.length > 0 && (
                   <div className="thread-map-handoff-label" title={chain.current.comment}>
                     <span className="thread-map-handoff-text">
                       "{truncateComment(chain.current.comment)}"
                     </span>
                   </div>
                 )}
-                {chain.descendants.length > 0 && (
+                {descendants.length > 0 && (
                   <div className="thread-map-connector">
                     <ChevronDown size={14} />
                   </div>
@@ -155,7 +152,7 @@ export function ThreadMapModal({ isOpen, onClose, threadId, onOpenThread }: Thre
               </div>
             )}
 
-            {chain.descendants.map((t, i) => (
+            {descendants.map((t, i) => (
               <div key={t.id} className="thread-map-item">
                 <button
                   className="thread-map-card thread-map-card--descendant"
@@ -172,12 +169,12 @@ export function ThreadMapModal({ isOpen, onClose, threadId, onOpenThread }: Thre
                     )}
                   </span>
                 </button>
-                {t.comment && i < chain.descendants.length - 1 && (
+                {t.comment && i < descendants.length - 1 && (
                   <div className="thread-map-handoff-label" title={t.comment}>
                     <span className="thread-map-handoff-text">"{truncateComment(t.comment)}"</span>
                   </div>
                 )}
-                {i < chain.descendants.length - 1 && (
+                {i < descendants.length - 1 && (
                   <div className="thread-map-connector">
                     <ChevronDown size={14} />
                   </div>
