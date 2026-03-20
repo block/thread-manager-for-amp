@@ -6,9 +6,11 @@ import {
   Rocket,
   Brain,
   Maximize,
+  Gift,
   FileText,
   Info,
   DollarSign,
+  Activity,
   FlaskConical,
 } from 'lucide-react';
 import { CATEGORIES } from './categories';
@@ -91,6 +93,14 @@ export function createSettingsCommands(
       disabled: modeLocked,
     },
     {
+      id: 'settings-mode-free',
+      category: CATEGORIES.SETTINGS,
+      label: `set mode: free${agentMode === 'free' ? ' (active)' : ''}${modeLocked ? ' (locked)' : ''}`,
+      icon: <Gift size={14} />,
+      action: () => onSetAgentMode?.('free'),
+      disabled: modeLocked,
+    },
+    {
       id: 'settings-toggle-deep',
       category: CATEGORIES.SETTINGS,
       label:
@@ -123,6 +133,13 @@ export function createSettingsCommands(
       label: 'usage',
       icon: <DollarSign size={14} />,
       action: () => handlers.onShowUsage?.(),
+    },
+    {
+      id: 'thread-usage',
+      category: CATEGORIES.AMP,
+      label: 'thread usage',
+      icon: <Activity size={14} />,
+      action: () => handlers.onShowThreadUsage?.(),
     },
     {
       id: 'amp-check-updates',

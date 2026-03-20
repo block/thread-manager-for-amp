@@ -539,7 +539,7 @@ async function spawnAmpOnSession(
 
 // ── Initialise session cost/model from thread file ──────────────────────
 
-const VALID_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep', 'large'];
+const VALID_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep', 'large', 'free'];
 
 // Shell command execution timeout (30 seconds)
 const SHELL_EXEC_TIMEOUT_MS = 30_000;

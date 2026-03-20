@@ -17,6 +17,7 @@ import {
   getAmpHelp,
   listAgentsMd,
   getUsage,
+  getThreadUsage,
   getAmpVersion,
   getCustomThemes,
 } from '../lib/skills.js';
@@ -230,6 +231,17 @@ export async function handleSkillRoutes(
       return jsonResponse(res, result);
     } catch (err) {
       return sendError(res, 500, (err as Error).message);
+    }
+  }
+
+  if (pathname === '/api/thread-usage') {
+    if (req.method !== 'GET') return sendError(res, 405, 'Method not allowed');
+    try {
+      const threadId = getParam(url, 'threadId');
+      const result = await getThreadUsage(threadId);
+      return jsonResponse(res, result);
+    } catch (err) {
+      return handleRouteError(res, err);
     }
   }
 

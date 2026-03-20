@@ -19,6 +19,7 @@ export interface ReviewOptions {
   files?: string[];
   instructions?: string;
   summaryOnly?: boolean;
+  checksOnly?: boolean;
 }
 
 export async function runReview(options: ReviewOptions): Promise<string> {
@@ -26,6 +27,7 @@ export async function runReview(options: ReviewOptions): Promise<string> {
   if (options.files?.length) args.push('--files', ...options.files);
   if (options.instructions) args.push('--instructions', options.instructions);
   if (options.summaryOnly) args.push('--summary-only');
+  if (options.checksOnly) args.push('--checks-only');
 
   const output = await runAmp(args, { cwd: options.workspace });
   return stripAnsi(output);
@@ -36,6 +38,7 @@ export function streamReview(options: ReviewOptions, res: ServerResponse): void 
   if (options.files?.length) args.push('--files', ...options.files);
   if (options.instructions) args.push('--instructions', options.instructions);
   if (options.summaryOnly) args.push('--summary-only');
+  if (options.checksOnly) args.push('--checks-only');
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',

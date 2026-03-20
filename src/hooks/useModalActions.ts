@@ -23,6 +23,7 @@ export interface UseModalActionsReturn {
   handleShowAgentsMdList: () => Promise<void>;
   handleSetVisibility: (id: string, visibility: string) => Promise<void>;
   handleShowUsage: () => Promise<void>;
+  handleShowThreadUsage: (threadId: string) => Promise<void>;
   handleCheckForUpdates: () => Promise<void>;
 }
 
@@ -325,6 +326,21 @@ export function useModalActions(
     }
   }, [modals, showError]);
 
+  const handleShowThreadUsage = useCallback(
+    async (threadId: string) => {
+      try {
+        const result = await apiGet<{ output: string }>(
+          `/api/thread-usage?threadId=${encodeURIComponent(threadId)}`,
+        );
+        modals.setOutputModal({ title: 'Thread Usage', content: result.output });
+      } catch (err) {
+        console.error('Failed to get thread usage:', err);
+        showError('Failed to get thread usage');
+      }
+    },
+    [modals, showError],
+  );
+
   const handleCheckForUpdates = useCallback(async () => {
     try {
       const result = await apiGet<{ output: string }>('/api/amp-version');
@@ -356,6 +372,7 @@ export function useModalActions(
     handleShowAgentsMdList,
     handleSetVisibility,
     handleShowUsage,
+    handleShowThreadUsage,
     handleCheckForUpdates,
   };
 }

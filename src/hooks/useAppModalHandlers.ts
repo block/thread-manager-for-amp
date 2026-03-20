@@ -285,6 +285,13 @@ export function useAppModalHandlers({
     onShowAgentsMdList: modalActions.handleShowAgentsMdList,
     onSetVisibility: modalActions.handleSetVisibility,
     onShowUsage: modalActions.handleShowUsage,
+    onShowThreadUsage: () => {
+      if (!activeThreadId) {
+        showError('No active thread');
+        return;
+      }
+      void modalActions.handleShowThreadUsage(activeThreadId);
+    },
     onCheckForUpdates: modalActions.handleCheckForUpdates,
   });
 

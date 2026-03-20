@@ -12,6 +12,7 @@ interface ReviewBody {
   files?: string[];
   instructions?: string;
   summaryOnly?: boolean;
+  checksOnly?: boolean;
   stream?: boolean;
 }
 
@@ -50,6 +51,7 @@ export async function handleReviewRoutes(
       files: body.files,
       instructions: body.instructions,
       summaryOnly: body.summaryOnly,
+      checksOnly: body.checksOnly,
     };
 
     if (body.stream) {

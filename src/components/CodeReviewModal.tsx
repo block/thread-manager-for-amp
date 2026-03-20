@@ -24,6 +24,7 @@ interface ReviewResult {
 export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalProps) {
   const [instructions, setInstructions] = useState('');
   const [summaryOnly, setSummaryOnly] = useState(false);
+  const [checksOnly, setChecksOnly] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [availableFiles, setAvailableFiles] = useState<FileItem[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
@@ -45,6 +46,7 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
       setSelectedFiles([]);
       setInstructions('');
       setSummaryOnly(false);
+      setChecksOnly(false);
       setShowFilePicker(false);
       setSelectedChecks([]);
       setShowChecks(false);
@@ -104,6 +106,7 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
         files: selectedFiles.length > 0 ? selectedFiles : undefined,
         instructions: reviewInstructions,
         summaryOnly,
+        checksOnly,
         stream: true,
       };
 
@@ -167,6 +170,7 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
           files: selectedFiles.length > 0 ? selectedFiles : undefined,
           instructions: instructions.trim() || undefined,
           summaryOnly,
+          checksOnly,
         });
         setReviewOutput(result.output);
       } catch (fallbackErr) {
@@ -176,7 +180,7 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
       setReviewing(false);
       abortRef.current = null;
     }
-  }, [workspace, selectedFiles, instructions, summaryOnly, selectedChecks, checks]);
+  }, [workspace, selectedFiles, instructions, summaryOnly, checksOnly, selectedChecks, checks]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -333,6 +337,15 @@ export function CodeReviewModal({ isOpen, onClose, workspace }: CodeReviewModalP
                     disabled={reviewing}
                   />
                   Summary only
+                </label>
+                <label className="code-review-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={checksOnly}
+                    onChange={(e) => setChecksOnly(e.target.checked)}
+                    disabled={reviewing}
+                  />
+                  Checks only
                 </label>
 
                 <div className="code-review-actions">
