@@ -12,24 +12,34 @@ Thank you for your interest in contributing! This project is a local web UI for 
 
 ### Setup
 
-```bash
-git clone https://github.com/block/thread-manager-for-amp.git
-cd thread-manager-for-amp
-pnpm install
-pnpm dev
-```
+> **External contributors**: You don't have push access to this repo — that's normal for open source! You'll need to **fork first**, then clone your fork. See the workflow below.
 
-Open http://localhost:5173
+1. **Fork the repository** — Click the "Fork" button on [the repo page](https://github.com/block/thread-manager-for-amp), or use the GitHub CLI:
+
+   ```bash
+   gh repo fork block/thread-manager-for-amp --clone
+   cd thread-manager-for-amp
+   ```
+
+2. **Install dependencies and start dev server**:
+
+   ```bash
+   pnpm install
+   pnpm dev
+   ```
+
+3. Open http://localhost:5173
 
 ## Development Workflow
 
-1. Fork and clone the repository
+1. Make sure your fork is up to date: `git pull upstream main`
 2. Create a feature branch: `git checkout -b my-feature`
 3. Make your changes
 4. Run tests: `pnpm test`
 5. Run checks: `pnpm check` (format check + lint + typecheck + build)
 6. Commit with a descriptive message
-7. Open a pull request
+7. Push to your fork: `git push origin my-feature`
+8. Open a pull request from your fork back to `block/thread-manager-for-amp`
 
 ## Project Structure
 
