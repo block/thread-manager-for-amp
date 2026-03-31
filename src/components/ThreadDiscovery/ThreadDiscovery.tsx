@@ -10,7 +10,10 @@ import {
   Sparkles,
   Loader2,
   Map,
+  Copy,
+  Check,
 } from 'lucide-react';
+import { useState, useCallback } from 'react';
 import { SourceControl } from '../SourceControl';
 import type { Thread, ThreadMetadata } from '../../types';
 import type { Message } from '../../utils/parseMarkdown';
@@ -85,6 +88,14 @@ export function ThreadDiscovery({
     metadata,
     onMetadataChange,
   });
+
+  const [copied, setCopied] = useState(false);
+  const handleCopyThreadId = useCallback(() => {
+    void navigator.clipboard.writeText(threadId).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [threadId]);
 
   return (
     <div className="thread-discovery-v2">
@@ -182,6 +193,11 @@ export function ThreadDiscovery({
             )}
           </div>
         )}
+
+        <button onClick={handleCopyThreadId} className="linked-issue-add" title="Copy Thread ID">
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+          {copied ? 'Copied!' : 'Copy Thread ID'}
+        </button>
 
         {loading && <Loader2 size={12} className="spinning" style={{ opacity: 0.5 }} />}
 
