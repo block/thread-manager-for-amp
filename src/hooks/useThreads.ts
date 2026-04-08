@@ -16,18 +16,27 @@ export function useThreads() {
   const [hasMore, setHasMore] = useState(false);
   const cursorRef = useRef<string | null>(null);
   const autoRefreshRef = useRef<number | null>(null);
-  // Track recently deleted thread IDs to prevent them reappearing from API during eventual consistency lag
-  const deletedIdsRef = useRef<Map<string, number>>(new Map());
 
-  const filterDeleted = useCallback((threadList: Thread[]): Thread[] => {
+  // Track recently deleted thread IDs with expiry timestamps.
+  const deletedIdsRef = useRef<Map<string, number>>(new Map());
+  // Snapshot of thread IDs from the last fetch before any deletes.
+  // While deletes are pending, only threads in this set (minus deleted ones) are shown,
+  // preventing backfill from threads beyond the original API window.
+  const knownIdsRef = useRef<Set<string> | null>(null);
+  // Timestamp of the most recent delete — threads created after this are allowed through
+  const lastDeleteTimeRef = useRef<number>(0);
+
+  /** Prune expired entries and return current pending-delete count. */
+  const pruneDeleted = useCallback((): number => {
     const now = Date.now();
     const deleted = deletedIdsRef.current;
-    // Prune expired entries
     for (const [id, expiry] of deleted) {
       if (now >= expiry) deleted.delete(id);
     }
-    if (deleted.size === 0) return threadList;
-    return threadList.filter((t) => !deleted.has(t.id));
+    if (deleted.size === 0) {
+      knownIdsRef.current = null;
+    }
+    return deleted.size;
   }, []);
 
   const fetchThreads = useCallback(
@@ -45,10 +54,32 @@ export function useThreads() {
           `/api/threads?limit=1000${cursor ? `&cursor=${cursor}` : ''}`,
         );
 
-        const filtered = filterDeleted(data.threads);
+        const pendingDeletes = pruneDeleted();
+        const deleted = deletedIdsRef.current;
+
+        let filtered: Thread[];
+
+        if (pendingDeletes > 0 && knownIdsRef.current) {
+          // While deletes are pending, only show threads that:
+          // 1. Were in our known set before the delete (minus deleted ones), OR
+          // 2. Are genuinely new (interacted with after the last delete)
+          const known = knownIdsRef.current;
+          const cutoff = lastDeleteTimeRef.current;
+          filtered = data.threads.filter((t) => {
+            if (deleted.has(t.id)) return false;
+            if (known.has(t.id)) return true;
+            // Allow genuinely new threads (created/updated after the delete)
+            const threadTime = t.lastUpdatedDate ? new Date(t.lastUpdatedDate).getTime() : 0;
+            return threadTime > cutoff;
+          });
+        } else {
+          filtered = data.threads;
+          // Establish known set for future delete operations
+          knownIdsRef.current = new Set(data.threads.map((t) => t.id));
+        }
 
         if (append) {
-          setThreads((prev) => [...prev, ...filterDeleted(data.threads)]);
+          setThreads((prev) => [...prev, ...filtered]);
         } else {
           // Stabilize reference: skip setState if thread list hasn't meaningfully changed,
           // preventing downstream re-renders (e.g., useFilters label re-fetch) on every poll
@@ -81,7 +112,7 @@ export function useThreads() {
         setLoadingMore(false);
       }
     },
-    [filterDeleted],
+    [pruneDeleted],
   );
 
   const loadMore = useCallback(() => {
@@ -91,8 +122,17 @@ export function useThreads() {
   }, [hasMore, loadingMore, fetchThreads]);
 
   const removeThread = useCallback((threadId: string) => {
+    // Snapshot current thread IDs before any deletions
+    if (!knownIdsRef.current) {
+      setThreads((prev) => {
+        knownIdsRef.current = new Set(prev.map((t) => t.id));
+        return prev.filter((t) => t.id !== threadId);
+      });
+    } else {
+      setThreads((prev) => prev.filter((t) => t.id !== threadId));
+    }
     deletedIdsRef.current.set(threadId, Date.now() + DELETE_GRACE_PERIOD_MS);
-    setThreads((prev) => prev.filter((t) => t.id !== threadId));
+    lastDeleteTimeRef.current = Date.now();
   }, []);
 
   useEffect(() => {
