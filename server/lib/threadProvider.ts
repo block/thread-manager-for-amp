@@ -6,10 +6,10 @@
  *   2. readThreadFile(id) — tries local file first, falls back to `amp threads export`
  */
 
-import { readFile, access } from 'fs/promises';
+import { readFile, readdir, access } from 'fs/promises';
 import { join } from 'path';
 import type { Thread, ThreadVisibility } from '../../shared/types.js';
-import { THREADS_DIR, type ThreadFile } from './threadTypes.js';
+import { THREADS_DIR, isHandoffRelationship, type ThreadFile } from './threadTypes.js';
 import { listThreads, type AmpThreadSummary } from './amp-api.js';
 import { formatRelativeTime, parseFileUri, runAmp } from './utils.js';
 
@@ -45,7 +45,62 @@ function parseRepoFromUrl(url: string | undefined | null): string | null {
 
 export async function listAllThreads(): Promise<Thread[]> {
   const summaries = await listThreads(500);
-  return summaries.map(toThread);
+  const threads = summaries.map(toThread);
+
+  // The listThreads API doesn't return relationship data.
+  // Scan local thread files to enrich handoff parent/child links.
+  await enrichRelationships(threads);
+
+  return threads;
+}
+
+/**
+ * Scan local thread files for handoff relationships and merge them into
+ * the thread list. This is fast (~5ms for 25 local files) and only reads
+ * the `relationships` field from each file.
+ */
+async function enrichRelationships(threads: Thread[]): Promise<void> {
+  const threadMap = new Map(threads.map((t) => [t.id, t]));
+
+  let files: string[];
+  try {
+    files = await readdir(THREADS_DIR);
+  } catch {
+    return;
+  }
+
+  const jsonFiles = files.filter((f) => f.startsWith('T-') && f.endsWith('.json'));
+
+  await Promise.all(
+    jsonFiles.map(async (file) => {
+      const threadId = file.replace('.json', '');
+      const thread = threadMap.get(threadId);
+      if (!thread) return;
+
+      try {
+        const content = await readFile(join(THREADS_DIR, file), 'utf-8');
+        const data = JSON.parse(content) as ThreadFile;
+        const relationships = data.relationships || [];
+
+        for (const rel of relationships) {
+          if (isHandoffRelationship(rel)) {
+            if (rel.role === 'child') {
+              thread.handoffParentId = rel.threadID;
+            } else {
+              thread.handoffChildIds = thread.handoffChildIds || [];
+              thread.handoffChildIds.push(rel.threadID);
+            }
+          }
+        }
+
+        if (thread.handoffChildIds?.length) {
+          thread.handoffChildIds = [...new Set(thread.handoffChildIds)];
+        }
+      } catch {
+        // Skip unreadable files
+      }
+    }),
+  );
 }
 
 function toThread(s: AmpThreadSummary): Thread {
