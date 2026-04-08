@@ -1,96 +1,23 @@
-import { readFile, readdir, stat } from 'fs/promises';
-import { join } from 'path';
-import type { SearchResult, SearchMatch, RelatedThread } from '../../shared/types.js';
-import { THREADS_DIR, isTextContent, type ThreadFile } from './threadTypes.js';
-import { getThreads } from './threadCrud.js';
+import type { SearchResult, RelatedThread } from '../../shared/types.js';
+import { listAllThreads } from './threadProvider.js';
+import { runAmp } from './utils.js';
+
+interface CliSearchResult {
+  id: string;
+  title: string;
+  updatedAt: string;
+}
 
 export async function searchThreads(query: string): Promise<SearchResult[]> {
-  const searchLower = query.toLowerCase();
-  const results: (SearchResult & { mtime: number })[] = [];
-
   try {
-    const files = await readdir(THREADS_DIR);
-    const threadFiles = files.filter((f: string) => f.startsWith('T-') && f.endsWith('.json'));
+    const stdout = await runAmp(['threads', 'search', query, '--json', '--limit', '50']);
+    const results = JSON.parse(stdout) as CliSearchResult[];
 
-    for (const file of threadFiles) {
-      const filePath = join(THREADS_DIR, file);
-      try {
-        const fileStat = await stat(filePath);
-        const content = await readFile(filePath, 'utf-8');
-        const data = JSON.parse(content) as ThreadFile;
-        const messages = data.messages || [];
-        const threadId = file.replace('.json', '');
-
-        const matches: SearchMatch[] = [];
-        for (let i = 0; i < messages.length; i++) {
-          const msg = messages[i];
-          if (!msg) continue;
-          let textContent = '';
-
-          if (typeof msg.content === 'string') {
-            textContent = msg.content;
-          } else if (Array.isArray(msg.content)) {
-            textContent = msg.content
-              .filter(isTextContent)
-              .map((c) => c.text || '')
-              .join('\n');
-          }
-
-          if (textContent.toLowerCase().includes(searchLower)) {
-            const lines = textContent.split('\n');
-            for (const line of lines) {
-              if (line.toLowerCase().includes(searchLower)) {
-                matches.push({
-                  messageIndex: i,
-                  role: msg.role,
-                  snippet: line.slice(0, 200),
-                });
-                if (matches.length >= 3) break;
-              }
-            }
-          }
-          if (matches.length >= 3) break;
-        }
-
-        let title = data.title || '';
-        if (!title && messages.length > 0) {
-          const firstUser = messages.find((m) => m.role === 'user');
-          if (firstUser?.content) {
-            let tc = '';
-            if (typeof firstUser.content === 'string') {
-              tc = firstUser.content;
-            } else if (Array.isArray(firstUser.content)) {
-              const textBlock = firstUser.content.find(isTextContent);
-              tc = textBlock?.text || '';
-            }
-            title = tc.slice(0, 60).replace(/\n/g, ' ').trim();
-          }
-        }
-        if (!title) title = threadId;
-
-        const titleMatches = title.toLowerCase().includes(searchLower);
-        const idMatches = threadId.toLowerCase().includes(searchLower);
-
-        if (matches.length > 0 || titleMatches || idMatches) {
-          results.push({
-            threadId,
-            title,
-            lastUpdated: new Date(fileStat.mtimeMs).toISOString(),
-            matches,
-            mtime: fileStat.mtimeMs,
-          });
-        }
-      } catch {
-        // Skip threads that fail to parse
-      }
-    }
-
-    results.sort((a, b) => b.mtime - a.mtime);
     return results.map((r) => ({
-      threadId: r.threadId,
+      threadId: r.id,
       title: r.title,
-      lastUpdated: r.lastUpdated,
-      matches: r.matches,
+      lastUpdated: r.updatedAt,
+      matches: [],
     }));
   } catch (e) {
     console.error('[threads] Search error:', e);
@@ -99,7 +26,7 @@ export async function searchThreads(query: string): Promise<SearchResult[]> {
 }
 
 export async function getRelatedThreads(threadId: string): Promise<RelatedThread[]> {
-  const { threads } = await getThreads({ limit: 1000 });
+  const threads = await listAllThreads();
   const targetThread = threads.find((t) => t.id === threadId);
 
   if (!targetThread?.touchedFiles?.length) {

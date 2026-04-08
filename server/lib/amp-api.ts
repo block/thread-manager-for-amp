@@ -130,3 +130,52 @@ export async function callAmpInternalAPI<T = unknown>(
   // eslint-disable-next-line @typescript-eslint/only-throw-error -- TODO: wrap lastError in a proper Error
   throw lastError;
 }
+
+// ── listThreads internal API ────────────────────────────────────────────
+
+export interface AmpThreadTree {
+  uri: string;
+  displayName: string;
+  repository?: { url: string; ref?: string; sha?: string; type?: string };
+}
+
+export interface AmpThreadSummary {
+  id: string;
+  v: number;
+  title: string;
+  created: number;
+  userLastInteractedAt: number;
+  messageCount: number;
+  agentMode: string;
+  archived: boolean;
+  creatorUserID: string;
+  usesDtw: boolean;
+  env?: {
+    initial?: {
+      trees?: AmpThreadTree[];
+    };
+  };
+  relationships?: Array<{
+    type: string;
+    role: 'parent' | 'child';
+    threadID: string;
+    comment?: string;
+  }>;
+  summaryStats?: {
+    diffStats?: { added: number; changed: number; deleted: number };
+    messageCount: number;
+  };
+  meta: {
+    visibility: string;
+    sharedGroupIDs: string[];
+  };
+}
+
+interface ListThreadsResult {
+  threads: AmpThreadSummary[];
+}
+
+export async function listThreads(limit = 500): Promise<AmpThreadSummary[]> {
+  const result = await callAmpInternalAPI<ListThreadsResult>('listThreads', { limit });
+  return result.threads;
+}

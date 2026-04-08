@@ -1,9 +1,9 @@
 import { spawn, ChildProcess } from 'child_process';
 import { readFile, writeFile, mkdir, stat } from 'fs/promises';
-import type { Stats } from 'fs';
 import { join, dirname, isAbsolute, relative, basename } from 'path';
 import { AMP_HOME } from './constants.js';
 import { THREADS_DIR } from './threadTypes.js';
+import { readThreadFile } from './threadProvider.js';
 import type {
   ThreadGitActivity,
   WorkspaceGitActivity,
@@ -578,12 +578,18 @@ export async function getThreadGitActivity(
   threadId: string,
   forceRefresh = false,
 ): Promise<ThreadGitActivity> {
-  const threadPath = join(THREADS_DIR, `${threadId}.json`);
-
   try {
-    const content = await readFile(threadPath, 'utf-8');
-    const data = JSON.parse(content) as ThreadData;
-    const threadStat: Stats = await stat(threadPath);
+    const data = (await readThreadFile(threadId)) as unknown as ThreadData;
+
+    // stat the local file for cache invalidation — may not exist for server-only threads
+    let threadMtimeMs = 0;
+    try {
+      const threadPath = join(THREADS_DIR, `${threadId}.json`);
+      const threadStat = await stat(threadPath);
+      threadMtimeMs = threadStat.mtimeMs;
+    } catch {
+      // No local file — skip cache check (always recompute)
+    }
 
     const trees = data.env?.initial?.trees || [];
     if (trees.length === 0) {
@@ -631,7 +637,8 @@ export async function getThreadGitActivity(
 
       const cacheValid =
         cachedWorkspace &&
-        cache?.threadMtimeMs === threadStat.mtimeMs &&
+        cache?.threadMtimeMs === threadMtimeMs &&
+        threadMtimeMs > 0 &&
         cachedWorkspace.gitHeadSha === headSha &&
         !forceRefresh;
 
@@ -698,7 +705,7 @@ export async function getThreadGitActivity(
 
     const result: CacheData = {
       threadId,
-      threadMtimeMs: threadStat.mtimeMs,
+      threadMtimeMs,
       computedAtMs: Date.now(),
       workspaces,
     };

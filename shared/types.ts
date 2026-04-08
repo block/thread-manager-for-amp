@@ -1,12 +1,14 @@
 // Shared types between frontend and backend
 // This is the source of truth - frontend re-exports from here
 
+export type ThreadVisibility = 'Private' | 'Public' | 'Workspace' | 'Unlisted' | 'Group';
+
 export interface Thread {
   id: string;
   title: string;
   lastUpdated: string;
   lastUpdatedDate?: string;
-  visibility: 'Private' | 'Public' | 'Workspace' | 'Unlisted' | 'Group';
+  visibility: ThreadVisibility;
   messages: number;
   model?: string;
   contextPercent?: number;
@@ -21,6 +23,8 @@ export interface Thread {
   // Handoff relationship IDs (derived from relationships for quick access)
   handoffParentId?: string | null;
   handoffChildIds?: string[];
+  agentMode?: string;
+  archived?: boolean;
 }
 
 export interface RelatedThread {

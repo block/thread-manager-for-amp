@@ -1,12 +1,11 @@
-import { readFile, readdir, stat } from 'fs/promises';
-import { join } from 'path';
-import { THREADS_DIR, isTextContent, type ThreadFile } from './threadTypes.js';
+import { isTextContent } from './threadTypes.js';
 import {
   recordPrompt,
   searchPromptHistory,
   getPromptHistoryCount,
   type PromptHistoryRow,
 } from './database.js';
+import { listAllThreads, readThreadFile } from './threadProvider.js';
 
 let backfillPromise: Promise<void> | null = null;
 
@@ -20,38 +19,27 @@ async function backfillPromptHistory(): Promise<void> {
     // Skip if already backfilled (data persists across restarts)
     if (getPromptHistoryCount() > 0) return;
 
-    const files = await readdir(THREADS_DIR);
-    const threadFiles = files.filter((f) => f.startsWith('T-') && f.endsWith('.json'));
+    const threads = await listAllThreads();
 
-    // Stat all files and sort oldest-first so duplicate prompts keep the most recent timestamp
-    const fileStats = (
-      await Promise.all(
-        threadFiles.map(async (file) => {
-          try {
-            const fileStat = await stat(join(THREADS_DIR, file));
-            return { file, mtimeMs: fileStat.mtimeMs };
-          } catch {
-            return null;
-          }
-        }),
-      )
-    )
-      .filter((s): s is { file: string; mtimeMs: number } => s !== null)
-      .sort((a, b) => a.mtimeMs - b.mtimeMs);
+    // Sort oldest-first so duplicate prompts keep the most recent timestamp
+    const sorted = [...threads].sort((a, b) => {
+      const aDate = a.lastUpdatedDate ? new Date(a.lastUpdatedDate).getTime() : 0;
+      const bDate = b.lastUpdatedDate ? new Date(b.lastUpdatedDate).getTime() : 0;
+      return aDate - bDate;
+    });
 
     // Process in parallel batches to avoid overwhelming the filesystem
     const BATCH_SIZE = 20;
-    for (let i = 0; i < fileStats.length; i += BATCH_SIZE) {
-      const batch = fileStats.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < sorted.length; i += BATCH_SIZE) {
+      const batch = sorted.slice(i, i + BATCH_SIZE);
       await Promise.all(
-        batch.map(async ({ file, mtimeMs }) => {
+        batch.map(async (thread) => {
           try {
-            const filePath = join(THREADS_DIR, file);
-            const fileMtime = Math.floor(mtimeMs / 1000);
-            const content = await readFile(filePath, 'utf-8');
-            const data = JSON.parse(content) as ThreadFile;
-            const threadId = file.replace('.json', '');
+            const data = await readThreadFile(thread.id);
             const messages = data.messages || [];
+            const fileMtime = thread.lastUpdatedDate
+              ? Math.floor(new Date(thread.lastUpdatedDate).getTime() / 1000)
+              : Math.floor(Date.now() / 1000);
 
             for (const msg of messages) {
               if (msg.role !== 'user') continue;
@@ -65,19 +53,19 @@ async function backfillPromptHistory(): Promise<void> {
               }
 
               if (text.trim()) {
-                // Use message sentAt if available, otherwise fall back to file mtime
+                // Use message sentAt if available, otherwise fall back to thread lastUpdated
                 const createdAt = msg.meta?.sentAt ? Math.floor(msg.meta.sentAt / 1000) : fileMtime;
-                recordPrompt(text, threadId, createdAt);
+                recordPrompt(text, thread.id, createdAt);
               }
             }
           } catch (err) {
-            console.warn(`[prompt-history] Failed to parse ${file}:`, err);
+            console.warn(`[prompt-history] Failed to parse ${thread.id}:`, err);
           }
         }),
       );
     }
 
-    console.warn(`📋 Prompt history backfill complete (scanned ${threadFiles.length} threads)`);
+    console.warn(`📋 Prompt history backfill complete (scanned ${sorted.length} threads)`);
   } catch (err) {
     console.error('[prompt-history] Backfill failed:', err);
   }
@@ -132,25 +120,15 @@ export function addPromptToHistory(text: string, threadId: string): void {
  */
 export async function getRecentThreadIds(limit = 100): Promise<string[]> {
   try {
-    const files = await readdir(THREADS_DIR);
-    const threadFiles = files.filter((f) => f.startsWith('T-') && f.endsWith('.json'));
-
-    const stats = await Promise.all(
-      threadFiles.map(async (file) => {
-        try {
-          const fileStat = await stat(join(THREADS_DIR, file));
-          return { file, mtime: fileStat.mtime.getTime() };
-        } catch {
-          return null;
-        }
-      }),
-    );
-
-    return stats
-      .filter((s): s is { file: string; mtime: number } => s !== null)
-      .sort((a, b) => b.mtime - a.mtime)
+    const threads = await listAllThreads();
+    return threads
+      .sort((a, b) => {
+        const aDate = a.lastUpdatedDate ? new Date(a.lastUpdatedDate).getTime() : 0;
+        const bDate = b.lastUpdatedDate ? new Date(b.lastUpdatedDate).getTime() : 0;
+        return bDate - aDate;
+      })
       .slice(0, limit)
-      .map((s) => s.file.replace('.json', ''));
+      .map((t) => t.id);
   } catch {
     return [];
   }

@@ -1,18 +1,16 @@
 import { readFile } from 'fs/promises';
-import { join } from 'path';
 import { getArtifacts } from './database.js';
 import { formatMessageContent } from './threadParsing.js';
 import type { ThreadImage, Artifact } from '../../shared/types.js';
-import { THREADS_DIR, isImageContent, type ThreadFile, type ThreadMessage } from './threadTypes.js';
+import { isImageContent, type ThreadMessage } from './threadTypes.js';
+import { readThreadFile } from './threadProvider.js';
 
 export async function getThreadMarkdown(
   threadId: string,
   limit: number = 50,
   offset: number = 0,
 ): Promise<string> {
-  const threadPath = join(THREADS_DIR, `${threadId}.json`);
-  const content = await readFile(threadPath, 'utf-8');
-  const data = JSON.parse(content) as ThreadFile;
+  const data = await readThreadFile(threadId);
 
   let messages = data.messages || [];
   const totalMessages = messages.length;
@@ -89,9 +87,7 @@ export async function getThreadImages(threadId: string): Promise<ThreadImage[]> 
 
   // 2. Get images from thread JSON (inline base64 from Amp CLI)
   try {
-    const threadPath = join(THREADS_DIR, `${threadId}.json`);
-    const content = await readFile(threadPath, 'utf-8');
-    const data = JSON.parse(content) as ThreadFile;
+    const data = await readThreadFile(threadId);
     const messages = data.messages || [];
 
     for (const msg of messages) {
@@ -119,8 +115,6 @@ export async function getThreadImages(threadId: string): Promise<ThreadImage[]> 
 export async function getThreadMessages(
   threadId: string,
 ): Promise<{ messages: ThreadMessage[]; title?: string }> {
-  const threadPath = join(THREADS_DIR, `${threadId}.json`);
-  const content = await readFile(threadPath, 'utf-8');
-  const data = JSON.parse(content) as ThreadFile;
+  const data = await readThreadFile(threadId);
   return { messages: data.messages || [], title: data.title };
 }

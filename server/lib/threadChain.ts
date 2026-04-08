@@ -1,14 +1,12 @@
-import { readFile } from 'fs/promises';
-import { join } from 'path';
 import type { Thread, ThreadChain, ChainThread, ThreadChainNode } from '../../shared/types.js';
 import { runAmp, stripAnsi } from './utils.js';
-import { getThreads } from './threadCrud.js';
-import { THREADS_DIR, isHandoffRelationship, type ThreadFile } from './threadTypes.js';
+import { isHandoffRelationship } from './threadTypes.js';
+import { listAllThreads, readThreadFile } from './threadProvider.js';
 import { callAmpInternalAPI } from './amp-api.js';
 import { getThreadMetadata, updateLinkedIssue } from './database.js';
 
 export async function getThreadChain(threadId: string): Promise<ThreadChain> {
-  const { threads } = await getThreads({ limit: 1000 });
+  const threads = await listAllThreads();
   const threadMap = new Map(threads.map((t) => [t.id, t]));
 
   // Build parent-to-children index from all threads' handoffParentId
@@ -71,8 +69,7 @@ export async function getThreadChain(threadId: string): Promise<ThreadChain> {
   await Promise.all(
     [...visited].map(async (id) => {
       try {
-        const content = await readFile(join(THREADS_DIR, `${id}.json`), 'utf-8');
-        const data = JSON.parse(content) as ThreadFile;
+        const data = await readThreadFile(id);
         for (const rel of data.relationships || []) {
           if (isHandoffRelationship(rel) && rel.role === 'parent' && rel.comment) {
             if (visited.has(rel.threadID)) {

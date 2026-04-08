@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
-import { join, resolve } from 'path';
-import { THREADS_DIR, isTextContent, type ThreadFile } from './threadTypes.js';
+import { resolve } from 'path';
+import { isTextContent } from './threadTypes.js';
+import { readThreadFile } from './threadProvider.js';
 
 const MAX_FILE_SIZE = 100 * 1024; // 100KB cap for injected file contents
 const MAX_FILE_LINES = 2000; // Max lines to inject
@@ -79,9 +80,7 @@ async function readFileContents(
 
 async function getThreadTitle(threadId: string): Promise<string | null> {
   try {
-    const filePath = join(THREADS_DIR, `${threadId}.json`);
-    const content = await readFile(filePath, 'utf-8');
-    const data = JSON.parse(content) as ThreadFile;
+    const data = await readThreadFile(threadId);
     if (data.title) return data.title;
 
     const firstUser = data.messages?.find((m) => m.role === 'user');

@@ -6,7 +6,6 @@ import {
   Rocket,
   Brain,
   Maximize,
-  Gift,
   FileText,
   Info,
   DollarSign,
@@ -92,14 +91,7 @@ export function createSettingsCommands(
       action: () => onSetAgentMode?.('large'),
       disabled: modeLocked,
     },
-    {
-      id: 'settings-mode-free',
-      category: CATEGORIES.SETTINGS,
-      label: `set mode: free${agentMode === 'free' ? ' (active)' : ''}${modeLocked ? ' (locked)' : ''}`,
-      icon: <Gift size={14} />,
-      action: () => onSetAgentMode?.('free'),
-      disabled: modeLocked,
-    },
+
     {
       id: 'settings-toggle-deep',
       category: CATEGORIES.SETTINGS,
