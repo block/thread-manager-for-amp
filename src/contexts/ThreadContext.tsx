@@ -16,6 +16,7 @@ export interface ThreadContextValue extends UseThreadActionsReturn {
   error: string | null;
   totalCount: number;
   hasMore: boolean;
+  loadingMore: boolean;
   loadMore: () => void;
   refetch: () => Promise<void> | void;
   updateStatus: (id: string, status: ThreadStatus) => Promise<unknown>;
@@ -32,6 +33,7 @@ export interface ThreadProviderProps extends UseThreadActionsOptions {
   error: string | null;
   totalCount: number;
   hasMore: boolean;
+  loadingMore: boolean;
   loadMore: () => void;
 }
 
@@ -51,6 +53,7 @@ export function ThreadProvider({
   error,
   totalCount,
   hasMore,
+  loadingMore,
   loadMore,
 }: ThreadProviderProps) {
   const actualCosts = useActualCosts();
@@ -85,6 +88,7 @@ export function ThreadProvider({
       error,
       totalCount,
       hasMore,
+      loadingMore,
       loadMore,
       refetch,
       updateStatus,
@@ -99,6 +103,7 @@ export function ThreadProvider({
       error,
       totalCount,
       hasMore,
+      loadingMore,
       loadMore,
       refetch,
       updateStatus,

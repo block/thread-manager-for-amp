@@ -3,6 +3,7 @@ import type { ViewMode } from '../Toolbar';
 interface PaginationBarProps {
   totalCount: number;
   hasMore?: boolean;
+  loadingMore?: boolean;
   startIdx: number;
   endIdx: number;
   currentPage: number;
@@ -14,6 +15,7 @@ interface PaginationBarProps {
 export function PaginationBar({
   totalCount,
   hasMore,
+  loadingMore,
   startIdx,
   endIdx,
   currentPage,
@@ -79,7 +81,7 @@ export function PaginationBar({
             «
           </button>
           <span className="page-indicator">
-            Page {currentPage} of {totalPages}
+            {loadingMore ? 'Loading more…' : `Page ${currentPage} of ${totalPages}`}
           </span>
           <button
             className="page-btn"

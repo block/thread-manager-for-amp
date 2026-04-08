@@ -57,6 +57,7 @@ export const ThreadList = memo(function ThreadList({
   viewMode,
   groupByDate = false,
   hasMore,
+  loadingMore,
   onLoadMore,
 }: ThreadListProps) {
   const [archiveTarget, setArchiveTarget] = useState<Thread | null>(null);
@@ -317,6 +318,7 @@ export const ThreadList = memo(function ThreadList({
       <PaginationBar
         totalCount={entries.length}
         hasMore={hasMore}
+        loadingMore={loadingMore}
         startIdx={startIdx}
         endIdx={Math.min(endIdx, entries.length)}
         currentPage={currentPage}
