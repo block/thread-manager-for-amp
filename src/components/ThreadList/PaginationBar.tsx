@@ -3,7 +3,6 @@ import type { ViewMode } from '../Toolbar';
 interface PaginationBarProps {
   totalCount: number;
   hasMore?: boolean;
-  loadingMore?: boolean;
   startIdx: number;
   endIdx: number;
   currentPage: number;
@@ -15,7 +14,6 @@ interface PaginationBarProps {
 export function PaginationBar({
   totalCount,
   hasMore,
-  loadingMore,
   startIdx,
   endIdx,
   currentPage,
@@ -81,20 +79,20 @@ export function PaginationBar({
             «
           </button>
           <span className="page-indicator">
-            {loadingMore ? 'Loading more…' : `Page ${currentPage} of ${totalPages}`}
+            Page {currentPage} of {totalPages}
           </span>
           <button
             className="page-btn"
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === totalPages && !hasMore}
+            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
             aria-label="Next page"
           >
             »
           </button>
           <button
             className="page-btn"
-            onClick={() => onPageChange(hasMore ? totalPages + 1 : totalPages)}
-            disabled={currentPage === totalPages && !hasMore}
+            onClick={() => onPageChange(totalPages)}
+            disabled={currentPage === totalPages}
             aria-label="Last page"
           >
             »»

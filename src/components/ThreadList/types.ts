@@ -20,8 +20,6 @@ export interface ThreadListProps {
   viewMode: ViewMode;
   groupByDate?: boolean;
   hasMore?: boolean;
-  loadingMore?: boolean;
-  onLoadMore?: () => void;
 }
 
 export interface ThreadRowProps {

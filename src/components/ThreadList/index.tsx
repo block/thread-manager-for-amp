@@ -48,8 +48,6 @@ export const ThreadList = memo(function ThreadList({
   viewMode,
   groupByDate = false,
   hasMore,
-  loadingMore,
-  onLoadMore,
 }: ThreadListProps) {
   const [archiveTarget, setArchiveTarget] = useState<Thread | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Thread | null>(null);
@@ -133,18 +131,6 @@ export const ThreadList = memo(function ThreadList({
   const setCurrentPage = useCallback((page: number) => {
     setRequestedPage(page);
   }, []);
-
-  // Load more when user tries to navigate past the last page
-  const handlePageChange = useCallback(
-    (page: number) => {
-      if (page > totalPages && hasMore && onLoadMore) {
-        onLoadMore();
-        return;
-      }
-      setCurrentPage(page);
-    },
-    [totalPages, hasMore, onLoadMore, setCurrentPage],
-  );
 
   return (
     <div className={`thread-list-container ${viewMode === 'table' ? 'table-view' : ''}`}>
@@ -307,13 +293,12 @@ export const ThreadList = memo(function ThreadList({
       <PaginationBar
         totalCount={entries.length}
         hasMore={hasMore}
-        loadingMore={loadingMore}
         startIdx={startIdx}
         endIdx={Math.min(endIdx, entries.length)}
         currentPage={currentPage}
         totalPages={totalPages}
         viewMode={viewMode}
-        onPageChange={handlePageChange}
+        onPageChange={setCurrentPage}
       />
 
       {archiveTarget && (

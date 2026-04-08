@@ -138,8 +138,6 @@ function App() {
                 viewMode={settings.viewMode}
                 groupByDate={settings.groupByDate}
                 hasMore={threadCtx.hasMore}
-                loadingMore={threadCtx.loadingMore}
-                onLoadMore={threadCtx.loadMore}
               />
             )}
           </main>
