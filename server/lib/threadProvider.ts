@@ -9,7 +9,13 @@
 import { readFile, readdir, access } from 'fs/promises';
 import { join } from 'path';
 import type { Thread, ThreadVisibility } from '../../shared/types.js';
-import { THREADS_DIR, isHandoffRelationship, type ThreadFile } from './threadTypes.js';
+import {
+  THREADS_DIR,
+  isHandoffRelationship,
+  isToolUseContent,
+  type ThreadFile,
+  type ThreadMessage,
+} from './threadTypes.js';
 import { listThreads, type AmpThreadSummary } from './amp-api.js';
 import { formatRelativeTime, parseFileUri, runAmp } from './utils.js';
 
@@ -56,8 +62,9 @@ export async function listAllThreads(): Promise<Thread[]> {
 
 /**
  * Scan local thread files for handoff relationships and merge them into
- * the thread list. This is fast (~5ms for 25 local files) and only reads
- * the `relationships` field from each file.
+ * the thread list. Checks two sources:
+ *   1. `relationships[]` array (older Amp format)
+ *   2. `handoff` tool_use/tool_result blocks in messages (newer Amp format)
  */
 async function enrichRelationships(threads: Thread[]): Promise<void> {
   const threadMap = new Map(threads.map((t) => [t.id, t]));
@@ -80,15 +87,29 @@ async function enrichRelationships(threads: Thread[]): Promise<void> {
       try {
         const content = await readFile(join(THREADS_DIR, file), 'utf-8');
         const data = JSON.parse(content) as ThreadFile;
-        const relationships = data.relationships || [];
 
-        for (const rel of relationships) {
+        // Source 1: explicit relationships array (older format)
+        for (const rel of data.relationships || []) {
           if (isHandoffRelationship(rel)) {
             if (rel.role === 'child') {
               thread.handoffParentId = rel.threadID;
             } else {
               thread.handoffChildIds = thread.handoffChildIds || [];
               thread.handoffChildIds.push(rel.threadID);
+            }
+          }
+        }
+
+        // Source 2: handoff tool blocks in messages (newer format)
+        const childIds = extractHandoffChildIds(data.messages || [], threadId);
+        if (childIds.length > 0) {
+          thread.handoffChildIds = thread.handoffChildIds || [];
+          thread.handoffChildIds.push(...childIds);
+          // Set the reverse link: mark each child's parent
+          for (const childId of childIds) {
+            const child = threadMap.get(childId);
+            if (child && !child.handoffParentId) {
+              child.handoffParentId = threadId;
             }
           }
         }
@@ -101,6 +122,45 @@ async function enrichRelationships(threads: Thread[]): Promise<void> {
       }
     }),
   );
+}
+
+const THREAD_ID_RE = /T-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g;
+
+/**
+ * Extract child thread IDs from handoff tool_result blocks.
+ * When a thread uses the `handoff` tool, the tool_result contains the new thread ID.
+ */
+function extractHandoffChildIds(messages: ThreadMessage[], selfId: string): string[] {
+  const handoffToolUseIds = new Set<string>();
+  const childIds: string[] = [];
+
+  for (const msg of messages) {
+    if (!Array.isArray(msg.content)) continue;
+
+    for (const block of msg.content) {
+      // Collect tool_use IDs for handoff tools
+      if (isToolUseContent(block) && block.name === 'handoff') {
+        const id = (block as unknown as Record<string, unknown>).id as string | undefined;
+        if (id) handoffToolUseIds.add(id);
+      }
+
+      // Check tool_result blocks that reference a handoff tool_use
+      const b = block as Record<string, unknown>;
+      if (b.type === 'tool_result' && typeof b.toolUseID === 'string') {
+        if (handoffToolUseIds.has(b.toolUseID)) {
+          // Extract thread IDs from the result content
+          const resultText =
+            typeof b.content === 'string' ? b.content : JSON.stringify(b.content ?? b.run ?? '');
+          const matches = resultText.match(THREAD_ID_RE) || [];
+          for (const tid of matches) {
+            if (tid !== selfId) childIds.push(tid);
+          }
+        }
+      }
+    }
+  }
+
+  return [...new Set(childIds)];
 }
 
 function toThread(s: AmpThreadSummary): Thread {
