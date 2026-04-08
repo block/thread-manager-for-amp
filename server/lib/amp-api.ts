@@ -150,12 +150,12 @@ export interface AmpThreadSummary {
   archived: boolean;
   creatorUserID: string;
   usesDtw: boolean;
-  env: {
-    initial: {
-      trees: AmpThreadTree[];
+  env?: {
+    initial?: {
+      trees?: AmpThreadTree[];
     };
   };
-  relationships: Array<{
+  relationships?: Array<{
     type: string;
     role: 'parent' | 'child';
     threadID: string;

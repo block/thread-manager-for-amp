@@ -49,14 +49,13 @@ export async function listAllThreads(): Promise<Thread[]> {
 }
 
 function toThread(s: AmpThreadSummary): Thread {
-  const trees = s.env.initial.trees;
-  const tree = trees[0];
+  const tree = s.env?.initial?.trees?.[0];
   const repoUrl = tree?.repository?.url;
 
   // Extract handoff relationships
   let handoffParentId: string | null = null;
   const handoffChildIds: string[] = [];
-  for (const rel of s.relationships) {
+  for (const rel of s.relationships ?? []) {
     if (rel.type === 'handoff') {
       if (rel.role === 'child') {
         handoffParentId = rel.threadID;
