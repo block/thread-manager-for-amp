@@ -2,7 +2,6 @@ import type { ViewMode } from '../Toolbar';
 
 interface PaginationBarProps {
   totalCount: number;
-  hasMore?: boolean;
   startIdx: number;
   endIdx: number;
   currentPage: number;
@@ -13,7 +12,6 @@ interface PaginationBarProps {
 
 export function PaginationBar({
   totalCount,
-  hasMore,
   startIdx,
   endIdx,
   currentPage,
@@ -22,8 +20,6 @@ export function PaginationBar({
   onPageChange,
 }: PaginationBarProps) {
   if (totalCount === 0) return null;
-
-  const countDisplay = hasMore ? `${totalCount}+` : `${totalCount}`;
 
   return (
     <div className="pagination-bar">
@@ -34,11 +30,11 @@ export function PaginationBar({
             <strong>
               {startIdx + 1}–{Math.min(endIdx, totalCount)}
             </strong>{' '}
-            of <strong>{countDisplay}</strong> threads
+            of <strong>{totalCount}</strong> threads
           </>
         ) : (
           <>
-            <strong>{countDisplay}</strong> threads
+            <strong>{totalCount}</strong> threads
           </>
         )}
       </span>

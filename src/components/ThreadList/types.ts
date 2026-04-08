@@ -19,7 +19,6 @@ export interface ThreadListProps {
   onStatusChange?: (threadId: string, status: ThreadStatus) => void;
   viewMode: ViewMode;
   groupByDate?: boolean;
-  hasMore?: boolean;
 }
 
 export interface ThreadRowProps {
