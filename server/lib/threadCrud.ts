@@ -139,9 +139,11 @@ export async function deleteThread(threadId: string): Promise<DeleteResult> {
   try {
     await runAmp(['threads', 'delete', threadId]);
     await cleanupThreadFiles(threadId);
+    console.log(`[threads] Deleted ${threadId}`);
     return { success: true };
   } catch (e) {
     const error = e as Error;
+    console.error(`[threads] Delete failed for ${threadId}: ${error.message}`);
     return { success: false, error: error.message };
   }
 }

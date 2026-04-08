@@ -5,6 +5,9 @@ import { apiGet, ApiError } from '../api/client';
 // Auto-refresh interval (30 seconds)
 const AUTO_REFRESH_INTERVAL_MS = 30000;
 
+// Grace period to suppress deleted threads from reappearing via API polling (2 minutes)
+const DELETE_GRACE_PERIOD_MS = 120000;
+
 export function useThreads() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,55 +16,73 @@ export function useThreads() {
   const [hasMore, setHasMore] = useState(false);
   const cursorRef = useRef<string | null>(null);
   const autoRefreshRef = useRef<number | null>(null);
+  // Track recently deleted thread IDs to prevent them reappearing from API during eventual consistency lag
+  const deletedIdsRef = useRef<Map<string, number>>(new Map());
 
-  const fetchThreads = useCallback(async (append = false) => {
-    if (append) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
+  const filterDeleted = useCallback((threadList: Thread[]): Thread[] => {
+    const now = Date.now();
+    const deleted = deletedIdsRef.current;
+    // Prune expired entries
+    for (const [id, expiry] of deleted) {
+      if (now >= expiry) deleted.delete(id);
     }
-    setError(null);
-
-    try {
-      const cursor = append ? cursorRef.current : null;
-      const data = await apiGet<ThreadsResult>(
-        `/api/threads?limit=50${cursor ? `&cursor=${cursor}` : ''}`,
-      );
-
-      if (append) {
-        setThreads((prev) => [...prev, ...data.threads]);
-      } else {
-        // Stabilize reference: skip setState if thread list hasn't meaningfully changed,
-        // preventing downstream re-renders (e.g., useFilters label re-fetch) on every poll
-        setThreads((prev) => {
-          if (prev.length !== data.threads.length) return data.threads;
-          const changed = prev.some((t, i) => {
-            const next = data.threads[i];
-            return (
-              !next ||
-              t.id !== next.id ||
-              t.title !== next.title ||
-              t.lastUpdated !== next.lastUpdated
-            );
-          });
-          return changed ? data.threads : prev;
-        });
-      }
-      cursorRef.current = data.nextCursor;
-      setHasMore(data.hasMore);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        console.error(`[useThreads] API error ${err.status}: ${err.message}`);
-        setError(err.message);
-      } else {
-        console.error('[useThreads] Unexpected error:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      }
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
+    if (deleted.size === 0) return threadList;
+    return threadList.filter((t) => !deleted.has(t.id));
   }, []);
+
+  const fetchThreads = useCallback(
+    async (append = false) => {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      try {
+        const cursor = append ? cursorRef.current : null;
+        const data = await apiGet<ThreadsResult>(
+          `/api/threads?limit=50${cursor ? `&cursor=${cursor}` : ''}`,
+        );
+
+        const filtered = filterDeleted(data.threads);
+
+        if (append) {
+          setThreads((prev) => [...prev, ...filterDeleted(data.threads)]);
+        } else {
+          // Stabilize reference: skip setState if thread list hasn't meaningfully changed,
+          // preventing downstream re-renders (e.g., useFilters label re-fetch) on every poll
+          setThreads((prev) => {
+            if (prev.length !== filtered.length) return filtered;
+            const changed = prev.some((t, i) => {
+              const next = filtered[i];
+              return (
+                !next ||
+                t.id !== next.id ||
+                t.title !== next.title ||
+                t.lastUpdated !== next.lastUpdated
+              );
+            });
+            return changed ? filtered : prev;
+          });
+        }
+        cursorRef.current = data.nextCursor;
+        setHasMore(data.hasMore);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          console.error(`[useThreads] API error ${err.status}: ${err.message}`);
+          setError(err.message);
+        } else {
+          console.error('[useThreads] Unexpected error:', err);
+          setError(err instanceof Error ? err.message : 'Unknown error');
+        }
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [filterDeleted],
+  );
 
   const loadMore = useCallback(() => {
     if (hasMore && !loadingMore) {
@@ -70,6 +91,7 @@ export function useThreads() {
   }, [hasMore, loadingMore, fetchThreads]);
 
   const removeThread = useCallback((threadId: string) => {
+    deletedIdsRef.current.set(threadId, Date.now() + DELETE_GRACE_PERIOD_MS);
     setThreads((prev) => prev.filter((t) => t.id !== threadId));
   }, []);
 
