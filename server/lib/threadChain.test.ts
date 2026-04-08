@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Thread, ThreadChainNode } from '../../shared/types.js';
 
-vi.mock('./threadCrud.js', () => ({
-  getThreads: vi.fn(),
+vi.mock('./threadProvider.js', () => ({
+  listAllThreads: vi.fn(),
+  readThreadFile: vi.fn().mockResolvedValue({ relationships: [] }),
 }));
 
 import { getThreadChain } from './threadChain.js';
-import { getThreads } from './threadCrud.js';
+import { listAllThreads } from './threadProvider.js';
 
-const mockedGetThreads = vi.mocked(getThreads);
+const mockedListAllThreads = vi.mocked(listAllThreads);
 
 function makeThread(overrides: Partial<Thread> & { id: string }): Thread {
   return {
@@ -35,11 +36,7 @@ beforeEach(() => {
 
 describe('getThreadChain', () => {
   it('returns empty chain for a thread with no relationships', async () => {
-    mockedGetThreads.mockResolvedValue({
-      threads: [makeThread({ id: 'solo' })],
-      nextCursor: null,
-      hasMore: false,
-    });
+    mockedListAllThreads.mockResolvedValue([makeThread({ id: 'solo' })]);
 
     const chain = await getThreadChain('solo');
     expect(chain.ancestors).toEqual([]);
@@ -48,15 +45,11 @@ describe('getThreadChain', () => {
   });
 
   it('returns linear ancestors for a simple chain', async () => {
-    mockedGetThreads.mockResolvedValue({
-      threads: [
-        makeThread({ id: 'root' }),
-        makeThread({ id: 'middle', handoffParentId: 'root' }),
-        makeThread({ id: 'leaf', handoffParentId: 'middle' }),
-      ],
-      nextCursor: null,
-      hasMore: false,
-    });
+    mockedListAllThreads.mockResolvedValue([
+      makeThread({ id: 'root' }),
+      makeThread({ id: 'middle', handoffParentId: 'root' }),
+      makeThread({ id: 'leaf', handoffParentId: 'middle' }),
+    ]);
 
     const chain = await getThreadChain('leaf');
     expect(chain.ancestors.map((a) => a.id)).toEqual(['root', 'middle']);
@@ -66,16 +59,12 @@ describe('getThreadChain', () => {
 
   it('returns tree with fork for multiple children', async () => {
     // root → mid → [child-a, child-b]
-    mockedGetThreads.mockResolvedValue({
-      threads: [
-        makeThread({ id: 'root' }),
-        makeThread({ id: 'mid', handoffParentId: 'root' }),
-        makeThread({ id: 'child-a', handoffParentId: 'mid' }),
-        makeThread({ id: 'child-b', handoffParentId: 'mid' }),
-      ],
-      nextCursor: null,
-      hasMore: false,
-    });
+    mockedListAllThreads.mockResolvedValue([
+      makeThread({ id: 'root' }),
+      makeThread({ id: 'mid', handoffParentId: 'root' }),
+      makeThread({ id: 'child-a', handoffParentId: 'mid' }),
+      makeThread({ id: 'child-b', handoffParentId: 'mid' }),
+    ]);
 
     const chain = await getThreadChain('root');
     expect(chain.ancestors).toEqual([]);
@@ -99,17 +88,13 @@ describe('getThreadChain', () => {
 
   it('builds tree from middle of a chain', async () => {
     // root → mid → [child-a → grandchild, child-b]
-    mockedGetThreads.mockResolvedValue({
-      threads: [
-        makeThread({ id: 'root' }),
-        makeThread({ id: 'mid', handoffParentId: 'root' }),
-        makeThread({ id: 'child-a', handoffParentId: 'mid' }),
-        makeThread({ id: 'child-b', handoffParentId: 'mid' }),
-        makeThread({ id: 'grandchild', handoffParentId: 'child-a' }),
-      ],
-      nextCursor: null,
-      hasMore: false,
-    });
+    mockedListAllThreads.mockResolvedValue([
+      makeThread({ id: 'root' }),
+      makeThread({ id: 'mid', handoffParentId: 'root' }),
+      makeThread({ id: 'child-a', handoffParentId: 'mid' }),
+      makeThread({ id: 'child-b', handoffParentId: 'mid' }),
+      makeThread({ id: 'grandchild', handoffParentId: 'child-a' }),
+    ]);
 
     const chain = await getThreadChain('mid');
 
@@ -135,11 +120,7 @@ describe('getThreadChain', () => {
   });
 
   it('returns null current for unknown thread id', async () => {
-    mockedGetThreads.mockResolvedValue({
-      threads: [makeThread({ id: 'other' })],
-      nextCursor: null,
-      hasMore: false,
-    });
+    mockedListAllThreads.mockResolvedValue([makeThread({ id: 'other' })]);
 
     const chain = await getThreadChain('nonexistent');
     expect(chain.current).toBeNull();
@@ -149,17 +130,13 @@ describe('getThreadChain', () => {
 
   it('tree contains all descendants in a complex fork', async () => {
     // root → [a → [a1, a2], b]
-    mockedGetThreads.mockResolvedValue({
-      threads: [
-        makeThread({ id: 'root' }),
-        makeThread({ id: 'a', handoffParentId: 'root' }),
-        makeThread({ id: 'b', handoffParentId: 'root' }),
-        makeThread({ id: 'a1', handoffParentId: 'a' }),
-        makeThread({ id: 'a2', handoffParentId: 'a' }),
-      ],
-      nextCursor: null,
-      hasMore: false,
-    });
+    mockedListAllThreads.mockResolvedValue([
+      makeThread({ id: 'root' }),
+      makeThread({ id: 'a', handoffParentId: 'root' }),
+      makeThread({ id: 'b', handoffParentId: 'root' }),
+      makeThread({ id: 'a1', handoffParentId: 'a' }),
+      makeThread({ id: 'a2', handoffParentId: 'a' }),
+    ]);
 
     const chain = await getThreadChain('root');
     const treeIds = collectNodeIds(chain.descendantsTree).sort();

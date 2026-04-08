@@ -1,6 +1,5 @@
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { THREADS_DIR, type ThreadFile, isToolUseContent } from './threadTypes.js';
+import { isToolUseContent } from './threadTypes.js';
+import { readThreadFile } from './threadProvider.js';
 import {
   calculateCost,
   isHiddenCostTool,
@@ -53,9 +52,7 @@ export interface ContextAnalysis {
 }
 
 export async function analyzeContext(threadId: string): Promise<ContextAnalysis> {
-  const threadPath = join(THREADS_DIR, `${threadId}.json`);
-  const content = await readFile(threadPath, 'utf-8');
-  const data = JSON.parse(content) as ThreadFile;
+  const data = await readThreadFile(threadId);
 
   const tags = data.env?.initial?.tags || [];
   const modelTag = tags.find((t: string) => t.startsWith('model:'));

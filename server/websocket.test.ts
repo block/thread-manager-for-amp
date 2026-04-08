@@ -26,6 +26,16 @@ vi.mock('fs/promises', () => ({
   readFile: vi.fn().mockRejectedValue(new Error('not found')),
   writeFile: vi.fn().mockResolvedValue(undefined),
   mkdir: vi.fn().mockResolvedValue(undefined),
+  access: vi.fn().mockRejectedValue(new Error('not found')),
+}));
+
+// Mock threadProvider to prevent real API/CLI calls
+vi.mock('./lib/threadProvider.js', () => ({
+  readThreadFile: vi.fn().mockResolvedValue({
+    env: { initial: { tags: [], trees: [] } },
+    messages: [],
+  }),
+  hasLocalFile: vi.fn().mockResolvedValue(false),
 }));
 
 // Mock database to prevent SQLite initialization

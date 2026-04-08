@@ -1,5 +1,5 @@
 import { spawn, execFile, ChildProcess } from 'child_process';
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, access } from 'fs/promises';
 import { watchFile, unwatchFile, type StatWatcher } from 'fs';
 import { join } from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -17,9 +17,10 @@ import {
 } from '../shared/cost.js';
 import { AMP_BIN, AMP_HOME, DEFAULT_MAX_CONTEXT_TOKENS, isAllowedOrigin } from './lib/constants.js';
 import { createArtifact } from './lib/database.js';
-import { THREADS_DIR, ARTIFACTS_DIR, type ThreadFile } from './lib/threadTypes.js';
+import { THREADS_DIR, ARTIFACTS_DIR } from './lib/threadTypes.js';
 import { resolveMessageReferences } from './lib/mentionResolver.js';
 import { parseFileUri } from './lib/utils.js';
+import { readThreadFile } from './lib/threadProvider.js';
 
 // Grace period before killing child process on disconnect (30 seconds)
 const DISCONNECT_GRACE_PERIOD_MS = 30_000;
@@ -350,9 +351,7 @@ async function spawnAmpOnSession(
     // Resolve @file and @T-thread references in the message
     let workspacePath: string | null = null;
     try {
-      const threadData = JSON.parse(
-        await readFile(join(THREADS_DIR, `${session.threadId}.json`), 'utf-8'),
-      ) as ThreadFile;
+      const threadData = await readThreadFile(session.threadId);
       const uri = threadData.env?.initial?.trees?.[0]?.uri;
       workspacePath = parseFileUri(uri);
     } catch {
@@ -539,7 +538,7 @@ async function spawnAmpOnSession(
 
 // ── Initialise session cost/model from thread file ──────────────────────
 
-const VALID_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep', 'large', 'free'];
+const VALID_MODES: readonly AgentMode[] = ['smart', 'rush', 'deep', 'large'];
 
 // Shell command execution timeout (30 seconds)
 const SHELL_EXEC_TIMEOUT_MS = 30_000;
@@ -552,9 +551,7 @@ interface InitResult {
 
 async function initSessionFromThread(session: ThreadSession): Promise<InitResult> {
   try {
-    const threadPath = join(THREADS_DIR, `${session.threadId}.json`);
-    const content = await readFile(threadPath, 'utf-8');
-    const data = JSON.parse(content) as ThreadFile;
+    const data = await readThreadFile(session.threadId);
     const tags = data.env?.initial?.tags || [];
     const modelTag = tags.find((t: string) => t.startsWith('model:'));
     if (modelTag) {
@@ -592,10 +589,19 @@ async function initSessionFromThread(session: ThreadSession): Promise<InitResult
 
 // ── File watcher for external changes (e.g. CLI running the thread) ─────
 
-function startFileWatcher(session: ThreadSession): void {
+async function startFileWatcher(session: ThreadSession): Promise<void> {
   if (session.fileWatcher) return; // already watching
 
   const threadPath = join(THREADS_DIR, `${session.threadId}.json`);
+
+  // Check if local file exists before watching
+  try {
+    await access(threadPath);
+  } catch {
+    // Server-only thread — no local file to watch
+    return;
+  }
+
   session.fileWatcher = watchFile(threadPath, { interval: 2000 }, (curr, prev) => {
     // Skip if we have our own child process running (we get streaming updates)
     if (session.child) return;
@@ -620,9 +626,7 @@ function stopFileWatcher(session: ThreadSession): void {
 
 async function getSessionWorkspacePath(session: ThreadSession): Promise<string | null> {
   try {
-    const threadData = JSON.parse(
-      await readFile(join(THREADS_DIR, `${session.threadId}.json`), 'utf-8'),
-    ) as ThreadFile;
+    const threadData = await readThreadFile(session.threadId);
     const uri = threadData.env?.initial?.trees?.[0]?.uri;
     return uri ? uri.replace('file://', '') : null;
   } catch {
@@ -788,7 +792,7 @@ export function setupWebSocket(server: Server): WebSocketServer {
     }
 
     // Watch the thread file for external changes (e.g. CLI running the thread)
-    startFileWatcher(session);
+    void startFileWatcher(session);
 
     // ── Client messages ─────────────────────────────────────────────────
     ws.on('message', (data: Buffer) => {

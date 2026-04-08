@@ -1,26 +1,17 @@
-import { readFile, writeFile, readdir, stat, unlink, rm } from 'fs/promises';
-import type { Stats } from 'fs';
+import { readFile, writeFile, access, rm } from 'fs/promises';
 import { join } from 'path';
 import { AMP_HOME } from './constants.js';
-import { calculateThreadCost } from '../../shared/cost.js';
-import { formatRelativeTime, parseFileUri, runAmp } from './utils.js';
+import { runAmp } from './utils.js';
 import { deleteThreadData } from './database.js';
 import { getKnownWorkspaces as getKnownWorkspacesImpl } from './workspaces.js';
-import type {
-  Thread,
-  ThreadsResult,
-  FileChange,
-  FileEdit,
-  KnownWorkspace,
-} from '../../shared/types.js';
+import { listAllThreads, readThreadFile } from './threadProvider.js';
+import type { ThreadsResult, FileChange, FileEdit, KnownWorkspace } from '../../shared/types.js';
 import {
   ARTIFACTS_DIR,
   THREADS_DIR,
   isTextContent,
   isToolUseContent,
-  isHandoffRelationship,
   type ThreadFile,
-  type FileStat,
 } from './threadTypes.js';
 
 interface GetThreadsOptions {
@@ -32,166 +23,24 @@ export async function getThreads({
   limit = 50,
   cursor = null,
 }: GetThreadsOptions = {}): Promise<ThreadsResult> {
-  try {
-    const files = await readdir(THREADS_DIR);
-    const threadFiles = files.filter((f: string) => f.startsWith('T-') && f.endsWith('.json'));
+  const allThreads = await listAllThreads();
 
-    // Get file stats for sorting before loading full content
-    const fileStats = await Promise.all(
-      threadFiles.map(async (file: string): Promise<FileStat | null> => {
-        const filePath = join(THREADS_DIR, file);
-        try {
-          const fileStat: Stats = await stat(filePath);
-          return { file, mtime: fileStat.mtime.getTime() };
-        } catch {
-          return null;
-        }
-      }),
-    );
-
-    // Sort by mtime descending
-    const sortedFiles = (fileStats.filter(Boolean) as FileStat[]).sort((a, b) => b.mtime - a.mtime);
-
-    // Find cursor position and slice
-    let startIndex = 0;
-    if (cursor) {
-      const cursorIndex = sortedFiles.findIndex((f) => f.file === `${cursor}.json`);
-      if (cursorIndex !== -1) {
-        startIndex = cursorIndex + 1;
-      }
-    }
-
-    const slicedFiles = sortedFiles.slice(startIndex, startIndex + limit);
-    const hasMore = startIndex + limit < sortedFiles.length;
-
-    const threads = await Promise.all(
-      slicedFiles.map(async ({ file }): Promise<Thread | null> => {
-        const filePath = join(THREADS_DIR, file);
-        try {
-          const content = await readFile(filePath, 'utf-8');
-          const data = JSON.parse(content) as ThreadFile;
-          const fileStat: Stats = await stat(filePath);
-
-          const messages = data.messages || [];
-
-          // Get title from first user message or use thread ID
-          let title = data.title || '';
-          if (!title && messages.length > 0) {
-            const firstUser = messages.find((m) => m.role === 'user');
-            if (firstUser?.content) {
-              let textContent = '';
-              if (typeof firstUser.content === 'string') {
-                textContent = firstUser.content;
-              } else if (Array.isArray(firstUser.content)) {
-                const textBlock = firstUser.content.find(isTextContent);
-                textContent = textBlock?.text || '';
-              }
-              title = textContent.slice(0, 60).replace(/\n/g, ' ').trim();
-              if (textContent.length > 60) title += '...';
-            }
-          }
-          if (!title) title = file.replace('.json', '');
-
-          // Extract model from tags
-          const tags = data.env?.initial?.tags || [];
-          const modelTag = tags.find((t) => t.startsWith('model:'));
-          let model: string | undefined;
-          let isOpus = false;
-          if (modelTag) {
-            const modelName = modelTag.replace('model:', '');
-            if (modelName.includes('opus')) {
-              model = 'opus';
-              isOpus = true;
-            } else if (modelName.includes('sonnet')) {
-              model = 'sonnet';
-            } else {
-              model = modelName;
-            }
-          }
-
-          // Calculate token usage and cost
-          const { cost, contextPercent, maxContextTokens } = calculateThreadCost(messages, isOpus);
-
-          // Extract workspace/repo info
-          const trees = data.env?.initial?.trees || [];
-          const workspace = trees[0]?.displayName || null;
-          const workspaceUri = trees[0]?.uri || null;
-          const workspacePath = parseFileUri(workspaceUri);
-          const repoUrl = trees[0]?.repository?.url || null;
-          let repo: string | null = null;
-          if (repoUrl) {
-            const match = repoUrl.match(/[:/]([^/]+\/[^/]+?)(?:\.git)?$/);
-            repo = match?.[1] ?? repoUrl;
-          }
-
-          // Extract handoff relationships
-          const relationships = data.relationships || [];
-          let handoffParentId: string | null = null;
-          const handoffChildIds: string[] = [];
-          for (const rel of relationships) {
-            if (isHandoffRelationship(rel)) {
-              if (rel.role === 'child') {
-                // "I am the child" → threadID is my parent
-                handoffParentId = rel.threadID;
-              } else {
-                // "I am the parent" → threadID is my child
-                handoffChildIds.push(rel.threadID);
-              }
-            }
-          }
-          const uniqueChildIds = [...new Set(handoffChildIds)];
-
-          // Extract touched files from tool uses
-          const touchedFiles = new Set<string>();
-          for (const msg of messages) {
-            if (msg.role === 'assistant' && Array.isArray(msg.content)) {
-              for (const block of msg.content) {
-                if (isToolUseContent(block) && block.input?.path) {
-                  touchedFiles.add(block.input.path);
-                }
-              }
-            }
-          }
-          return {
-            id: file.replace('.json', ''),
-            title,
-            lastUpdated: formatRelativeTime(fileStat.mtime),
-            lastUpdatedDate: fileStat.mtime.toISOString(),
-            visibility: data.visibility || 'Private',
-            messages: messages.length,
-            model,
-            contextPercent,
-            maxContextTokens,
-            cost: Math.round(cost * 100) / 100,
-            workspace,
-            workspacePath,
-            repo,
-            touchedFiles: [...touchedFiles],
-            handoffParentId,
-            handoffChildIds: uniqueChildIds,
-          };
-        } catch (e) {
-          const error = e as Error;
-          console.error(`[threads] Failed to parse ${file}:`, error.message);
-          return null;
-        }
-      }),
-    );
-
-    const validThreads = threads.filter((t): t is Thread => t !== null);
-
-    const lastThread = validThreads[validThreads.length - 1];
-    const nextCursor = lastThread && hasMore ? lastThread.id : null;
-
-    return {
-      threads: validThreads,
-      nextCursor,
-      hasMore,
-    };
-  } catch (e) {
-    console.error('[threads] Error reading threads directory:', e);
-    throw e;
+  // Apply cursor-based pagination (same contract as before)
+  let startIndex = 0;
+  if (cursor) {
+    const cursorIndex = allThreads.findIndex((t) => t.id === cursor);
+    if (cursorIndex !== -1) startIndex = cursorIndex + 1;
   }
+
+  const sliced = allThreads.slice(startIndex, startIndex + limit);
+  const hasMore = startIndex + limit < allThreads.length;
+  const lastThread = sliced[sliced.length - 1];
+
+  return {
+    threads: sliced,
+    nextCursor: lastThread && hasMore ? lastThread.id : null,
+    hasMore,
+  };
 }
 
 interface FileChangesData {
@@ -200,11 +49,8 @@ interface FileChangesData {
 }
 
 export async function getThreadChanges(threadId: string): Promise<FileChange[]> {
-  const threadPath = join(THREADS_DIR, `${threadId}.json`);
-
   try {
-    const content = await readFile(threadPath, 'utf-8');
-    const data = JSON.parse(content) as ThreadFile;
+    const data = await readThreadFile(threadId);
     const messages = data.messages || [];
 
     const fileChanges = new Map<string, FileChangesData>();
@@ -289,65 +135,14 @@ interface DeleteResult {
   error?: string;
 }
 
-interface SecretsFile {
-  apiKey?: string;
-  API_KEY?: string;
-  amp_api_key?: string;
-}
-
 export async function deleteThread(threadId: string): Promise<DeleteResult> {
-  const secretsPath = join(AMP_HOME, '.local', 'share', 'amp', 'secrets.json');
-
   try {
-    const secretsContent = await readFile(secretsPath, 'utf-8');
-    const secrets = JSON.parse(secretsContent) as SecretsFile;
-    const apiKey = secrets.apiKey || secrets.API_KEY || secrets.amp_api_key;
-
-    if (!apiKey) {
-      throw new Error('No API key found');
-    }
-
-    // Try remote delete first (with timeout)
-    const controller = new AbortController();
-    const deleteTimeout = setTimeout(() => controller.abort(), 10000);
-    let response: Response;
-    try {
-      response = await fetch(`https://ampcode.com/api/threads/${threadId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${apiKey}` },
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(deleteTimeout);
-    }
-
-    if (!response.ok && response.status !== 404) {
-      const text = await response.text();
-      throw new Error(`Remote delete failed: ${text}`);
-    }
-
-    // Delete local file
-    const threadPath = join(THREADS_DIR, `${threadId}.json`);
-    await unlink(threadPath);
-
-    // Cleanup all thread-related files and database records
+    await runAmp(['threads', 'delete', threadId]);
     await cleanupThreadFiles(threadId);
-
     return { success: true };
   } catch (e) {
     const error = e as Error;
-    // If remote fails, try local only
-    try {
-      const threadPath = join(THREADS_DIR, `${threadId}.json`);
-      await unlink(threadPath);
-
-      // Cleanup all thread-related files and database records
-      await cleanupThreadFiles(threadId);
-
-      return { success: true, localOnly: true };
-    } catch {
-      return { success: false, error: error.message };
-    }
+    return { success: false, error: error.message };
   }
 }
 
@@ -373,7 +168,7 @@ export async function createThread(
 }
 
 export async function getKnownWorkspaces(): Promise<KnownWorkspace[]> {
-  return getKnownWorkspacesImpl(getThreads);
+  return getKnownWorkspacesImpl();
 }
 
 export async function renameThread(threadId: string, name: string): Promise<string> {
@@ -405,6 +200,13 @@ export async function truncateThreadAtMessage(
   messageIndex: number,
 ): Promise<TruncateResult> {
   const threadPath = join(THREADS_DIR, `${threadId}.json`);
+  try {
+    await access(threadPath);
+  } catch {
+    throw new Error(
+      'Cannot edit this thread — it exists only on the server and has no local file.',
+    );
+  }
   const content = await readFile(threadPath, 'utf-8');
   const data = JSON.parse(content) as ThreadFile;
   const messages = data.messages || [];
@@ -440,6 +242,13 @@ interface UndoResult {
  */
 export async function undoLastTurn(threadId: string): Promise<UndoResult> {
   const threadPath = join(THREADS_DIR, `${threadId}.json`);
+  try {
+    await access(threadPath);
+  } catch {
+    throw new Error(
+      'Cannot edit this thread — it exists only on the server and has no local file.',
+    );
+  }
   const content = await readFile(threadPath, 'utf-8');
   const data = JSON.parse(content) as ThreadFile;
   const messages = data.messages || [];
@@ -467,8 +276,6 @@ export async function undoLastTurn(threadId: string): Promise<UndoResult> {
  * Read raw messages from a thread file for counting/inspection.
  */
 export async function getThreadMessageCount(threadId: string): Promise<number> {
-  const threadPath = join(THREADS_DIR, `${threadId}.json`);
-  const content = await readFile(threadPath, 'utf-8');
-  const data = JSON.parse(content) as ThreadFile;
+  const data = await readThreadFile(threadId);
   return (data.messages || []).length;
 }

@@ -2,8 +2,8 @@ import { spawn, ChildProcess } from 'child_process';
 import { readFile, stat, unlink } from 'fs/promises';
 import { join, resolve, isAbsolute } from 'path';
 import type { GitStatus, GitFileStatus, FileDiff } from '../../shared/types.js';
-import { THREADS_DIR } from './threadTypes.js';
 import { parseFileUri } from './utils.js';
+import { readThreadFile } from './threadProvider.js';
 
 /**
  * Validates and sanitizes a workspace path to prevent path traversal attacks.
@@ -189,11 +189,8 @@ interface GitStatusError {
 }
 
 export async function getWorkspaceGitStatus(threadId: string): Promise<GitStatus | GitStatusError> {
-  const threadPath = join(THREADS_DIR, `${threadId}.json`);
-
   try {
-    const content = await readFile(threadPath, 'utf-8');
-    const data = JSON.parse(content) as ThreadData;
+    const data = (await readThreadFile(threadId)) as unknown as ThreadData;
 
     const trees = data.env?.initial?.trees || [];
     if (trees.length === 0) {

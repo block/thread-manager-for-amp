@@ -78,12 +78,17 @@ export interface ThreadEnv {
 
 export interface ThreadFile {
   title?: string;
-  visibility?: 'Private' | 'Public' | 'Workspace' | 'Unlisted' | 'Group';
+  visibility?: string;
   created?: number; // Unix timestamp in milliseconds
   agentMode?: string;
   messages?: ThreadMessage[];
   relationships?: ThreadRelationship[];
   env?: ThreadEnv;
+  // Server-enriched fields (present in `amp threads export` output)
+  meta?: {
+    visibility?: string;
+    [key: string]: unknown;
+  };
 }
 
 export interface FileStat {
