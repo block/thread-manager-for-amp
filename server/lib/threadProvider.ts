@@ -54,8 +54,11 @@ export async function listAllThreads(): Promise<Thread[]> {
   const threads = summaries.map(toThread);
 
   // The listThreads API doesn't return relationship data.
-  // Scan local thread files to enrich handoff parent/child links.
+  // Enrich from two sources:
+  //   1. Local thread files (relationships[] array + handoff tool blocks)
+  //   2. Shared thread ID prefix heuristic (handoff batches share first 4 UUID segments)
   await enrichRelationships(threads);
+  enrichBatchSiblings(threads);
 
   return threads;
 }
@@ -122,6 +125,56 @@ async function enrichRelationships(threads: Thread[]): Promise<void> {
       }
     }),
   );
+}
+
+/**
+ * Detect handoff batch siblings by shared thread ID prefix.
+ * When the Amp `handoff` tool creates multiple children from one parent,
+ * all children share the same first 4 UUID segments in their thread ID.
+ * For threads not already linked by enrichRelationships, group them by
+ * prefix and link them: oldest becomes the "batch root", others point to it.
+ */
+function enrichBatchSiblings(threads: Thread[]): void {
+  // Group threads by their first 4 UUID segments: T-xxxxxxxx-xxxx-xxxx-xxxx
+  const prefixGroups = new Map<string, Thread[]>();
+  for (const t of threads) {
+    const parts = t.id.split('-');
+    const prefix = parts.slice(0, 5).join('-'); // T + 4 UUID segments
+    let group = prefixGroups.get(prefix);
+    if (!group) {
+      group = [];
+      prefixGroups.set(prefix, group);
+    }
+    group.push(t);
+  }
+
+  for (const group of prefixGroups.values()) {
+    if (group.length < 2) continue;
+
+    // Skip if all threads already have relationship links
+    const allLinked = group.every((t) => t.handoffParentId);
+    if (allLinked) continue;
+
+    // Sort by creation time (from lastUpdatedDate as proxy — older = earlier)
+    // The oldest in the batch is the first handoff child created
+    const sorted = [...group].sort(
+      (a, b) =>
+        new Date(a.lastUpdatedDate || 0).getTime() - new Date(b.lastUpdatedDate || 0).getTime(),
+    );
+
+    const root = sorted[0];
+    if (!root) continue;
+
+    for (const t of sorted.slice(1)) {
+      if (!t.handoffParentId) {
+        t.handoffParentId = root.id;
+      }
+    }
+
+    // Ensure root knows about its children
+    const childIds = sorted.slice(1).map((t) => t.id);
+    root.handoffChildIds = [...new Set([...(root.handoffChildIds || []), ...childIds])];
+  }
 }
 
 const THREAD_ID_RE = /T-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g;
