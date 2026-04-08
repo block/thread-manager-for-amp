@@ -85,16 +85,16 @@ export function PaginationBar({
           </span>
           <button
             className="page-btn"
-            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages && !hasMore}
             aria-label="Next page"
           >
             »
           </button>
           <button
             className="page-btn"
-            onClick={() => onPageChange(totalPages)}
-            disabled={currentPage === totalPages}
+            onClick={() => onPageChange(hasMore ? totalPages + 1 : totalPages)}
+            disabled={currentPage === totalPages && !hasMore}
             aria-label="Last page"
           >
             »»

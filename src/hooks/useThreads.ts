@@ -8,8 +8,10 @@ const AUTO_REFRESH_INTERVAL_MS = 30000;
 // Grace period to suppress deleted threads from reappearing via API polling (2 minutes)
 const DELETE_GRACE_PERIOD_MS = 120000;
 
-// How many threads to fetch per batch
-const BATCH_SIZE = 500;
+// How many threads to fetch per batch.
+// Higher initial batch ensures most top-level threads are visible even with
+// heavy stacking (handoff chains collapse many threads into single entries).
+const BATCH_SIZE = 1000;
 
 export function useThreads() {
   const [threads, setThreads] = useState<Thread[]>([]);

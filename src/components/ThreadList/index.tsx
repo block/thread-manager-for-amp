@@ -1,13 +1,4 @@
-import React, {
-  useState,
-  useCallback,
-  useMemo,
-  useEffect,
-  useRef,
-  memo,
-  lazy,
-  Suspense,
-} from 'react';
+import React, { useState, useCallback, useMemo, memo, lazy, Suspense } from 'react';
 import { CheckSquare, Square, MinusSquare } from 'lucide-react';
 import type { Thread, ThreadStatus } from '../../types';
 import { ConfirmModal } from '../ConfirmModal';
@@ -97,20 +88,6 @@ export const ThreadList = memo(function ThreadList({
   const endIdx = startIdx + PAGE_SIZE;
   const paginatedEntries = entries.slice(startIdx, endIdx);
 
-  // Auto-load more when user reaches the last page.
-  // Track the entries count to reset the guard when new data arrives.
-  const loadMoreForCountRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (currentPage === totalPages && hasMore && onLoadMore) {
-      if (loadMoreForCountRef.current !== entries.length) {
-        loadMoreForCountRef.current = entries.length;
-        onLoadMore();
-      }
-    } else {
-      loadMoreForCountRef.current = null;
-    }
-  }, [currentPage, totalPages, hasMore, onLoadMore, entries.length]);
-
   // Flatten for selection/keyboard hooks (include expanded stack children)
   const paginatedThreads = useMemo(() => {
     const result: Thread[] = [];
@@ -156,6 +133,18 @@ export const ThreadList = memo(function ThreadList({
   const setCurrentPage = useCallback((page: number) => {
     setRequestedPage(page);
   }, []);
+
+  // Load more when user tries to navigate past the last page
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (page > totalPages && hasMore && onLoadMore) {
+        onLoadMore();
+        return;
+      }
+      setCurrentPage(page);
+    },
+    [totalPages, hasMore, onLoadMore, setCurrentPage],
+  );
 
   return (
     <div className={`thread-list-container ${viewMode === 'table' ? 'table-view' : ''}`}>
@@ -324,7 +313,7 @@ export const ThreadList = memo(function ThreadList({
         currentPage={currentPage}
         totalPages={totalPages}
         viewMode={viewMode}
-        onPageChange={setCurrentPage}
+        onPageChange={handlePageChange}
       />
 
       {archiveTarget && (
