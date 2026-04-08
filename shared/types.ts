@@ -132,7 +132,6 @@ export interface ThreadsResult {
   threads: Thread[];
   nextCursor: string | null;
   hasMore: boolean;
-  totalCount: number;
 }
 
 export interface SearchMatch {

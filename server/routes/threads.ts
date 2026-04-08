@@ -34,9 +34,8 @@ export async function handleThreadRoutes(
 
   if (pathname === '/api/threads') {
     try {
-      const limit = parseInt(url.searchParams.get('limit') || '500', 10);
-      const offset = parseInt(url.searchParams.get('offset') || '0', 10);
-      const result = await getThreads({ limit, offset });
+      const limit = parseInt(url.searchParams.get('limit') || '10000', 10);
+      const result = await getThreads({ limit });
 
       // Trigger background actual cost fetching for visible threads
       enqueueCostFetch(result.threads.map((t: { id: string }) => t.id));

@@ -16,26 +16,17 @@ import {
 
 interface GetThreadsOptions {
   limit?: number;
-  offset?: number;
 }
 
 export async function getThreads({
-  limit = 500,
-  offset = 0,
+  limit = 10000,
 }: GetThreadsOptions = {}): Promise<ThreadsResult> {
-  // Fetch limit + offset threads so we can slice the requested window
-  const allThreads = await listAllThreads(offset + limit);
-
-  const sliced = allThreads.slice(offset, offset + limit);
-  const lastThread = sliced[sliced.length - 1];
-  // If we got back a full window, there are likely more beyond it
-  const hasMore = allThreads.length >= offset + limit;
+  const allThreads = await listAllThreads(limit);
 
   return {
-    threads: sliced,
-    nextCursor: lastThread && hasMore ? lastThread.id : null,
-    hasMore,
-    totalCount: allThreads.length,
+    threads: allThreads,
+    nextCursor: null,
+    hasMore: false,
   };
 }
 

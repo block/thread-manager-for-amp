@@ -15,17 +15,7 @@ import App from './App.tsx';
 
 // eslint-disable-next-line react-refresh/only-export-components -- internal wrapper component for provider composition
 function DataLayer({ children }: { children: ReactNode }) {
-  const {
-    threads,
-    loading,
-    loadingMore,
-    error,
-    refetch,
-    removeThread,
-    totalCount,
-    hasMore,
-    loadMore,
-  } = useThreads();
+  const { threads, loading, error, refetch, removeThread } = useThreads();
   const { metadata, updateStatus, addBlocker, removeBlocker } = useThreadMetadata();
   const modals = useModalContext();
   const { errors, showError, dismissError } = useErrorToast();
@@ -41,10 +31,6 @@ function DataLayer({ children }: { children: ReactNode }) {
       metadata={metadata}
       loading={loading}
       error={error}
-      totalCount={totalCount}
-      hasMore={hasMore}
-      loadingMore={loadingMore}
-      loadMore={loadMore}
       showError={showError}
       showInputModal={modals.setInputModal}
       showConfirmModal={modals.setConfirmModal}
