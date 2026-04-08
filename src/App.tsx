@@ -137,6 +137,9 @@ function App() {
                 onStatusChange={threadCtx.updateStatus}
                 viewMode={settings.viewMode}
                 groupByDate={settings.groupByDate}
+                totalCount={threadCtx.totalCount}
+                hasMore={threadCtx.hasMore}
+                onLoadMore={threadCtx.loadMore}
               />
             )}
           </main>

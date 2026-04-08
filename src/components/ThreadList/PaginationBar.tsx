@@ -2,6 +2,7 @@ import type { ViewMode } from '../Toolbar';
 
 interface PaginationBarProps {
   totalCount: number;
+  serverTotalCount?: number;
   startIdx: number;
   endIdx: number;
   currentPage: number;
@@ -12,6 +13,7 @@ interface PaginationBarProps {
 
 export function PaginationBar({
   totalCount,
+  serverTotalCount,
   startIdx,
   endIdx,
   currentPage,
@@ -31,10 +33,16 @@ export function PaginationBar({
               {startIdx + 1}–{Math.min(endIdx, totalCount)}
             </strong>{' '}
             of <strong>{totalCount}</strong> threads
+            {serverTotalCount != null && serverTotalCount > totalCount && (
+              <span className="total-hint"> ({serverTotalCount.toLocaleString()} total)</span>
+            )}
           </>
         ) : (
           <>
             <strong>{totalCount}</strong> threads
+            {serverTotalCount != null && serverTotalCount > totalCount && (
+              <span className="total-hint"> ({serverTotalCount.toLocaleString()} total)</span>
+            )}
           </>
         )}
       </span>

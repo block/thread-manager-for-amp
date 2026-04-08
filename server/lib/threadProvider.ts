@@ -49,8 +49,8 @@ function parseRepoFromUrl(url: string | undefined | null): string | null {
 
 // ── List all threads via API ────────────────────────────────────────────
 
-export async function listAllThreads(): Promise<Thread[]> {
-  const summaries = await listThreads();
+export async function listAllThreads(limit = 500): Promise<Thread[]> {
+  const summaries = await listThreads(limit);
   const threads = summaries.map(toThread);
 
   // The listThreads API doesn't return relationship data.

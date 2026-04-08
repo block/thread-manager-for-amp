@@ -14,6 +14,9 @@ export interface ThreadContextValue extends UseThreadActionsReturn {
   metadata: MetadataMap;
   loading: boolean;
   error: string | null;
+  totalCount: number;
+  hasMore: boolean;
+  loadMore: () => void;
   refetch: () => Promise<void> | void;
   updateStatus: (id: string, status: ThreadStatus) => Promise<unknown>;
   addBlocker: (threadId: string, blockedBy: string, reason?: string) => Promise<unknown>;
@@ -27,6 +30,9 @@ export interface ThreadProviderProps extends UseThreadActionsOptions {
   metadata: MetadataMap;
   loading: boolean;
   error: string | null;
+  totalCount: number;
+  hasMore: boolean;
+  loadMore: () => void;
 }
 
 export function ThreadProvider({
@@ -43,6 +49,9 @@ export function ThreadProvider({
   metadata,
   loading,
   error,
+  totalCount,
+  hasMore,
+  loadMore,
 }: ThreadProviderProps) {
   const actualCosts = useActualCosts();
 
@@ -74,6 +83,9 @@ export function ThreadProvider({
       metadata,
       loading,
       error,
+      totalCount,
+      hasMore,
+      loadMore,
       refetch,
       updateStatus,
       addBlocker,
@@ -85,6 +97,9 @@ export function ThreadProvider({
       metadata,
       loading,
       error,
+      totalCount,
+      hasMore,
+      loadMore,
       refetch,
       updateStatus,
       addBlocker,

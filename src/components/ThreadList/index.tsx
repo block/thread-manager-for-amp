@@ -1,4 +1,13 @@
-import React, { useState, useCallback, useMemo, memo, lazy, Suspense } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+  memo,
+  lazy,
+  Suspense,
+} from 'react';
 import { CheckSquare, Square, MinusSquare } from 'lucide-react';
 import type { Thread, ThreadStatus } from '../../types';
 import { ConfirmModal } from '../ConfirmModal';
@@ -47,6 +56,9 @@ export const ThreadList = memo(function ThreadList({
   onStatusChange,
   viewMode,
   groupByDate = false,
+  totalCount: serverTotalCount,
+  hasMore,
+  onLoadMore,
 }: ThreadListProps) {
   const [archiveTarget, setArchiveTarget] = useState<Thread | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Thread | null>(null);
@@ -84,6 +96,20 @@ export const ThreadList = memo(function ThreadList({
   const startIdx = (currentPage - 1) * PAGE_SIZE;
   const endIdx = startIdx + PAGE_SIZE;
   const paginatedEntries = entries.slice(startIdx, endIdx);
+
+  // Auto-load more when user reaches the last page.
+  // Track the entries count to reset the guard when new data arrives.
+  const loadMoreForCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (currentPage === totalPages && hasMore && onLoadMore) {
+      if (loadMoreForCountRef.current !== entries.length) {
+        loadMoreForCountRef.current = entries.length;
+        onLoadMore();
+      }
+    } else {
+      loadMoreForCountRef.current = null;
+    }
+  }, [currentPage, totalPages, hasMore, onLoadMore, entries.length]);
 
   // Flatten for selection/keyboard hooks (include expanded stack children)
   const paginatedThreads = useMemo(() => {
@@ -291,6 +317,7 @@ export const ThreadList = memo(function ThreadList({
 
       <PaginationBar
         totalCount={entries.length}
+        serverTotalCount={serverTotalCount}
         startIdx={startIdx}
         endIdx={Math.min(endIdx, entries.length)}
         currentPage={currentPage}

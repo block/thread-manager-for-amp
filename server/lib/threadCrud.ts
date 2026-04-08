@@ -16,30 +16,26 @@ import {
 
 interface GetThreadsOptions {
   limit?: number;
-  cursor?: string | null;
+  offset?: number;
 }
 
 export async function getThreads({
-  limit = 50,
-  cursor = null,
+  limit = 500,
+  offset = 0,
 }: GetThreadsOptions = {}): Promise<ThreadsResult> {
-  const allThreads = await listAllThreads();
+  // Fetch limit + offset threads so we can slice the requested window
+  const allThreads = await listAllThreads(offset + limit);
 
-  // Apply cursor-based pagination (same contract as before)
-  let startIndex = 0;
-  if (cursor) {
-    const cursorIndex = allThreads.findIndex((t) => t.id === cursor);
-    if (cursorIndex !== -1) startIndex = cursorIndex + 1;
-  }
-
-  const sliced = allThreads.slice(startIndex, startIndex + limit);
-  const hasMore = startIndex + limit < allThreads.length;
+  const sliced = allThreads.slice(offset, offset + limit);
   const lastThread = sliced[sliced.length - 1];
+  // If we got back a full window, there are likely more beyond it
+  const hasMore = allThreads.length >= offset + limit;
 
   return {
     threads: sliced,
     nextCursor: lastThread && hasMore ? lastThread.id : null,
     hasMore,
+    totalCount: allThreads.length,
   };
 }
 
