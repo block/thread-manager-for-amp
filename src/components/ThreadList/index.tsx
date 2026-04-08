@@ -56,7 +56,6 @@ export const ThreadList = memo(function ThreadList({
   onStatusChange,
   viewMode,
   groupByDate = false,
-  totalCount: serverTotalCount,
   hasMore,
   onLoadMore,
 }: ThreadListProps) {
@@ -317,7 +316,7 @@ export const ThreadList = memo(function ThreadList({
 
       <PaginationBar
         totalCount={entries.length}
-        serverTotalCount={serverTotalCount}
+        hasMore={hasMore}
         startIdx={startIdx}
         endIdx={Math.min(endIdx, entries.length)}
         currentPage={currentPage}
