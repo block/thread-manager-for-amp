@@ -175,7 +175,24 @@ interface ListThreadsResult {
   threads: AmpThreadSummary[];
 }
 
-export async function listThreads(limit = 500): Promise<AmpThreadSummary[]> {
-  const result = await callAmpInternalAPI<ListThreadsResult>('listThreads', { limit });
-  return result.threads;
+/**
+ * Fetch threads from the Amp internal API with automatic pagination.
+ * The API caps each request at 500, so we paginate with `offset` until
+ * we've collected the requested number or the API returns fewer results.
+ */
+export async function listThreads(limit = 1000): Promise<AmpThreadSummary[]> {
+  const PAGE_SIZE = 500;
+  const all: AmpThreadSummary[] = [];
+
+  while (all.length < limit) {
+    const batchSize = Math.min(PAGE_SIZE, limit - all.length);
+    const result = await callAmpInternalAPI<ListThreadsResult>('listThreads', {
+      limit: batchSize,
+      offset: all.length,
+    });
+    all.push(...result.threads);
+    if (result.threads.length < batchSize) break; // No more threads available
+  }
+
+  return all;
 }
