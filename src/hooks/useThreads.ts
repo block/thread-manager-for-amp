@@ -42,7 +42,7 @@ export function useThreads() {
       try {
         const cursor = append ? cursorRef.current : null;
         const data = await apiGet<ThreadsResult>(
-          `/api/threads?limit=50${cursor ? `&cursor=${cursor}` : ''}`,
+          `/api/threads?limit=500${cursor ? `&cursor=${cursor}` : ''}`,
         );
 
         const filtered = filterDeleted(data.threads);
