@@ -102,6 +102,10 @@ export async function archiveThread(threadId: string): Promise<string> {
 }
 
 async function cleanupThreadFiles(threadId: string): Promise<void> {
+  // Delete the local thread JSON file so it doesn't resurface via local scan
+  const threadFile = join(THREADS_DIR, `${threadId}.json`);
+  await rm(threadFile, { force: true }).catch(() => {});
+
   // Delete artifacts directory
   const threadArtifactsDir = join(ARTIFACTS_DIR, threadId);
   await rm(threadArtifactsDir, { recursive: true, force: true }).catch(() => {});
