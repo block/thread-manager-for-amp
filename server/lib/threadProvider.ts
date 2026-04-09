@@ -16,7 +16,7 @@ import {
   type ThreadFile,
   type ThreadMessage,
 } from './threadTypes.js';
-import { listThreads, type AmpThreadSummary } from './amp-api.js';
+import { listThreads, AMP_API_MAX, type AmpThreadSummary } from './amp-api.js';
 import { formatRelativeTime, parseFileUri, runAmp } from './utils.js';
 
 // ── Visibility normalization ────────────────────────────────────────────
@@ -47,20 +47,119 @@ function parseRepoFromUrl(url: string | undefined | null): string | null {
   return match?.[1] ?? url;
 }
 
-// ── List all threads via API ────────────────────────────────────────────
+// ── List all threads via API + local supplement ─────────────────────────
 
-export async function listAllThreads(limit = 1000): Promise<Thread[]> {
-  const summaries = await listThreads(limit);
+/**
+ * Fetch all threads using a hybrid approach:
+ *   1. API call — returns up to 500 most-recent threads (the API's max)
+ *   2. Local file scan — picks up any threads on disk not already in the API
+ *      response (handles >500 threads or threads not yet synced to server)
+ *
+ * Returns threads sorted by lastUpdatedDate descending.
+ */
+export async function listAllThreads(): Promise<Thread[]> {
+  const summaries = await listThreads();
   const threads = summaries.map(toThread);
+  const apiIds = new Set(threads.map((t) => t.id));
 
-  // The listThreads API doesn't return relationship data.
-  // Enrich from two sources:
-  //   1. Local thread files (relationships[] array + handoff tool blocks)
-  //   2. Shared thread ID prefix heuristic (handoff batches share first 4 UUID segments)
+  // Supplement with local thread files not in the API response
+  if (apiIds.size >= AMP_API_MAX) {
+    // API returned its max — there are likely more threads on disk
+    const localExtras = await getLocalOnlyThreads(apiIds);
+    threads.push(...localExtras);
+  }
+
+  // Enrich handoff relationships from local files + batch heuristic
   await enrichRelationships(threads);
   enrichBatchSiblings(threads);
 
+  // Sort by last updated descending (API threads are already sorted, but
+  // local extras may interleave)
+  threads.sort(
+    (a, b) =>
+      new Date(b.lastUpdatedDate || 0).getTime() - new Date(a.lastUpdatedDate || 0).getTime(),
+  );
+
   return threads;
+}
+
+/**
+ * Scan local thread files and return Thread objects for IDs not in `knownIds`.
+ * Reads only the minimal fields needed (title, timestamps, env) — does NOT
+ * parse full message content.
+ */
+async function getLocalOnlyThreads(knownIds: Set<string>): Promise<Thread[]> {
+  let files: string[];
+  try {
+    files = await readdir(THREADS_DIR);
+  } catch {
+    return [];
+  }
+
+  const extras: Thread[] = [];
+  const jsonFiles = files.filter((f) => f.startsWith('T-') && f.endsWith('.json'));
+
+  await Promise.all(
+    jsonFiles.map(async (file) => {
+      const threadId = file.replace('.json', '');
+      if (knownIds.has(threadId)) return;
+
+      try {
+        const content = await readFile(join(THREADS_DIR, file), 'utf-8');
+        const data = JSON.parse(content) as ThreadFile;
+        extras.push(localFileToThread(threadId, data));
+      } catch {
+        // Skip unreadable files
+      }
+    }),
+  );
+
+  return extras;
+}
+
+/**
+ * Convert a local ThreadFile into the shared Thread type.
+ * Mirrors toThread() but works from the on-disk JSON shape.
+ */
+function localFileToThread(id: string, data: ThreadFile): Thread {
+  const tree = data.env?.initial?.trees?.[0];
+  const repoUrl = tree?.repository?.url;
+
+  let handoffParentId: string | null = null;
+  const handoffChildIds: string[] = [];
+  for (const rel of data.relationships || []) {
+    if (isHandoffRelationship(rel)) {
+      if (rel.role === 'child') {
+        handoffParentId = rel.threadID;
+      } else {
+        handoffChildIds.push(rel.threadID);
+      }
+    }
+  }
+
+  const createdMs = data.created || 0;
+  const lastDate = new Date(createdMs);
+
+  return {
+    id,
+    title: data.title || id,
+    lastUpdated: formatRelativeTime(lastDate),
+    lastUpdatedDate: lastDate.toISOString(),
+    visibility: normalizeVisibility(data.visibility ?? data.meta?.visibility),
+    messages: (data.messages || []).length,
+    workspace: tree?.displayName || null,
+    workspacePath: parseFileUri(tree?.uri) || null,
+    repo: parseRepoFromUrl(repoUrl),
+    handoffParentId,
+    handoffChildIds: [...new Set(handoffChildIds)],
+    agentMode: data.agentMode,
+    archived: false,
+    model: undefined,
+    cost: undefined,
+    contextPercent: undefined,
+    maxContextTokens: undefined,
+    touchedFiles: undefined,
+  };
 }
 
 /**

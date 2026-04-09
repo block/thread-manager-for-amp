@@ -16,8 +16,7 @@ export function useThreads() {
     setError(null);
 
     try {
-      // Fetch all threads — the server paginates the Amp API internally (500 per call)
-      const data = await apiGet<ThreadsResult>('/api/threads?limit=10000');
+      const data = await apiGet<ThreadsResult>('/api/threads');
 
       // Stabilize reference: skip setState if thread list hasn't meaningfully changed,
       // preventing downstream re-renders (e.g., useFilters label re-fetch) on every poll

@@ -14,14 +14,8 @@ import {
   type ThreadFile,
 } from './threadTypes.js';
 
-interface GetThreadsOptions {
-  limit?: number;
-}
-
-export async function getThreads({
-  limit = 10000,
-}: GetThreadsOptions = {}): Promise<ThreadsResult> {
-  const allThreads = await listAllThreads(limit);
+export async function getThreads(): Promise<ThreadsResult> {
+  const allThreads = await listAllThreads();
 
   return {
     threads: allThreads,
