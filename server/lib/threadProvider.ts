@@ -16,7 +16,7 @@ import {
   type ThreadFile,
   type ThreadMessage,
 } from './threadTypes.js';
-import { listThreads, AMP_API_MAX, type AmpThreadSummary } from './amp-api.js';
+import { listThreads, type AmpThreadSummary } from './amp-api.js';
 import { formatRelativeTime, parseFileUri, runAmp } from './utils.js';
 
 // ── Visibility normalization ────────────────────────────────────────────
@@ -62,12 +62,11 @@ export async function listAllThreads(): Promise<Thread[]> {
   const threads = summaries.map(toThread);
   const apiIds = new Set(threads.map((t) => t.id));
 
-  // Supplement with local thread files not in the API response
-  if (apiIds.size >= AMP_API_MAX) {
-    // API returned its max — there are likely more threads on disk
-    const localExtras = await getLocalOnlyThreads(apiIds);
-    threads.push(...localExtras);
-  }
+  // Always supplement with local thread files not in the API response.
+  // The API returns at most 500 most-recent threads, so older threads
+  // only appear via their local files on disk.
+  const localExtras = await getLocalOnlyThreads(apiIds);
+  threads.push(...localExtras);
 
   // Enrich handoff relationships from local files + batch heuristic
   await enrichRelationships(threads);
