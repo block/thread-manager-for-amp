@@ -175,7 +175,19 @@ interface ListThreadsResult {
   threads: AmpThreadSummary[];
 }
 
-export async function listThreads(limit = 500): Promise<AmpThreadSummary[]> {
-  const result = await callAmpInternalAPI<ListThreadsResult>('listThreads', { limit });
+/** Maximum threads the Amp API returns in a single call. */
+export const AMP_API_MAX = 500;
+
+/**
+ * Fetch threads from the Amp internal API.
+ *
+ * The API's `offset` parameter is silently ignored — it always returns the
+ * same set of threads regardless of offset. So we make a single call with
+ * limit capped at 500 (the API maximum).
+ */
+export async function listThreads(): Promise<AmpThreadSummary[]> {
+  const result = await callAmpInternalAPI<ListThreadsResult>('listThreads', {
+    limit: AMP_API_MAX,
+  });
   return result.threads;
 }

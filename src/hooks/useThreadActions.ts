@@ -145,8 +145,8 @@ export function useThreadActions({
       } catch (err) {
         console.error('Bulk archive error:', err);
         showError('Some threads failed to archive');
+        refetch();
       }
-      refetch();
     },
     [refetch, removeThread, showError],
   );
@@ -171,12 +171,13 @@ export function useThreadActions({
         if (failures.length > 0) {
           console.error(`${failures.length} delete(s) failed`);
           showError(`${failures.length} thread(s) failed to delete`);
+          refetch();
         }
       } catch (err) {
         console.error('Bulk delete error:', err);
         showError('Some threads failed to delete');
+        refetch();
       }
-      refetch();
     },
     [refetch, removeThread, showError],
   );

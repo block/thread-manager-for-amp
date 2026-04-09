@@ -14,32 +14,13 @@ import {
   type ThreadFile,
 } from './threadTypes.js';
 
-interface GetThreadsOptions {
-  limit?: number;
-  cursor?: string | null;
-}
-
-export async function getThreads({
-  limit = 50,
-  cursor = null,
-}: GetThreadsOptions = {}): Promise<ThreadsResult> {
+export async function getThreads(): Promise<ThreadsResult> {
   const allThreads = await listAllThreads();
 
-  // Apply cursor-based pagination (same contract as before)
-  let startIndex = 0;
-  if (cursor) {
-    const cursorIndex = allThreads.findIndex((t) => t.id === cursor);
-    if (cursorIndex !== -1) startIndex = cursorIndex + 1;
-  }
-
-  const sliced = allThreads.slice(startIndex, startIndex + limit);
-  const hasMore = startIndex + limit < allThreads.length;
-  const lastThread = sliced[sliced.length - 1];
-
   return {
-    threads: sliced,
-    nextCursor: lastThread && hasMore ? lastThread.id : null,
-    hasMore,
+    threads: allThreads,
+    nextCursor: null,
+    hasMore: false,
   };
 }
 
@@ -121,6 +102,10 @@ export async function archiveThread(threadId: string): Promise<string> {
 }
 
 async function cleanupThreadFiles(threadId: string): Promise<void> {
+  // Delete the local thread JSON file so it doesn't resurface via local scan
+  const threadFile = join(THREADS_DIR, `${threadId}.json`);
+  await rm(threadFile, { force: true }).catch(() => {});
+
   // Delete artifacts directory
   const threadArtifactsDir = join(ARTIFACTS_DIR, threadId);
   await rm(threadArtifactsDir, { recursive: true, force: true }).catch(() => {});
@@ -139,9 +124,11 @@ export async function deleteThread(threadId: string): Promise<DeleteResult> {
   try {
     await runAmp(['threads', 'delete', threadId]);
     await cleanupThreadFiles(threadId);
+    console.log(`[threads] Deleted ${threadId}`);
     return { success: true };
   } catch (e) {
     const error = e as Error;
+    console.error(`[threads] Delete failed for ${threadId}: ${error.message}`);
     return { success: false, error: error.message };
   }
 }
