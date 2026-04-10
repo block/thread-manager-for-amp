@@ -6,7 +6,7 @@
  *   2. readThreadFile(id) — tries local file first, falls back to `amp threads export`
  */
 
-import { readFile, readdir, access } from 'fs/promises';
+import { readFile, readdir, access, unlink } from 'fs/promises';
 import { join } from 'path';
 import type { Thread, ThreadVisibility } from '../../shared/types.js';
 import {
@@ -17,7 +17,13 @@ import {
   type ThreadMessage,
 } from './threadTypes.js';
 import { listThreads, type AmpThreadSummary } from './amp-api.js';
-import { formatRelativeTime, parseFileUri, runAmp } from './utils.js';
+import { tmpdir } from 'os';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import { formatRelativeTime, parseFileUri } from './utils.js';
+import { AMP_BIN } from './constants.js';
+
+const execFileAsync = promisify(execFile);
 
 // ── Visibility normalization ────────────────────────────────────────────
 
@@ -373,9 +379,27 @@ export async function readThreadFile(threadId: string): Promise<ThreadFile> {
     // File doesn't exist or is unreadable — fall through to CLI
   }
 
-  // Slow path: fetch from server via CLI
-  const stdout = await runAmp(['threads', 'export', threadId]);
-  const data = JSON.parse(stdout) as ThreadFile;
+  // Slow path: fetch from server via CLI.
+  // The amp CLI truncates stdout at ~64KB when piped. Work around this
+  // by redirecting output to a temp file, then reading the file.
+  const tmpFile = join(tmpdir(), `amp-export-${threadId}.json`);
+  try {
+    await execFileAsync('sh', ['-c', `"${AMP_BIN}" threads export "${threadId}" > "${tmpFile}"`], {
+      timeout: 120000,
+    });
+  } catch (err) {
+    await unlink(tmpFile).catch(() => {});
+    throw err;
+  }
+
+  let exportContent: string;
+  try {
+    exportContent = await readFile(tmpFile, 'utf-8');
+  } finally {
+    await unlink(tmpFile).catch(() => {});
+  }
+
+  const data = JSON.parse(exportContent) as ThreadFile;
 
   // Normalize: export puts visibility in meta.visibility (lowercase)
   if (!data.visibility && data.meta?.visibility) {

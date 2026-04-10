@@ -1,6 +1,5 @@
 import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import { FileText, X } from 'lucide-react';
-import { apiGet } from '../../api/client';
 import { Timestamp } from '../Timestamp';
 import type { ToolbarContentSearchProps, SearchResult } from './types';
 import styles from './Toolbar.module.css';
@@ -14,22 +13,77 @@ export const ToolbarContentSearch = memo(function ToolbarContentSearch({
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const performSearch = useCallback(async (query: string) => {
     if (query.length < 2) {
       setSearchResults([]);
       return;
     }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsSearching(true);
+    setSearchResults([]);
+
     try {
-      const results = await apiGet<SearchResult[]>(`/api/search?q=${encodeURIComponent(query)}`);
-      setSearchResults(results);
-      setShowResults(true);
+      const seen = new Set<string>();
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&stream`, {
+        signal: controller.signal,
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error(`Search failed: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (controller.signal.aborted) return;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ') && line.length > 6) {
+            try {
+              const batch = JSON.parse(line.slice(6)) as SearchResult[];
+              const fresh = batch.filter((r) => {
+                if (seen.has(r.threadId)) return false;
+                seen.add(r.threadId);
+                return true;
+              });
+              if (fresh.length > 0) {
+                setSearchResults((prev) => [...prev, ...fresh]);
+                if (document.activeElement === inputRef.current) {
+                  setShowResults(true);
+                }
+              }
+            } catch {
+              // skip malformed SSE data
+            }
+          }
+          if (line.startsWith('event: done')) {
+            setIsSearching(false);
+          }
+        }
+      }
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.error('Search failed:', err);
-      setSearchResults([]);
     } finally {
-      setIsSearching(false);
+      if (!controller.signal.aborted) {
+        setIsSearching(false);
+      }
     }
   }, []);
 
@@ -94,6 +148,7 @@ export const ToolbarContentSearch = memo(function ToolbarContentSearch({
     <div className={styles.contentSearch} ref={searchRef}>
       <FileText size={16} className={styles.searchIconContent} />
       <input
+        ref={inputRef}
         type="text"
         placeholder="Search threads..."
         value={fullTextQuery}

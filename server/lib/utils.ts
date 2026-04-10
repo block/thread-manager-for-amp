@@ -46,6 +46,7 @@ export function handleRouteError(res: ServerResponse, err: unknown): boolean {
 interface RunAmpOptions {
   cwd?: string;
   stdio?: StdioOptions;
+  timeoutMs?: number;
 }
 
 export function jsonResponse(res: ServerResponse, data: unknown, status: number = 200): boolean {
@@ -119,10 +120,11 @@ export function runAmp(args: string[], options: RunAmpOptions = {}): Promise<str
       });
     }
 
+    const timeoutMs = options.timeoutMs ?? 120000;
     const timeout = setTimeout(() => {
       child.kill('SIGKILL');
-      reject(new Error('Command timed out after 2 minutes'));
-    }, 120000);
+      reject(new Error(`Command timed out after ${Math.round(timeoutMs / 1000)}s`));
+    }, timeoutMs);
 
     child.on('error', (err: Error) => {
       clearTimeout(timeout);

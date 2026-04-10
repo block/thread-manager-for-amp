@@ -3,6 +3,7 @@ import { jsonResponse, sendError, handleRouteError, getParam, parseBody } from '
 import {
   getThreads,
   searchThreads,
+  streamSearchResults,
   getThreadChanges,
   getThreadChain,
   getRelatedThreads,
@@ -48,6 +49,36 @@ export async function handleThreadRoutes(
   if (pathname === '/api/search') {
     try {
       const query = getParam(url, 'q');
+      const stream = url.searchParams.has('stream');
+
+      if (stream) {
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+        });
+        res.flushHeaders();
+
+        // Send initial comment to confirm connection
+        res.write(': connected\n\n');
+
+        streamSearchResults(
+          query,
+          (results) => {
+            if (!res.writableEnded) {
+              res.write(`data: ${JSON.stringify(results)}\n\n`);
+            }
+          },
+          () => {
+            if (!res.writableEnded) {
+              res.write('event: done\ndata: \n\n');
+              res.end();
+            }
+          },
+        );
+        return true;
+      }
+
       const results = await searchThreads(query);
       return jsonResponse(res, results);
     } catch (err) {
